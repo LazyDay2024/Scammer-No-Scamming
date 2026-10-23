@@ -328,19 +328,11 @@ namespace ScammerNoScamming
         void OnGUI()
         {
             if (!ActionActive || GameScreen.AnyOpen || current == null) return;
-            ThaiGui.BeginCanvas();
-            var hud = new Rect(30f, 65f, 570f, 132f);
-            GUI.DrawTexture(hud, ThaiGui.Solid(new Color(0.04f, 0.06f, 0.055f, 0.78f)));
-            GUI.Label(new Rect(48f, 74f, 530f, 38f), current.Title, ThaiGui.Text(25, ThaiGui.Gold, FontStyle.Bold));
             string objective = HasEvidence ? "นำหลักฐานกลับสถานี แล้ว Seal ที่โต๊ะเก็บหลักฐาน"
                 : raid != null && raid.Cleared ? "ปลอดภัยแล้ว เล็งที่หลักฐานแล้วกด E เพื่อเก็บ"
                 : $"บุก {current.ZoneHint} · ศัตรูเหลือ {(raid != null ? raid.RemainingEnemies : 0)} คน";
-            GUI.Label(new Rect(48f, 111f, 530f, 36f), objective, ThaiGui.Text(21, ThaiGui.Bone));
-            float hp = vitals != null ? vitals.Health.Current : 100f;
-            GUI.Label(new Rect(48f, 151f, 180f, 30f), $"เลือด {hp:0}", ThaiGui.Text(22, ThaiGui.Bone, FontStyle.Bold));
-            GUI.Label(new Rect(240f, 151f, 320f, 30f), $"Trouble {trouble:0} / {policeThreshold:0}" +
-                (raid != null && raid.PoliceSpawned ? " · ตำรวจเทากำลังมา" : ""), ThaiGui.Text(20, ThaiGui.Orange));
-            ThaiGui.EndCanvas();
+            GameHud.Draw(current.Title, objective, vitals != null ? vitals.Health.Current : 100f,
+                vitals != null ? vitals.Health.max : 100f, trouble, policeThreshold, raid != null && raid.PoliceSpawned);
         }
     }
 }

@@ -36,11 +36,29 @@ namespace ScammerNoScamming
             var first = db.Find("CASE_01_FAKE_SHOP");
 
             yield return Shot("menu");
+            yield return new WaitForSecondsRealtime(9f);
+            yield return Shot("menu_drifted");
             flow.GetComponent<MainMenuScreen>().Close();
             var story = flow.GetComponent<StoryScreen>();
             story.Show("bg_opening", "2035 · สยามภิรมย์", "ม้าเหล็กหมดน้ำมัน", db.Text.Opening, null, "รับคดีแรก", null);
             yield return Shot("opening");
             story.Close();
+
+            // Station: the 3D investigation, with the interaction prompt and the subtitle panel.
+            var station = flow.station != null ? flow.station : FindAnyObjectByType<StationInvestigation>();
+            var player = PlayerLocator.Player;
+            if (station != null && player != null)
+            {
+                station.BeginCase(first, new GeneLoadout(), null, null);
+                yield return null;
+                Place(player, new Vector3(-5f, 0.1f, -5.2f), 0f);
+                yield return new WaitForSecondsRealtime(1f);
+                yield return Shot("station_victim");
+                Place(player, new Vector3(-6.6f, 0.1f, 2.6f), 0f);
+                yield return new WaitForSecondsRealtime(1f);
+                yield return Shot("station_clue");
+                station.Reset();
+            }
 
             var analysis = flow.GetComponent<AnalysisScreen>();
             analysis.Show(first, 10f, null);
@@ -75,8 +93,14 @@ namespace ScammerNoScamming
             yield return Shot("lesson");
             lesson.Close();
 
+            story.Show("bg_ending_messy", "ล่าถอยจากพื้นที่", "ยังมีโอกาสกลับไปช่วยพวกเขา",
+                "คุณบาดเจ็บจนบุกต่อไม่ไหว กลับมาที่สถานีแล้วเตรียมลงมือใหม่ คำตอบวิเคราะห์และยีนที่เลือกยังอยู่ครบ", null, "บุกอีกครั้ง", null);
+            yield return Shot("death");
+            story.Close();
+            yield return null;
+
             story.Show("bg_ending_clean", "ฉากจบ: สะอาด", "เมืองได้แสงกลับมา", db.Text.EndingClean,
-                db.Text.Stat.Description + "\n(" + db.Text.Stat.SourceName + ")", "กลับเมนูหลัก", null);
+                db.Text.Stat.Description + System.Environment.NewLine + "(" + db.Text.Stat.SourceName + ")", "กลับเมนูหลัก", null);
             yield return Shot("ending_clean");
             story.Close();
             yield return null;
@@ -85,6 +109,14 @@ namespace ScammerNoScamming
             pause.DebugOpen();
             yield return Shot("pause");
             Application.Quit();
+        }
+
+        static void Place(PlayerController player, Vector3 position, float yaw)
+        {
+            var cc = player.GetComponent<CharacterController>();
+            if (cc != null) cc.enabled = false;
+            player.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
+            if (cc != null) cc.enabled = true;
         }
 
         IEnumerator Shot(string name)

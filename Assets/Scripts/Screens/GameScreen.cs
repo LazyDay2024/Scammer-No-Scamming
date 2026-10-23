@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace ScammerNoScamming
 {
-    // Base for our full-screen IMGUI screens (menu, analysis, genes, lesson, ending). While any screen
+    // Base for our full-screen IMGUI screens (menu, story, pause, analysis, genes, lesson). While any screen
     // is open the game is paused, the player's input is off and the cursor is free.
     // Named GameScreen so it does not clash with UIScreen from the class diagram (the friend's uGUI work).
     public abstract class GameScreen : MonoBehaviour
@@ -14,10 +14,21 @@ namespace ScammerNoScamming
         public static bool AnyOpen => open.Count > 0;
         public bool IsOpen { get; private set; }
 
+        float openedAt;
+
+        // Seconds since this screen opened, in unscaled time (the game is paused while a screen is open).
+        protected float Age => Time.unscaledTime - openedAt;
+
+        // Screens that sit on top of the live 3D world (menu, story) ask for the drifting backdrop camera.
+        protected virtual bool WantsLiveWorld => false;
+        protected virtual float FadeIn => 0.4f;
+
         protected void Open()
         {
             if (IsOpen) return;
             IsOpen = true;
+            openedAt = Time.unscaledTime;
+            if (WantsLiveWorld) ScreenBackdrop.Hold(this);
             if (open.Count == 0 && !releasePending) Focus(true);
             releasePending = false;
             open.Add(this);
@@ -31,6 +42,7 @@ namespace ScammerNoScamming
         {
             if (!IsOpen) return;
             IsOpen = false;
+            ScreenBackdrop.Release(this);
             open.Remove(this);
             if (open.Count == 0) releasePending = true;
         }
@@ -83,9 +95,15 @@ namespace ScammerNoScamming
             GUI.depth = -10;
             // Fill the letterbox bars so the frozen world never shows around the 16:9 canvas.
             if (FillsScreen) GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), ThaiGui.Solid(ThaiGui.Night));
+            if (WantsLiveWorld && !ScreenBackdrop.IsLive) ThaiGui.Backdrop();
+            float reveal = ThaiGui.Ease(Age / FadeIn);
+            GUI.color = new Color(1f, 1f, 1f, reveal);
+            ThaiGui.CanvasOffsetY = (1f - reveal) * 18f;
             var canvas = ThaiGui.BeginCanvas();
             Draw(canvas);
             ThaiGui.EndCanvas();
+            ThaiGui.CanvasOffsetY = 0f;
+            GUI.color = Color.white;
         }
 
         protected virtual bool FillsScreen => true;

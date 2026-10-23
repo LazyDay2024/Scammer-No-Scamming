@@ -3,6 +3,8 @@ using UnityEngine;
 
 namespace ScammerNoScamming
 {
+    // Opening, retreat and ending pages: a typographic column over the live world.
+    // The first argument used to name a painted background; it now only tells the mood (messy = grim).
     public class StoryScreen : GameScreen
     {
         string art;
@@ -12,6 +14,9 @@ namespace ScammerNoScamming
         string extra;
         string button;
         Action onDone;
+
+        protected override bool FillsScreen => false;
+        protected override bool WantsLiveWorld => true;
 
         public void Show(string backgroundArt, string kickerText, string titleText, string bodyText, string extraText,
             string buttonText, Action done)
@@ -26,25 +31,63 @@ namespace ScammerNoScamming
             Open();
         }
 
+        void Finish()
+        {
+            Close();
+            onDone?.Invoke();
+        }
+
         protected override void Draw(Rect canvas)
         {
-            ThaiGui.Background(canvas, art, 0.2f);
-            GUI.DrawTexture(new Rect(0f, 0f, 1060f, 1080f), ThaiGui.Solid(new Color(0.04f, 0.07f, 0.08f, 0.72f)));
-            float y = 140f;
-            if (!string.IsNullOrEmpty(kicker))
+            bool grim = art != null && art.Contains("messy");
+            var tone = grim ? ThaiGui.Danger : ThaiGui.Gold;
+            ThaiGui.Dim(grim ? 0.35f : 0.12f);
+            ThaiGui.ScrimLeft(1350f, 0.95f);
+            ThaiGui.ScrimBottom(320f, 0.5f);
+            ThaiGui.VignetteOverlay(grim ? 0.8f : 0.55f);
+            ThaiGui.Grain(0.035f);
+
+            const float x = 150f, w = 880f;
+            float age = Age;
+            float y = 130f;
+            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.15f)))
             {
-                ThaiGui.Kicker(new Rect(110f, y, 0f, 0f), kicker);
-                y += 80f;
+                if (!string.IsNullOrEmpty(kicker))
+                {
+                    ThaiGui.Kicker(new Rect(x, y, 0f, 0f), kicker, tone);
+                    y += 70f;
+                }
             }
-            if (!string.IsNullOrEmpty(title))
-                y += ThaiGui.Label(new Rect(110f, y, 880f, 200f), title, ThaiGui.Text(76, ThaiGui.Bone, FontStyle.Bold)) + 30f;
-            y += ThaiGui.Label(new Rect(110f, y, 880f, 500f), body, ThaiGui.Text(36, ThaiGui.Bone)) + 30f;
-            if (!string.IsNullOrEmpty(extra))
-                ThaiGui.Label(new Rect(110f, y, 880f, 300f), extra, ThaiGui.Text(28, ThaiGui.Gold));
-            if (GUI.Button(new Rect(110f, 920f, 560f, 96f), button, ThaiGui.Button(38)))
+            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.3f, 0.6f)))
             {
-                Close();
-                onDone?.Invoke();
+                if (!string.IsNullOrEmpty(title))
+                {
+                    y += ThaiGui.Label(new Rect(x, y, w + 120f, 200f), title, ThaiGui.Headline(ThaiGui.H1, ThaiGui.Bone, FontStyle.Bold)) + 26f;
+                    ThaiGui.Fill(new Rect(x, y, 70f, 2f), tone);
+                    y += 40f;
+                }
+            }
+            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.55f, 0.6f)))
+            {
+                y += ThaiGui.Paragraphs(new Rect(x, y, w, 0f), body, ThaiGui.Text(ThaiGui.Lead - 2, ThaiGui.Bone), 18f) + 34f;
+                if (!string.IsNullOrEmpty(extra))
+                {
+                    var style = ThaiGui.Text(ThaiGui.Small, ThaiGui.Muted);
+                    float h = style.CalcHeight(new GUIContent(extra), w - 36f);
+                    ThaiGui.VRule(x, y + 2f, h - 4f, tone, 2.5f);
+                    GUI.Label(new Rect(x + 28f, y, w - 36f, h), extra, style);
+                }
+            }
+            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.9f)))
+            {
+                var r = new Rect(x, canvas.height - 190f, 400f, 76f);
+                if (ThaiGui.Btn(r, button, 32, true)) Finish();
+                var e = Event.current;
+                if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter))
+                {
+                    e.Use();
+                    Finish();
+                }
             }
         }
     }
