@@ -38,6 +38,8 @@ namespace ScammerNoScamming
             yield return Shot("menu");
             yield return new WaitForSecondsRealtime(9f);
             yield return Shot("menu_drifted");
+            flow.GetComponent<MainMenuScreen>().DebugSettings(true);
+            yield return Shot("menu_settings");
             flow.GetComponent<MainMenuScreen>().Close();
             var story = flow.GetComponent<StoryScreen>();
             story.Show("bg_opening", "2035 · สยามภิรมย์", "ม้าเหล็กหมดน้ำมัน", db.Text.Opening, null, "รับคดีแรก", null);
@@ -108,6 +110,8 @@ namespace ScammerNoScamming
             var pause = flow.GetComponent<PauseScreen>();
             pause.DebugOpen();
             yield return Shot("pause");
+            pause.DebugSettings();
+            yield return Shot("pause_settings");
             Application.Quit();
         }
 
