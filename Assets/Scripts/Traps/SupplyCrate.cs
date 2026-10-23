@@ -34,6 +34,18 @@ namespace ScammerNoScamming
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetCollected() => Collected = null;
 
+        public override void ResetTrap()
+        {
+            base.ResetTrap();
+            IsUsed = false;
+        }
+
+        void OnGUI()
+        {
+            if (IsUsed || GameScreen.AnyOpen || !PlayerWithin(interactRange)) return;
+            DrawPrompt(isFake ? "กด E รับของฟรี!" : "กด E เปิดกล่องเสบียง");
+        }
+
         public void Use(GameObject user)
         {
             if (IsUsed) return;

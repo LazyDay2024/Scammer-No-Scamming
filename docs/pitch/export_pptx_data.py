@@ -47,7 +47,7 @@ def main():
         else:
             body = [plain(l) for l in lines]
         slides.append({"seconds": sec, "kicker": kicker.upper(), "title": plain(title), "lines": body,
-                       "caption": caption, "layout": layout, "background": bg,
+                       "caption": " ".join(t for _, t in caption) if isinstance(caption, list) else caption, "layout": layout, "background": bg,
                        "source": ("ม.ค.-เม.ย. 2569 · ที่มา: ศูนย์ต่อต้านการฉ้อโกงออนไลน์ (ACSC) ผ่าน Thai PBS Verify"
                                   if layout == "stat" else "")})
     with open(os.path.join(b.HERE, "pptx_slides.json"), "w", encoding="utf-8") as f:

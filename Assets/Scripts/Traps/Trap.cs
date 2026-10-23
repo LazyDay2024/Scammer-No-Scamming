@@ -63,6 +63,35 @@ namespace ScammerNoScamming
 
         protected virtual void OnSprung(GameObject target) { }
 
+        // Re-arms a sprung trap for the next case and hides the scammers it woke. A defused trap stays
+        // defused (for example a disguised scammer that was shot down).
+        public virtual void ResetTrap()
+        {
+            if (IsDefused) return;
+            HasSprung = false;
+            foreach (var go in activateOnSpring)
+                if (go != null) go.SetActive(false);
+        }
+
+        // Small "press E" hint near interactable traps; the lure text itself is part of the trap.
+        protected void DrawPrompt(string text)
+        {
+            var canvas = ThaiGui.BeginCanvas();
+            var r = new Rect(canvas.width * 0.5f - 420f, canvas.height * 0.7f, 840f, 70f);
+            GUI.DrawTexture(r, ThaiGui.Solid(new Color(0.04f, 0.07f, 0.08f, 0.75f)));
+            GUI.Label(r, text, ThaiGui.Text(32, ThaiGui.Bone, FontStyle.Bold, TextAnchor.MiddleCenter));
+            ThaiGui.EndCanvas();
+        }
+
+        protected bool PlayerWithin(float range)
+        {
+            var player = FindPlayer();
+            if (player == null || player.IsMounted) return false;
+            Vector3 offset = player.transform.position - transform.position;
+            offset.y = 0f;
+            return offset.sqrMagnitude <= range * range;
+        }
+
         // Unity overloads == for destroyed objects but ?. and ?? do not, so normalise first.
         static IDamageable Alive(IDamageable damageable) =>
             damageable is Object unityObject && unityObject == null ? null : damageable;

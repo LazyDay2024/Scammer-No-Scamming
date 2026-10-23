@@ -24,6 +24,12 @@ namespace ScammerNoScamming
                 Spring(player.gameObject);
         }
 
+        void OnGUI()
+        {
+            if (HasSprung || GameScreen.AnyOpen || !PlayerWithin(interactRange)) return;
+            DrawPrompt("กด E สแกนลิงก์");
+        }
+
         protected override void OnSprung(GameObject target)
         {
             var weapon = target != null ? target.GetComponentInChildren<PlayerWeaponController>() : null;
