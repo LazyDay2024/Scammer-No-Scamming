@@ -354,6 +354,8 @@ classDiagram
 | ดมตามรอย | เห็นศัตรูไกล | Trouble เพิ่มเร็ว | `Special = ShowEnemyMarkers`, `TroubleGain ×1.5` |
 | ซ่อนตัว | ศัตรูเห็นยาก | ม้าเปราะ | `EnemySightRange ×0.5`, `DamageTaken ×1.5` |
 
+**โค้ดจริง (2026-10-23, branch `feature/genes-traps-map`)**: กติกาที่ตัดสินใจแล้วคือ "ปกติ 2 ตัว สูงสุด 4 ตัว" จึงใช้จำนวนช่องแทน `Budget`/`Cost`: `GeneLoadout(freeSlots=2, maxSlots=4, troublePerExtraGene)` มี `ExtraCount`, `OverBudgetTrouble`, `Toggle()`; ยีน 4 ตัวสร้างได้จาก `GeneCatalog.CreateDefault()`; ม้าใช้คอมโพเนนต์ `HorseGenes.Apply(RunModifiers)` (ไม่แก้ `HorseController`) ซึ่งคูณจากค่าตั้งต้นเสมอ เล่นซ้ำแล้วไม่ทบ
+
 สิ่งที่ต้องยืนยัน: "ม้าเปราะ" ในเอกสารต้นฉบับ ที่นี่ตีความเป็นผู้เล่นรับดาเมตมากขึ้น (`DamageTaken`) เพราะม้ายังไม่มีเลือด; และกติกาจำนวนยีนที่เลือกได้ (`Budget`, `Cost`, ค่าปรับเมื่อเกินโควตา) ยังเป็นข้อเสนอ จึงทำเป็นพารามิเตอร์ ไม่ฝังตัวเลขในโค้ด
 
 ## 7. Player, Horse และ Combat
@@ -869,6 +871,77 @@ classDiagram
 - เมืองเป็นวงแหวน รัศมีราว 200 ม.: สถานี (0-30) → ตึกสูง (30-80) → อาคารทั่วไป (80-140) → บ้าน (140-200) สร้างจาก primitive ผ่าน `BuildingFactory`/`PropFactory` ตามที่ตัดสินใจ (ผสมกับเท็กซ์เจอร์จาก Codex)
 - Interior เข้าได้บางอาคาร (สถานีเป็นอย่างน้อย) ยังไม่ออกแบบคลาสเฉพาะ ใช้ prefab ห้องเดียวต่อ `StationHub`
 - **รอตัดสินใจ**: บทบาทของแผนที่ (ฮับอย่างเดียว หรือเมืองเดียวใช้ทุกคดี) และเงื่อนไขชนะของด่าน (ที่เสนอ: จัดการผู้ติดอาวุธ + กด E ค้างที่ตู้เซิร์ฟเวอร์) จึงโครง `Hideout` กับ `CaseObjective` ไว้ก่อน ถ้าเงื่อนไขชนะเปลี่ยน เพิ่มคลาสลูกของ `CaseObjective` ได้ โดยไม่แก้ส่วนอื่น
+
+## 11.1 กับดักระหว่างทาง (Traps) และหลายรัง
+
+```mermaid
+classDiagram
+    class Trap {
+        <<abstract>>
+        +float damage
+        +GameObject[] activateOnSpring
+        +TrapKind Kind
+        +bool HasSprung
+        +bool IsDefused
+        +static event Sprung
+        +static event Defused
+        +Spring(GameObject target)
+        +Defuse()
+    }
+    class TrapKind {
+        <<enumeration>>
+        FakeSupply
+        PhishingLink
+        Disguised
+        Ambush
+        CallCenter
+    }
+    class SupplyCrate {
+        +bool isFake
+        +static event Collected
+        +Use(GameObject user)
+    }
+    class PhishingSign {
+        +float hackDuration
+    }
+    class DisguisedScammer {
+        +float stareTime
+        +IsEyeContact(eye, forward) bool
+        +UpdateStare(bool contact, float dt) bool
+    }
+    class AmbushBait {
+        +float triggerRadius
+    }
+    class TrapLog {
+        <<static>>
+        +SprungKinds
+        +DefusedKinds
+        +Reset()
+    }
+    class Hideout {
+        +string hideoutId
+        +string zoneHint
+        +bool IsRevealed
+        +static Find(string id) Hideout
+        +Reveal()
+        +Hide()
+    }
+
+    Trap <|-- SupplyCrate
+    Trap <|-- PhishingSign
+    Trap <|-- DisguisedScammer
+    Trap <|-- AmbushBait
+    Trap --> TrapKind
+    Trap ..> TrapLog : records
+    Trap ..> IDamageable : damages player
+```
+
+- กับดักทุกอันต้องมีสัญญาณให้สังเกตก่อน (อาร์ตหรือพฤติกรรม) ดู PLAN.md หัวข้อ 4
+- กับดักไม่รู้จัก Trouble/UI/ศัตรู: ระบบอื่นฟัง `Trap.Sprung`/`Defused` เอง, ศัตรูที่ซุ่มอยู่วางไว้ในฉากแบบปิดแล้วใส่ใน `activateOnSpring`
+- `DisguisedScammer` ต้องมี `Health` (Faction Scammer) ถ้าถูกยิงตายก่อน = Defuse
+- `PhishingSign` ล็อกปืนผู้เล่น `hackDuration` วินาที (ผลของการโดน Hack เป็นข้อเสนอ ยังไม่ยืนยัน)
+- Call center gang ยังไม่มีโค้ด (ตัดได้ตาม PLAN.md)
+- `Hideout` แทนที่ `Hideout` ในหัวข้อ 11 สำหรับเรื่องตำแหน่ง: เมืองมีหลายรัง คดีอ้างด้วย `hideoutId`, ตอบถูกในขั้นวิเคราะห์ = `Reveal()` ขึ้นลำแสงเหนือรัง
 
 ## 12. โฟลเดอร์และการแบ่งงาน
 
