@@ -11,6 +11,8 @@ namespace ScammerNoScamming
         public float sealRange = 5f;
         public float holdSeconds = 1.5f;
         public int regularCases = 3;
+        [Tooltip("Off for the one-case vertical slice; turn on to end the run with the boss case.")]
+        public bool includeBoss = true;
         public float troublePerWrongAnswer = 10f;
         public float troublePerExtraGene = 20f;
         public float troublePerShot = 1.5f;
@@ -180,6 +182,7 @@ namespace ScammerNoScamming
         void BeginRun()
         {
             run = db.PickRun(regularCases, System.Environment.TickCount);
+            if (!includeBoss) run.RemoveAll(c => c.IsBoss);
             caseIndex = 0;
             trouble = 0f;
             innocentsHit = 0;

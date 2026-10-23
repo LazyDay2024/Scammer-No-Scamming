@@ -19,6 +19,8 @@ namespace ScammerNoScamming
         public float beaconHeight = 120f;
         [Tooltip("Serialized URP material, so its shader is included in Windows builds.")]
         public Material beaconMaterialAsset;
+        [Tooltip("Local base of the beacon, e.g. above the compound roof so it does not block the doorway.")]
+        public Vector3 beaconOffset;
 
         public bool IsRevealed { get; private set; }
 
@@ -75,7 +77,7 @@ namespace ScammerNoScamming
             if (Application.isPlaying) Object.Destroy(collider);
             else Object.DestroyImmediate(collider);
             pillar.transform.SetParent(transform, false);
-            pillar.transform.localPosition = Vector3.up * beaconHeight * 0.5f;
+            pillar.transform.localPosition = beaconOffset + Vector3.up * beaconHeight * 0.5f;
             pillar.transform.localScale = new Vector3(1.2f, beaconHeight * 0.5f, 1.2f);
             var renderer = pillar.GetComponent<Renderer>();
             if (beaconMaterialAsset != null) renderer.sharedMaterial = beaconMaterialAsset;

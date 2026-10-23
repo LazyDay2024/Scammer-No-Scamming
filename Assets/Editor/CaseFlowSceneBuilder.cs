@@ -31,6 +31,10 @@ public static class CaseFlowSceneBuilder
         if (mats.Ground != null)
             mats.Ground.SetTextureScale("_BaseMap", Vector2.one * (CityBuilder.GroundSize / 8f));
         var city = CityBuilder.Build(mats);
+        // Frontier streets are packed dirt: hide the dark asphalt strips (colliders stay) so the tracked dirt ground shows.
+        var roads = city.Root.transform.Find("Roads");
+        if (roads != null)
+            foreach (var road in roads.GetComponentsInChildren<Renderer>()) road.enabled = false;
 
         var player = PlayerSandbox.CreatePlayer();
         player.transform.position = new Vector3(0f, 0.05f, -24f);
@@ -58,6 +62,9 @@ public static class CaseFlowSceneBuilder
 
         var flow = new GameObject("CaseFlow").AddComponent<CaseFlowDemo>();
         flow.sealPoint = counter.transform;
+        // Vertical slice: one polished case (CASE_01, east shophouse) first; raise these in the Inspector to add more.
+        flow.regularCases = 1;
+        flow.includeBoss = false;
         var oldInterior = city.Station.transform.Find("Interior");
         if (oldInterior != null) Object.DestroyImmediate(oldInterior.gameObject);
         var station = flow.gameObject.AddComponent<StationInvestigation>();

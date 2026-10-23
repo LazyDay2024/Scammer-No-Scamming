@@ -34,7 +34,7 @@ namespace ScammerNoScamming
         int pageIndex;
         Transform root, victimVisual;
         WorldInteractable victim, advance, dispatch, caseFile;
-        TextMesh heading, advanceLabel, quota, fileLabel;
+        WorldLabel heading, advanceLabel, quota, fileLabel;
         readonly List<WorldInteractable> clues = new List<WorldInteractable>();
         readonly List<WorldInteractable> answers = new List<WorldInteractable>();
         readonly List<WorldInteractable> pins = new List<WorldInteractable>();
@@ -56,7 +56,7 @@ namespace ScammerNoScamming
             analysed = onAnalysed;
             dispatched = onDispatched;
             phase = Phase.Testimony;
-            heading.text = definition.Title + "\nคุยกับผู้เสียหาย · อ่านเบาะแส · เลือกคำตอบ";
+            heading.Text = definition.Title + "\nคุยกับผู้เสียหาย · อ่านเบาะแส · เลือกคำตอบ";
             SetVictim(definition);
             SetPages(definition.VictimStory.Split('\n'));
             victim.Prompt = "คุยกับ" + definition.VictimName;
@@ -68,7 +68,7 @@ namespace ScammerNoScamming
                 if (!exists) continue;
                 clues[i].ReadingTitle = "เบาะแส " + (i + 1);
                 clues[i].ReadingBody = definition.Clues[i];
-                clues[i].GetComponentInChildren<TextMesh>().text = "เบาะแส " + (i + 1) + "\n" + Wrap(definition.Clues[i], 23);
+                clues[i].GetComponentInChildren<WorldLabel>().Text = "เบาะแส " + (i + 1) + "\n" + definition.Clues[i];
             }
             subtitle = "เดินเข้าไปคุยกับ" + definition.VictimName + " แล้วตรวจเบาะแสบนบอร์ด";
             subtitleTitle = "รับคดี";
@@ -89,10 +89,10 @@ namespace ScammerNoScamming
             if (!string.IsNullOrEmpty(page.Footnote)) content.Add(page.Footnote);
             content.Add((page.Footer ?? "") + "\n" + string.Join(" · ", page.Hotlines));
             SetPages(content);
-            fileLabel.text = "แฟ้มคดีปิดแล้ว\n" + Wrap(page.Title, 22);
+            fileLabel.Text = "แฟ้มคดีปิดแล้ว\n" + page.Title;
             caseFile.ReadingTitle = "บทเรียนจากคดีนี้";
             caseFile.ReadingBody = "เดินมาที่โต๊ะ แล้วกด E เพื่อเปิดแฟ้ม";
-            heading.text = "ปิดคดีแล้ว\nอ่านแฟ้มบนโต๊ะก่อนรับคดีต่อไป";
+            heading.Text = "ปิดคดีแล้ว\nอ่านแฟ้มบนโต๊ะก่อนรับคดีต่อไป";
             subtitle = null;
             Refresh();
         }
@@ -142,7 +142,7 @@ namespace ScammerNoScamming
             if (!session.IsComplete) { phase = Phase.Questions; subtitle = null; Refresh(); return; }
             phase = Phase.Genes;
             var result = session.Result;
-            heading.text = "วิเคราะห์เสร็จ · ถูก " + result.CorrectCount + "/" + session.Case.Questions.Count + "\nเลือกยีนที่ชั้นขวดหน้าสถานี แล้วรับวิทยุออกปฏิบัติการ";
+            heading.Text = "วิเคราะห์เสร็จ · ถูก " + result.CorrectCount + "/" + session.Case.Questions.Count + "\nเลือกยีนที่ชั้นขวดหน้าสถานี แล้วรับวิทยุออกปฏิบัติการ";
             Say(dispatch.transform, "เตรียมม้าออกปฏิบัติการ", result.IsUnlocked(IntelKind.HideoutLocation)
                 ? "พบตำแหน่งรังแล้ว เลือกยีนที่ชั้นขวด ก่อนออกตามลำแสงสีทอง"
                 : "ยังไม่รู้ตำแหน่งรัง รู้เพียงว่าอยู่แถว " + session.Case.ZoneHint + " เลือกยีนก่อนออกตามหา");
@@ -186,11 +186,11 @@ namespace ScammerNoScamming
             victim.Available = phase == Phase.Testimony;
             advance.Available = phase == Phase.Feedback;
             advance.gameObject.SetActive(phase == Phase.Feedback);
-            advanceLabel.text = session != null && session.IsComplete ? "สรุปคดี\nE · เตรียมม้า" : "รับทราบ\nE · คำถามต่อไป";
+            advanceLabel.Text = session != null && session.IsComplete ? "สรุปคดี\nE · เตรียมม้า" : "รับทราบ\nE · คำถามต่อไป";
             for (int i = 0; i < clues.Count; i++) clues[i].Available = phase == Phase.Testimony || phase == Phase.Questions || phase == Phase.Feedback;
             var q = phase == Phase.Questions ? session.CurrentQuestion : null;
             bool map = q != null && q.Reward == IntelKind.HideoutLocation;
-            if (q != null) heading.text = "คำถาม " + (session.Current + 1) + "/" + session.Case.Questions.Count + "\n" + Wrap(q.Prompt, 48) + (map ? "\nเลือกหมุดบนโต๊ะแผนที่" : "");
+            if (q != null) heading.Text = "คำถาม " + (session.Current + 1) + "/" + session.Case.Questions.Count + "\n" + q.Prompt + (map ? "\nเลือกหมุดบนโต๊ะแผนที่" : "");
             for (int i = 0; i < answers.Count; i++)
             {
                 bool active = q != null && i < q.Options.Count;
@@ -201,7 +201,7 @@ namespace ScammerNoScamming
                 {
                     target.ReadingTitle = q.Prompt;
                     target.ReadingBody = q.Options[i].Text;
-                    target.GetComponentInChildren<TextMesh>().text = Wrap(q.Options[i].Text, map ? 15 : 20);
+                    target.GetComponentInChildren<WorldLabel>().Text = q.Options[i].Text;
                 }
                 if (map) pins[i].transform.localPosition = MapPosition(q.Options[i].Text, i);
             }
@@ -223,7 +223,7 @@ namespace ScammerNoScamming
 
         void UpdateGenes()
         {
-            quota.text = "ยีนม้า " + loadout.Count + "/" + loadout.MaxSlots + "\nฟรี " + loadout.FreeSlots + " ขวด · Trouble +" + loadout.OverBudgetTrouble.ToString("0");
+            quota.Text = "ยีนม้า " + loadout.Count + "/" + loadout.MaxSlots + "\nฟรี " + loadout.FreeSlots + " ขวด · Trouble +" + loadout.OverBudgetTrouble.ToString("0");
             Color mix = Color.black;
             for (int i = 0; i < bottles.Count; i++)
             {
@@ -247,8 +247,20 @@ namespace ScammerNoScamming
             {
                 if (string.IsNullOrWhiteSpace(paragraph)) continue;
                 // Keep testimony and case-file pages within the reading panel, without changing content.
-                for (int start = 0; start < paragraph.Length; start += 190)
-                    pages.Add(paragraph.Substring(start, Math.Min(190, paragraph.Length - start)));
+                // Cut at a space (or at least never between a Thai consonant and its marks).
+                int start = 0;
+                while (start < paragraph.Length)
+                {
+                    int end = Math.Min(paragraph.Length, start + 190);
+                    if (end < paragraph.Length)
+                    {
+                        int cut = paragraph.LastIndexOf(' ', end - 1, end - start - 1);
+                        if (cut <= start + 60) { cut = end; while (cut > start + 1 && !WorldText.CanBreakBefore(paragraph, cut)) cut--; }
+                        end = cut;
+                    }
+                    pages.Add(paragraph.Substring(start, end - start).Trim());
+                    start = end;
+                }
             }
         }
 
@@ -283,25 +295,25 @@ namespace ScammerNoScamming
             var metal = Mat(new Color(.07f, .13f, .14f));
             Box("ClueBoard", new Vector3(-5f, 2.1f, 5.85f), new Vector3(6.4f, 3.3f, .18f), wood);
             Box("AnswerBoard", new Vector3(3f, 2.1f, 5.85f), new Vector3(8.5f, 3.3f, .18f), wood);
-            heading = Label(root, "สถานีตำรวจ · รับคดี", new Vector3(0f, 4.4f, 5.6f), 4.8f, .11f, ThaiGui.Gold);
+            heading = Label(root, "สถานีตำรวจ · รับคดี", new Vector3(0f, 4.3f, 5.6f), new Vector2(11f, 1.2f), .1f, ThaiGui.Gold);
             for (int i = 0; i < 4; i++)
             {
                 var card = Interactive("Clue_" + i, new Vector3(-6.6f + i % 2 * 3.2f, 2.9f - i / 2 * 1.4f, 5.67f), new Vector3(2.95f, 1.2f, .12f), paper, "อ่านเบาะแส", () => { });
-                Label(card.transform, "เบาะแส", new Vector3(0f, 0f, -.09f), 1.2f, .09f, ThaiGui.Night);
+                Label(card.transform, "เบาะแส", new Vector3(0f, 0f, -.09f), new Vector2(2.7f, 1.05f), .06f, ThaiGui.Night);
                 clues.Add(card);
             }
             for (int i = 0; i < 3; i++)
             {
                 int index = i;
                 var answer = Interactive("Answer_" + i, new Vector3(.1f + i * 2.8f, 2.1f, 5.65f), new Vector3(2.6f, 2.5f, .18f), paper, "เลือกคำตอบนี้", () => Choose(index));
-                Label(answer.transform, "คำตอบ", new Vector3(0f, 0f, -.13f), 1.7f, .095f, ThaiGui.Night);
+                Label(answer.transform, "คำตอบ", new Vector3(0f, 0f, -.13f), new Vector2(2.3f, 2.2f), .075f, ThaiGui.Night);
                 answers.Add(answer);
-                var pin = Interactive("MapPin_" + i, MapPosition("", i), new Vector3(.26f, .55f, .26f), Mat(GeneColor(i)), "ปักหมุดที่นี่", () => Choose(index));
-                Label(pin.transform, "ตำแหน่ง", new Vector3(0f, .6f, -.15f), 4.4f, .08f, ThaiGui.Gold);
+                var pin = Interactive("MapPin_" + i, MapPosition("", i), new Vector3(.22f, .55f, .22f), Mat(GeneColor(i)), "ปักหมุดที่นี่", () => Choose(index), PrimitiveType.Cylinder);
+                Label(pin.transform, "ตำแหน่ง", new Vector3(0f, .55f, 0f), new Vector2(1.05f, .42f), .035f, ThaiGui.Gold);
                 pins.Add(pin);
             }
             advance = Interactive("AnalysisAcknowledgement", new Vector3(3f, 1.35f, 3.8f), new Vector3(2.6f, .85f, .3f), metal, "อ่านสรุป แล้วไปต่อ", Advance);
-            advanceLabel = Label(advance.transform, "รับทราบ", new Vector3(0f, 0f, -.2f), 1.7f, .12f, ThaiGui.Gold);
+            advanceLabel = Label(advance.transform, "รับทราบ", new Vector3(0f, 0f, -.2f), new Vector2(2.4f, .75f), .09f, ThaiGui.Gold);
             victim = Interactive("Victim", new Vector3(-5f, 1f, -1.5f), new Vector3(.8f, 1.8f, .8f), metal, "คุยกับผู้เสียหาย", Testimony);
             Table("MapTable", new Vector3(5f, 0f, 0f), new Vector3(3.6f, .18f, 3.6f), wood);
             Box("MapSurface", new Vector3(5f, 1.28f, 0f), new Vector3(3.45f, .04f, 3.45f), Mat(new Color(.3f, .36f, .27f)));
@@ -310,26 +322,33 @@ namespace ScammerNoScamming
                 float angle = i * Mathf.PI / 12f;
                 Box("MapBuilding", new Vector3(5f + Mathf.Sin(angle) * 1.2f, 1.37f, Mathf.Cos(angle) * 1.2f), new Vector3(.14f, .15f + i % 3 * .06f, .14f), paper, false);
             }
-            Label(root, "แผนที่เมือง · เหนือ ↑", new Vector3(5f, 1.8f, 2f), 3f, .09f, ThaiGui.Gold);
+            Label(root, "แผนที่เมือง · เหนือ ↑", new Vector3(5f, 1.75f, 1.95f), new Vector2(3.2f, .35f), .06f, ThaiGui.Gold);
             Table("CaseFileTable", new Vector3(-4f, 0f, -4f), new Vector3(3f, .18f, 1.5f), wood);
             caseFile = Interactive("SealedCaseFile", new Vector3(-4f, 1.38f, -4f), new Vector3(1.4f, .14f, .8f), paper, "เปิดแฟ้มคดี", ReadFile);
-            fileLabel = Label(caseFile.transform, "แฟ้มคดี", new Vector3(0f, .45f, -.1f), 3f, .09f, ThaiGui.Gold);
+            fileLabel = Label(caseFile.transform, "แฟ้มคดี", new Vector3(0f, .45f, -.1f), new Vector2(2.6f, .7f), .07f, ThaiGui.Gold);
             Box("GeneShelf", new Vector3(7f, 1.05f, -12f), new Vector3(4.7f, .15f, 1f), wood);
             foreach (float x in new[] { 4.8f, 9.2f }) Box("ShelfLeg", new Vector3(x, .5f, -12f), new Vector3(.15f, 1f, .6f), wood);
-            quota = Label(root, "ยีนม้า · ฟรี 2 ขวด", new Vector3(7f, 2.7f, -11.7f), 3.8f, .11f, ThaiGui.Gold);
+            quota = Label(root, "ยีนม้า · ฟรี 2 ขวด", new Vector3(7f, 2.6f, -11.7f), new Vector2(4.4f, .9f), .09f, ThaiGui.Gold);
             for (int i = 0; i < catalog.Genes.Count; i++)
             {
                 int index = i;
-                var bottle = Interactive("GeneBottle_" + catalog.Genes[i].GeneId, new Vector3(5.4f + i * 1.05f, 1.45f, -12f), new Vector3(.4f, .65f, .4f), Mat(GeneColor(i)), "ฉีดยีน " + catalog.Genes[i].DisplayName, () => ToggleGene(index));
-                Box("BottleStopper", bottle.transform.localPosition + Vector3.up * .4f, new Vector3(.23f, .16f, .23f), wood, false);
-                Label(bottle.transform, catalog.Genes[i].DisplayName, new Vector3(0f, -.6f, -.32f), 2.4f, .07f, ThaiGui.Bone);
+                var bottle = Interactive("GeneBottle_" + catalog.Genes[i].GeneId, new Vector3(5.4f + i * 1.05f, 1.45f, -12f), new Vector3(.36f, .65f, .36f), Mat(GeneColor(i)), "ฉีดยีน " + catalog.Genes[i].DisplayName, () => ToggleGene(index), PrimitiveType.Cylinder);
+                Box("BottleStopper", bottle.transform.localPosition + Vector3.up * .4f, new Vector3(.16f, .16f, .16f), wood, false);
+                Label(bottle.transform, catalog.Genes[i].DisplayName, new Vector3(0f, -.55f, -.32f), new Vector2(.95f, .28f), .05f, ThaiGui.Bone);
                 bottle.ReadingTitle = catalog.Genes[i].DisplayName; bottle.ReadingBody = catalog.Genes[i].Description;
                 bottles.Add(bottle); bottleGlass.Add(bottle.transform.Find("Geometry").GetComponent<Renderer>());
             }
             Table("DispatchTable", new Vector3(7f, 0f, -15f), new Vector3(2f, .18f, 1f), wood);
             dispatch = Interactive("DispatchRadio", new Vector3(7f, 1.55f, -15f), new Vector3(.65f, .7f, .35f), metal, "รับวิทยุ แล้วออกปฏิบัติการ", Dispatch);
-            Label(dispatch.transform, "ออกปฏิบัติการ\nE · รับวิทยุ", new Vector3(0f, .7f, -.3f), 3f, .11f, ThaiGui.Gold);
+            Label(dispatch.transform, "ออกปฏิบัติการ\nE · รับวิทยุ", new Vector3(0f, .75f, -.3f), new Vector2(2.4f, .8f), .09f, ThaiGui.Gold);
             Box("RadioAntenna", new Vector3(7.23f, 2.25f, -15f), new Vector3(.035f, .7f, .035f), metal, false);
+            // The station roof blocks the low sun; warm lamps keep the boards readable.
+            foreach (var lamp in new[] { new Vector3(-4f, 3.9f, 2.5f), new Vector3(3.5f, 3.9f, 2.5f), new Vector3(-1f, 3.9f, -3f) })
+            {
+                var light = new GameObject("StationLamp").AddComponent<Light>();
+                light.transform.SetParent(root, false); light.transform.localPosition = lamp;
+                light.type = LightType.Point; light.color = new Color(1f, .8f, .55f); light.intensity = 4f; light.range = 11f;
+            }
             if (interiorPrefabs != null)
                 for (int i = 0; i < interiorPrefabs.Length; i++)
                     if (interiorPrefabs[i] != null) FitModel(interiorPrefabs[i], new Vector3(-10f + i * 2.8f, 0f, 5.5f), 1.8f);
@@ -381,13 +400,13 @@ namespace ScammerNoScamming
             return go;
         }
 
-        WorldInteractable Interactive(string name, Vector3 p, Vector3 size, Material material, string prompt, Action action)
+        WorldInteractable Interactive(string name, Vector3 p, Vector3 size, Material material, string prompt, Action action, PrimitiveType shape = PrimitiveType.Cube)
         {
             var go = Box(name, p, size, material); var target = go.AddComponent<WorldInteractable>();
             // Child text must use world units; geometry dimensions live in the collider/mesh child.
             var geometry = new GameObject("Geometry"); geometry.transform.SetParent(go.transform, false);
-            geometry.transform.localScale = size;
-            geometry.AddComponent<MeshFilter>().sharedMesh = go.GetComponent<MeshFilter>().sharedMesh;
+            geometry.transform.localScale = shape == PrimitiveType.Cylinder ? new Vector3(size.x, size.y * .5f, size.z) : size;
+            geometry.AddComponent<MeshFilter>().sharedMesh = shape == PrimitiveType.Cube ? go.GetComponent<MeshFilter>().sharedMesh : PrimitiveMesh(shape);
             geometry.AddComponent<MeshRenderer>().sharedMaterial = material;
             go.GetComponent<Renderer>().enabled = false;
             go.transform.localScale = Vector3.one;
@@ -396,13 +415,25 @@ namespace ScammerNoScamming
             return target;
         }
 
-        TextMesh Label(Transform parent, string text, Vector3 p, float width, float size, Color color)
+        WorldLabel Label(Transform parent, string text, Vector3 p, Vector2 area, float maxSize, Color color)
         {
             var go = new GameObject("Label"); go.transform.SetParent(parent, false); go.transform.localPosition = p;
-            var label = go.AddComponent<TextMesh>(); label.font = ThaiGui.Font; label.fontSize = 48; label.characterSize = size;
-            label.anchor = TextAnchor.MiddleCenter; label.alignment = TextAlignment.Center; label.color = color; label.text = text;
-            go.GetComponent<MeshRenderer>().sharedMaterial = ThaiGui.Font.material;
+            var mesh = go.AddComponent<TextMesh>(); mesh.font = ThaiGui.Font; mesh.fontSize = 48;
+            mesh.anchor = TextAnchor.MiddleCenter; mesh.alignment = TextAlignment.Center; mesh.color = color;
+            var label = go.AddComponent<WorldLabel>();
+            label.width = area.x; label.height = area.y; label.maxSize = maxSize;
+            label.Text = text;
             return label;
+        }
+
+        static readonly Dictionary<PrimitiveType, Mesh> primitiveMeshes = new Dictionary<PrimitiveType, Mesh>();
+        static Mesh PrimitiveMesh(PrimitiveType shape)
+        {
+            if (primitiveMeshes.TryGetValue(shape, out var mesh) && mesh != null) return mesh;
+            var temp = GameObject.CreatePrimitive(shape);
+            mesh = temp.GetComponent<MeshFilter>().sharedMesh;
+            DestroyImmediate(temp);
+            return primitiveMeshes[shape] = mesh;
         }
 
         Material Mat(Color color)
@@ -412,13 +443,6 @@ namespace ScammerNoScamming
         }
 
         static Color GeneColor(int i) => i == 0 ? ThaiGui.Orange : i == 1 ? new Color(.3f, .55f, 1f) : i == 2 ? ThaiGui.Gold : ThaiGui.Teal;
-        static string Wrap(string text, int count)
-        {
-            var result = new System.Text.StringBuilder(); int line = 0;
-            foreach (char c in text ?? "") { result.Append(c); line++; if (c == '\n') line = 0; else if (line >= count) { result.Append('\n'); line = 0; } }
-            return result.ToString();
-        }
-
         void OnDestroy()
         {
             if (root != null) Destroy(root.gameObject);

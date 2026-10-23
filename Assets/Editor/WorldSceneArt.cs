@@ -137,6 +137,16 @@ public static class WorldSceneArt
         foreach (var renderer in horse.GetComponentsInChildren<Renderer>()) renderer.enabled = false;
         const string path = "Animals/Horse";
         var model = Model(horse.transform, path, Vector3.zero, 2.15f);
+        // The CC0 horse is nearly black brown and read as a silhouette at golden hour; repaint it chestnut.
+        var coat = Paint("HorseCoat", new Color(.46f, .25f, .13f));
+        var mane = Paint("HorseMane", new Color(.12f, .08f, .06f));
+        foreach (var renderer in model.GetComponentsInChildren<Renderer>())
+        {
+            var materials = renderer.sharedMaterials;
+            for (int i = 0; i < materials.Length; i++)
+                materials[i] = materials[i] != null && materials[i].GetColor("_BaseColor").maxColorComponent < .05f ? mane : coat;
+            renderer.sharedMaterials = materials;
+        }
         var visual = horse.AddComponent<HorseVisual>();
         visual.horse = horse.GetComponent<HorseController>();
         visual.animator = model.GetComponentInChildren<Animator>();
@@ -244,9 +254,18 @@ public static class WorldSceneArt
         var monitor = Paint("MonitorGlow", new Color(.12f, .42f, .37f), true);
         const float width = 19f, depth = 17f, h = 4.6f;
         Box(shell, "Floor", new Vector3(0f, .04f, 7f), new Vector3(width, .16f, depth), plaster);
-        Box(shell, "BackWall", new Vector3(0f, h / 2f, 15.35f), new Vector3(width, h, .35f), wall);
-        Box(shell, "WallLeft", new Vector3(-9.35f, h / 2f, 7f), new Vector3(.35f, h, depth), wall);
-        Box(shell, "WallRight", new Vector3(9.35f, h / 2f, 7f), new Vector3(.35f, h, depth), wall);
+        Box(shell, "BackWall", new Vector3(0f, h / 2f, 15.35f), new Vector3(width, h, .35f), plaster);
+        Box(shell, "WallLeft", new Vector3(-9.35f, h / 2f, 7f), new Vector3(.35f, h, depth), plaster);
+        Box(shell, "WallRight", new Vector3(9.35f, h / 2f, 7f), new Vector3(.35f, h, depth), plaster);
+        // Cube faces mirror their texture from inside the room, so the poster wall art goes on inward-facing quads.
+        const float art = 3.4f;
+        foreach (float x in new[] { -4.6f, 4.6f })
+            FrontArt(shell, "WallArt", new Vector3(x, 2.3f, 15.16f), new Vector2(art, art), wall);
+        foreach (float z in new[] { 3.6f, 10.4f })
+        {
+            FrontArt(shell, "WallArt", new Vector3(-9.16f, 2.3f, z), new Vector2(art, art), wall, -90f);
+            FrontArt(shell, "WallArt", new Vector3(9.16f, 2.3f, z), new Vector2(art, art), wall, 90f);
+        }
         Box(shell, "FrontWallLeft", new Vector3(-5.85f, h / 2f, -1.35f), new Vector3(7.3f, h, .35f), plaster);
         Box(shell, "FrontWallRight", new Vector3(5.85f, h / 2f, -1.35f), new Vector3(7.3f, h, .35f), plaster);
         Box(shell, "DoorLintel", new Vector3(0f, 4.05f, -1.35f), new Vector3(4.4f, 1.1f, .4f), wood);
@@ -267,6 +286,7 @@ public static class WorldSceneArt
         letters.fontSize = 48;
         letters.characterSize = .14f;
         letters.color = new Color(.94f, .76f, .43f);
+        letters.gameObject.AddComponent<WorldLabel>().width = 0f; // depth-tested material only
         letters.transform.localRotation = Quaternion.identity;
         // Rows leave a broad centre aisle and gaps around each cover desk.
         for (int row = 0; row < 3; row++)
@@ -311,15 +331,16 @@ public static class WorldSceneArt
         police.gameObject.SetActive(false);
         hideout.beaconMaterialAsset = Paint("InvestigationBeacon", new Color(1.1f, .68f, .22f), true);
         hideout.beaconHeight = 42f;
+        hideout.beaconOffset = new Vector3(0f, 5f, 7f);
         // Warm pools of light contrast with teal shadows and reveal the enemies under the solid roof.
-        for (int z = 3; z <= 12; z += 8)
+        for (int z = 3; z <= 13; z += 5)
         {
             Model(shell, "Interior/Light_Ceiling1", new Vector3(0f, 3.9f, z), .35f);
             var light = Empty(shell, "HangingLamp", new Vector3(0f, 3.65f, z)).gameObject.AddComponent<Light>();
             light.type = LightType.Point;
             light.color = new Color(1f, .74f, .43f);
-            light.intensity = 4.3f;
-            light.range = 14f;
+            light.intensity = 5.5f;
+            light.range = 13f;
             light.shadows = LightShadows.None;
         }
         BakeNavigation(root, hideout.hideoutId);
@@ -346,20 +367,21 @@ public static class WorldSceneArt
     public static void Lighting(Camera camera)
     {
         var sun = Empty(null, "GoldenHourSun", Vector3.zero).gameObject.AddComponent<Light>();
-        sun.transform.rotation = Quaternion.Euler(16f, -125f, 0f);
+        sun.transform.rotation = Quaternion.Euler(30f, -125f, 0f); // low enough for long shadows, high enough to light the streets
         sun.type = LightType.Directional;
-        sun.color = new Color(1f, .78f, .53f);
-        sun.intensity = 1.7f;
+        sun.color = new Color(1f, .8f, .58f);
+        sun.intensity = 2f;
         sun.shadows = LightShadows.Soft;
         sun.shadowStrength = .8f;
         sun.shadowBias = .045f;
         RenderSettings.sun = sun;
-        RenderSettings.skybox = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/City/Mat_sky_dusk.mat");
+        RenderSettings.skybox = GoldenSky();
         RenderSettings.ambientMode = AmbientMode.Trilight;
         RenderSettings.ambientSkyColor = new Color(.45f, .5f, .54f);
         RenderSettings.ambientEquatorColor = new Color(.42f, .36f, .28f);
         RenderSettings.ambientGroundColor = new Color(.19f, .15f, .11f);
         RenderSettings.ambientIntensity = 1f;
+        sun.gameObject.AddComponent<FrontierAtmosphere>();
         RenderSettings.fog = true;
         RenderSettings.fogMode = FogMode.Exponential;
         RenderSettings.fogColor = new Color(.62f, .48f, .32f);
@@ -379,9 +401,9 @@ public static class WorldSceneArt
         bloom.threshold.Override(1.1f);
         bloom.scatter.Override(.6f);
         var color = Add<ColorAdjustments>(profile);
-        color.postExposure.Override(.2f);
-        color.contrast.Override(14f);
-        color.saturation.Override(-9f);
+        color.postExposure.Override(.4f);
+        color.contrast.Override(10f);
+        color.saturation.Override(-12f);
         color.colorFilter.Override(new Color(1f, .96f, .88f));
         var balance = Add<WhiteBalance>(profile);
         balance.temperature.Override(9f);
@@ -403,6 +425,21 @@ public static class WorldSceneArt
         volume.priority = 10f;
         volume.sharedProfile = profile;
         Dust(new Vector3(0f, 2f, -45f));
+    }
+
+    // Our own copy of the city's dusk sky: brighter and warmer (golden hour), leaving the map's material untouched.
+    static Material GoldenSky()
+    {
+        var source = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/City/Mat_sky_dusk.mat");
+        if (source == null) return null;
+        string path = Folder + "/Sky_GoldenHour.mat";
+        var sky = AssetDatabase.LoadAssetAtPath<Material>(path);
+        if (sky == null) { sky = new Material(source); AssetDatabase.CreateAsset(sky, path); }
+        else sky.CopyPropertiesFromMaterial(source);
+        sky.SetColor("_Tint", new Color(.56f, .53f, .47f));
+        sky.SetFloat("_Exposure", 1.3f);
+        EditorUtility.SetDirty(sky);
+        return sky;
     }
 
     static T Add<T>(VolumeProfile profile) where T : VolumeComponent
