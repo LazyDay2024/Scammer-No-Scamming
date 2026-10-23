@@ -16,7 +16,9 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class EditorBridge
 {
-    const string Folder = "D:/AI/runtime/editor-bridge";
+    // One command folder per project checkout, so several open editors (worktrees) never read each other's commands.
+    static readonly string Folder = "D:/AI/runtime/editor-bridge" +
+        (System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(Application.dataPath)) is var project && project != "scammer-no-scamming" ? "-" + project : "");
     static double next;
 
     static EditorBridge()
