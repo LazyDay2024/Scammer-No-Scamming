@@ -92,7 +92,7 @@ namespace ScammerNoScamming
                 foreach (var collider in model.GetComponentsInChildren<Collider>(true))
                 {
                     collider.enabled = false;
-                    Destroy(collider);
+                    DestroyGenerated(collider);
                 }
                 var renderers = model.GetComponentsInChildren<Renderer>();
                 foreach (var renderer in renderers)
@@ -114,10 +114,25 @@ namespace ScammerNoScamming
                     }
                 if (renderers.Length > 0)
                 {
-                    Bounds bounds = renderers[0].bounds;
-                    foreach (var renderer in renderers) bounds.Encapsulate(renderer.bounds);
+                    // Normalize in the rig's space. A world AABB grows when the camera turns,
+                    // so converting that box back would change the gun's apparent size and centre.
+                    Bounds bounds = default;
+                    bool first = true;
+                    foreach (var renderer in renderers)
+                    {
+                        var local = renderer.localBounds;
+                        Matrix4x4 toRig = Rig.worldToLocalMatrix * renderer.localToWorldMatrix;
+                        for (int corner = 0; corner < 8; corner++)
+                        {
+                            Vector3 point = toRig.MultiplyPoint3x4(local.center + Vector3.Scale(local.extents,
+                                new Vector3((corner & 1) == 0 ? -1f : 1f, (corner & 2) == 0 ? -1f : 1f,
+                                    (corner & 4) == 0 ? -1f : 1f)));
+                            if (first) { bounds = new Bounds(point, Vector3.zero); first = false; }
+                            else bounds.Encapsulate(point);
+                        }
+                    }
                     float size = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
-                    Vector3 centre = Rig.InverseTransformPoint(bounds.center);
+                    Vector3 centre = bounds.center;
                     float scale = 0.34f / Mathf.Max(size, 0.001f);
                     model.transform.localScale *= scale;
                     model.transform.localPosition = -centre * scale;
@@ -184,7 +199,7 @@ namespace ScammerNoScamming
             part.transform.SetLocalPositionAndRotation(position, Quaternion.Euler(angles));
             part.transform.localScale = scale;
             var collider = part.GetComponent<Collider>();
-            if (collider != null) { collider.enabled = false; Destroy(collider); }
+            if (collider != null) { collider.enabled = false; DestroyGenerated(collider); }
             if (material != null) part.GetComponent<Renderer>().sharedMaterial = material;
         }
 
@@ -317,11 +332,17 @@ namespace ScammerNoScamming
         }
         void OnDestroy()
         {
-            if (Rig != null) Destroy(Rig.gameObject);
-            if (mechanismAudio != null) Destroy(mechanismAudio);
-            if (steel != null) Destroy(steel);
-            if (wood != null) Destroy(wood);
-            foreach (var material in convertedMaterials) if (material != null) Destroy(material);
+            if (Rig != null) DestroyGenerated(Rig.gameObject);
+            if (mechanismAudio != null) DestroyGenerated(mechanismAudio);
+            if (steel != null) DestroyGenerated(steel);
+            if (wood != null) DestroyGenerated(wood);
+            foreach (var material in convertedMaterials) if (material != null) DestroyGenerated(material);
+        }
+
+        static void DestroyGenerated(Object value)
+        {
+            if (Application.isPlaying) Destroy(value);
+            else DestroyImmediate(value);
         }
     }
 }
