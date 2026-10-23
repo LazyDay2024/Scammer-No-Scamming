@@ -104,6 +104,7 @@ namespace ScammerNoScamming
             }
             FindAnimation();
             if (animationComponent is NpcAnimator playback) playback.ResetForAction();
+            if (animationComponent is BanditAnimator bandit) bandit.ResetForAction();
             Animation.SetSpeed(0f);
             Animation.Aim(false);
             Animation.HandsUp(false);

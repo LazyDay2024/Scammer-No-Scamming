@@ -32,6 +32,8 @@ public static class EditorBridge
             foreach (var m in messages.Where(m => m.type == CompilerMessageType.Error))
                 Append("log.txt", "COMPILE ERROR " + m.message);
         };
+        // Registered on every domain load so PlayMode test results still arrive after the reload they cause.
+        ScriptableObject.CreateInstance<UnityEditor.TestTools.TestRunner.Api.TestRunnerApi>().RegisterCallbacks(new TestReport());
         Append("result.txt", "ready (domain loaded)");
     }
 
@@ -67,6 +69,11 @@ public static class EditorBridge
                 case "sceneshot": Shot(SceneView.lastActiveSceneView?.camera, arg); break;
                 case "look": Look(arg); break;
                 case "tp": Teleport(arg); break;
+                case "tests": // tests editmode|playmode : runs in this editor, summary to result.txt
+                    var api = ScriptableObject.CreateInstance<UnityEditor.TestTools.TestRunner.Api.TestRunnerApi>();
+                    api.Execute(new UnityEditor.TestTools.TestRunner.Api.ExecutionSettings(new UnityEditor.TestTools.TestRunner.Api.Filter {
+                        testMode = arg == "playmode" ? UnityEditor.TestTools.TestRunner.Api.TestMode.PlayMode : UnityEditor.TestTools.TestRunner.Api.TestMode.EditMode }));
+                    break;
                 case "tpg": // tpg x z yaw [pitch]: teleport onto the ground below (x, z)
                     var gp = arg.Split(' ').Select(float.Parse).ToArray();
                     float gy = Physics.Raycast(new Vector3(gp[0], 500f, gp[1]), Vector3.down, out var hitGround, 1000f, ~0, QueryTriggerInteraction.Ignore) ? hitGround.point.y + .1f : 0f;
@@ -212,5 +219,18 @@ public static class EditorBridge
     {
         try { File.AppendAllText(Path.Combine(Folder, file), DateTime.Now.ToString("HH:mm:ss ") + text + "\n"); }
         catch (IOException) { }
+    }
+
+    class TestReport : UnityEditor.TestTools.TestRunner.Api.ICallbacks
+    {
+        public void RunStarted(UnityEditor.TestTools.TestRunner.Api.ITestAdaptor tests) => Append("result.txt", "tests started " + tests.TestCaseCount);
+        public void RunFinished(UnityEditor.TestTools.TestRunner.Api.ITestResultAdaptor result) =>
+            Append("result.txt", $"TESTS {result.ResultState} passed={result.PassCount} failed={result.FailCount} skipped={result.SkipCount}");
+        public void TestStarted(UnityEditor.TestTools.TestRunner.Api.ITestAdaptor test) { }
+        public void TestFinished(UnityEditor.TestTools.TestRunner.Api.ITestResultAdaptor result)
+        {
+            if (!result.HasChildren && result.TestStatus == UnityEditor.TestTools.TestRunner.Api.TestStatus.Failed)
+                Append("result.txt", "FAIL " + result.FullName + " :: " + result.Message);
+        }
     }
 }

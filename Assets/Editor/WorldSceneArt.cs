@@ -161,16 +161,37 @@ public static class WorldSceneArt
     {
         var root = Empty(parent, armed ? "Guard_" + modelName : "Worker_" + modelName, position, yaw).gameObject;
         string path = "Characters/" + modelName;
-        var model = Model(root.transform, path, Vector3.zero, 1.82f);
-        var animation = root.AddComponent<NpcAnimator>();
-        animation.animator = model.GetComponentInChildren<Animator>();
-        animation.idle = Clip(path, "Idle");
-        animation.walk = Clip(path, "Walk");
-        animation.shoot = Clip(path, "Shoot_OneHanded");
-        animation.receiveHit = Clip(path, "RecieveHit");
-        animation.defeat = Clip(path, "Defeat");
-        animation.victory = Clip(path, "Victory");
-        animation.sitDown = Clip(path, "SitDown");
+        GameObject model;
+        // Armed scammers use Nithis's realistic bandit (animated revolver stance, death); others keep the CC0 rigs.
+        var bandit = armed ? AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/Scammer/ScammerModel.prefab") : null;
+        if (bandit != null)
+        {
+            model = (GameObject)PrefabUtility.InstantiatePrefab(bandit);
+            model.transform.SetParent(root.transform, false);
+            model.transform.localPosition = Vector3.zero;
+            model.transform.localRotation = Quaternion.identity;
+            var parts = model.GetComponentsInChildren<Renderer>();
+            if (parts.Length > 0)
+            {
+                Bounds b = parts[0].bounds; foreach (var r in parts) b.Encapsulate(r.bounds);
+                model.transform.localScale *= 1.8f / Mathf.Max(.01f, b.size.y);
+            }
+            var driver = root.AddComponent<BanditAnimator>();
+            driver.animator = model.GetComponentInChildren<Animator>();
+        }
+        else
+        {
+            model = Model(root.transform, path, Vector3.zero, 1.82f);
+            var animation = root.AddComponent<NpcAnimator>();
+            animation.animator = model.GetComponentInChildren<Animator>();
+            animation.idle = Clip(path, "Idle");
+            animation.walk = Clip(path, "Walk");
+            animation.shoot = Clip(path, "Shoot_OneHanded");
+            animation.receiveHit = Clip(path, "RecieveHit");
+            animation.defeat = Clip(path, "Defeat");
+            animation.victory = Clip(path, "Victory");
+            animation.sitDown = Clip(path, "SitDown");
+        }
         var health = root.AddComponent<Health>();
         health.max = armed ? 3f : 2f;
         health.deactivateOnDeath = false;
@@ -191,7 +212,7 @@ public static class WorldSceneArt
             enemy.preferredAttackDistance = 8f;
             enemy.sightAngle = 150f;
             npc = enemy;
-            Transform gunMount = model.GetComponentsInChildren<Transform>().FirstOrDefault(t =>
+            Transform gunMount = bandit != null ? null : model.GetComponentsInChildren<Transform>().FirstOrDefault(t =>
                 t.name.EndsWith("Hand.R") || t.name.IndexOf("RightHand", StringComparison.OrdinalIgnoreCase) >= 0 || t.name == "hand_r");
             if (gunMount != null)
             {
