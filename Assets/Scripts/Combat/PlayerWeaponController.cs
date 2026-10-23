@@ -21,6 +21,9 @@ namespace ScammerNoScamming
         public float LastHitTime { get; private set; } = -10f;
         public HitscanWeapon Weapon => weapon;
         public RevolverAmmo Ammo => weapon != null ? weapon.Ammo : GetComponent<RevolverAmmo>();
+        // API used by Nithis's trap consequences and trap course.
+        public void Refill() => Ammo?.RefillReserve();
+        public void Drain() => Ammo?.Empty();
 
         PlayerControls controls;
         PlayerMount mount;

@@ -46,6 +46,7 @@ namespace ScammerNoScamming
 
             Current -= info.Amount;
             Damaged?.Invoke(this, info);
+            GameEvents.RaiseDamaged(this, info);
             if (Current > 0f) return;
 
             IsDead = true;

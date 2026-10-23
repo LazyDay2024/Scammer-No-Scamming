@@ -28,16 +28,21 @@ namespace ScammerNoScamming
         [SerializeField] Transform seat;
 
         CharacterController characterController;
+        Health health;
         PlayerControls rider;
         float verticalVelocity;
 
         public Transform Seat => seat != null ? seat : transform;
         public bool HasRider => rider != null;
         public float Speed { get; private set; }
+        // A horse with no Health component cannot be hurt. Once it is down it stops answering the reins.
+        public bool IsDown => health != null && health.IsDead;
 
         void Awake()
         {
             characterController = GetComponent<CharacterController>();
+            health = GetComponent<Health>();
+            if (health != null) health.deactivateOnDeath = false;
         }
 
         void OnEnable()
@@ -55,7 +60,7 @@ namespace ScammerNoScamming
             Vector2 input = Vector2.zero;
             bool gallop = false;
             bool jump = false;
-            if (rider != null)
+            if (rider != null && !IsDown)
             {
                 input = rider.Move.ReadValue<Vector2>();
                 gallop = rider.Sprint.IsPressed();

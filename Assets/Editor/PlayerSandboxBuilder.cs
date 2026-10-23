@@ -17,18 +17,42 @@ public static class PlayerSandboxBuilder
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var world = PlayerSandbox.Create(MaterialFor);
         world.Player.GetComponent<PlayerWeaponController>().tracerMaterial = GetMaterial("Tracer", new Color(1f, 0.9f, 0.4f), "Universal Render Pipeline/Unlit");
+        PlayerSandbox.AddEnemies(MaterialFor);
+        PlayerSandbox.AddEvidence(MaterialFor);
+
+        // The five road traps beside the start, one every 8 m along +Z; T rebuilds them.
+        var traps = new GameObject("TrapCourse").AddComponent<TrapCourse>();
+        traps.transform.position = new Vector3(-22f, 0f, -4f);
+        traps.realCrate = MaterialFor(new Color(0.6f, 0.5f, 0.35f));
+        traps.fakeCrate = MaterialFor(new Color(0.9f, 0.5f, 0.2f));
+        traps.sign = MaterialFor(new Color(0.9f, 0.2f, 0.2f));
+        traps.villager = MaterialFor(new Color(0.3f, 0.35f, 0.5f));
+        traps.moneyBag = MaterialFor(new Color(0.7f, 0.6f, 0.3f));
+        traps.booth = MaterialFor(new Color(0.2f, 0.45f, 0.5f));
+        traps.scammer = MaterialFor(new Color(0.75f, 0.2f, 0.2f));
+
+        // Corrupt police ride in when Trouble fills up.
+        var raid = new GameObject("Corrupt police raid");
+        var police = raid.AddComponent<AmbushGroup>();
+        police.kind = AmbushKind.Riders;
+        police.count = 4;
+        police.minRadius = 35f;
+        police.maxRadius = 45f;
+        police.material = MaterialFor(new Color(0.15f, 0.2f, 0.45f));
+        raid.AddComponent<CorruptPoliceRaid>();
+        world.Spawner.enemyMaterial = MaterialFor(new Color(0.75f, 0.2f, 0.2f));
 
         EditorSceneManager.SaveScene(scene, ScenePath);
         AssetDatabase.SaveAssets();
         Debug.Log("Player sandbox scene saved to " + ScenePath);
     }
 
-    static Material MaterialFor(Color color)
+    public static Material MaterialFor(Color color)
     {
         return GetMaterial("Sandbox_" + ColorUtility.ToHtmlStringRGB(color), color, "Universal Render Pipeline/Lit");
     }
 
-    static Material GetMaterial(string name, Color color, string shaderName)
+    public static Material GetMaterial(string name, Color color, string shaderName)
     {
         string path = MaterialFolder + "/" + name + ".mat";
         var material = AssetDatabase.LoadAssetAtPath<Material>(path);

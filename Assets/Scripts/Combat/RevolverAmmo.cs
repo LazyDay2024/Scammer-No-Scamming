@@ -105,5 +105,14 @@ namespace ScammerNoScamming
             reserve = SupplyReserve;
             Changed?.Invoke();
         }
+
+        // A fake supply crate (Nithis's TrapConsequences) takes every round.
+        public void Empty()
+        {
+            InterruptReload();
+            loaded = 0;
+            reserve = 0;
+            Changed?.Invoke();
+        }
     }
 }

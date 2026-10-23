@@ -10,6 +10,7 @@ namespace ScammerNoScamming
 
         PlayerController player;
         PlayerControls controls;
+        PlayerCharacter character;
 
         public HorseController CurrentHorse { get; private set; }
         public HorseController Candidate { get; private set; }
@@ -19,6 +20,7 @@ namespace ScammerNoScamming
         {
             player = GetComponent<PlayerController>();
             controls = GetComponent<PlayerControls>();
+            character = GetComponent<PlayerCharacter>();
         }
 
         void Update()
@@ -29,7 +31,7 @@ namespace ScammerNoScamming
                 if (Candidate != null && !WorldInteractor.HasFocusedInteraction && controls.Interact.WasPressedThisFrame())
                     Mount(Candidate);
             }
-            else if (controls.Interact.WasPressedThisFrame())
+            else if (controls.Interact.WasPressedThisFrame() || CurrentHorse.IsDown)
             {
                 Dismount();
             }
@@ -42,10 +44,12 @@ namespace ScammerNoScamming
             Candidate = null;
             horse.SetRider(controls);
             player.EnterMount(horse.Seat);
+            if (character != null) character.SetRiding(horse.GetComponent<Collider>());
         }
 
         public void Dismount()
         {
+            if (CurrentHorse == null) return;
             var horse = CurrentHorse;
             if (horse == null) return;
             GetComponent<RevolverAmmo>()?.NotifyMountTransition();
@@ -53,6 +57,7 @@ namespace ScammerNoScamming
             float exitYaw = horse.transform.eulerAngles.y;
             horse.ClearRider();
             CurrentHorse = null;
+            if (character != null) character.SetRiding(null);
             player.ExitMount(exitPoint, exitYaw);
         }
 
@@ -62,7 +67,7 @@ namespace ScammerNoScamming
             float bestDistance = mountRange * mountRange;
             foreach (var horse in HorseController.All)
             {
-                if (horse.HasRider) continue;
+                if (horse.HasRider || horse.IsDown) continue;
                 Vector3 offset = horse.transform.position - transform.position;
                 offset.y = 0f;
                 float distance = offset.sqrMagnitude;

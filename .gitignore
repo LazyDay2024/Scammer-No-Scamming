@@ -36,6 +36,7 @@
 *.mdb.meta
 
 # Crash reports / builds
+/[Bb]uilds/
 sysinfo.txt
 crashlytics-build.properties
 *.apk
