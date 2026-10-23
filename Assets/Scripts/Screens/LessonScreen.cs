@@ -87,7 +87,7 @@ namespace ScammerNoScamming
             y += 46f;
             foreach (var item in items)
             {
-                ThaiGui.Fill(new Rect(r.x, y + 15f, 8f, 2f), tone);
+                ThaiGui.Fill(new Rect(r.x, y + 22f, 10f, 2f), tone);
                 y += ThaiGui.Label(new Rect(r.x + 26f, y, r.width - 26f, 200f), item, ThaiGui.Text(ThaiGui.Small + 3, ThaiGui.Bone)) + 12f;
             }
             return y - r.y;

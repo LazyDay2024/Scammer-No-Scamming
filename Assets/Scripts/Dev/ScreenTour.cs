@@ -51,10 +51,10 @@ namespace ScammerNoScamming
             {
                 station.BeginCase(first, new GeneLoadout(), null, null);
                 yield return null;
-                Place(player, new Vector3(-5f, 0.1f, -5.2f), 0f);
+                Place(player, new Vector3(-5f, 0.1f, -5.2f), 0f, 10f);
                 yield return new WaitForSecondsRealtime(1f);
                 yield return Shot("station_victim");
-                Place(player, new Vector3(-6.6f, 0.1f, 2.6f), 0f);
+                Place(player, new Vector3(-6.6f, 0.1f, 2.6f), 0f, 4f);
                 yield return new WaitForSecondsRealtime(1f);
                 yield return Shot("station_clue");
                 station.Reset();
@@ -111,17 +111,22 @@ namespace ScammerNoScamming
             Application.Quit();
         }
 
-        static void Place(PlayerController player, Vector3 position, float yaw)
+        // Dev-only: put the player somewhere and aim the camera (yaw/pitch are private in PlayerController).
+        static void Place(PlayerController player, Vector3 position, float yaw, float pitch)
         {
             var cc = player.GetComponent<CharacterController>();
             if (cc != null) cc.enabled = false;
             player.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
             if (cc != null) cc.enabled = true;
+            var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            typeof(PlayerController).GetField("yaw", flags)?.SetValue(player, yaw);
+            typeof(PlayerController).GetField("pitch", flags)?.SetValue(player, pitch);
+            if (player.cameraPivot != null) player.cameraPivot.localRotation = Quaternion.Euler(pitch, 0f, 0f);
         }
 
         IEnumerator Shot(string name)
         {
-            yield return new WaitForSecondsRealtime(0.6f);
+            yield return new WaitForSecondsRealtime(1.5f);
             yield return new WaitForEndOfFrame();
             ScreenCapture.CaptureScreenshot(Path.Combine(folder, $"{++shot:00}_{name}.png"));
             yield return new WaitForSecondsRealtime(0.4f);

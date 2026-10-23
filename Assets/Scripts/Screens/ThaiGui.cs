@@ -59,6 +59,11 @@ namespace ScammerNoScamming
             }
         }
 
+        // In a linear-colour project IMGUI text is blended without gamma correction and comes out too dark;
+        // pre-encode text colours so they land on the palette values.
+        public static Color Ink(Color c) => QualitySettings.activeColorSpace == ColorSpace.Linear
+            ? new Color(Mathf.LinearToGammaSpace(c.r), Mathf.LinearToGammaSpace(c.g), Mathf.LinearToGammaSpace(c.b), c.a) : c;
+
         // ---- Canvas --------------------------------------------------------------------------------------
         // Call at the start of OnGUI: scales the 1920x1080 layout to the window, letterboxed.
         public static Rect BeginCanvas()
@@ -128,11 +133,11 @@ namespace ScammerNoScamming
 
         // Alpha 1 at the left edge fading to 0 at the right edge.
         static Texture2D GradH => gradH != null ? gradH : gradH = Make(256, 1, (x, y) =>
-            new Color(1f, 1f, 1f, 1f - Smooth(Mathf.Pow(x / 255f, 0.85f))));
+            new Color(1f, 1f, 1f, 1f - Smooth((x / 255f - 0.38f) / 0.62f)));
 
-        // Alpha 0 at the top fading to 1 at the bottom (flip with ScaleMode rect height for the reverse).
+        // Alpha 0 at the top fading to 1 at the bottom (texture row 0 is the bottom edge).
         static Texture2D GradV => gradV != null ? gradV : gradV = Make(1, 256, (x, y) =>
-            new Color(1f, 1f, 1f, Smooth(y / 255f)));
+            new Color(1f, 1f, 1f, 1f - Smooth(y / 255f)));
 
         static Texture2D Vignette => vignette != null ? vignette : vignette = Make(128, 128, (x, y) =>
         {
@@ -331,7 +336,7 @@ namespace ScammerNoScamming
                     wordWrap = true,
                     richText = true,
                 };
-                style.normal.textColor = color;
+                style.normal.textColor = Ink(color);
                 styles[key] = style;
             }
             return style;
@@ -427,10 +432,10 @@ namespace ScammerNoScamming
                 style.hover.background = ButtonTexture(new Color(Gold.r, Gold.g, Gold.b, 0.16f), Gold);
                 style.active.background = ButtonTexture(new Color(Gold.r, Gold.g, Gold.b, 0.3f), Gold);
                 style.focused.background = style.normal.background;
-                style.normal.textColor = Bone;
-                style.hover.textColor = Gold;
+                style.normal.textColor = Ink(Bone);
+                style.hover.textColor = Ink(Gold);
                 style.active.textColor = Color.white;
-                style.focused.textColor = Bone;
+                style.focused.textColor = Ink(Bone);
                 style.onNormal = style.normal;
                 style.onHover = style.hover;
                 style.onActive = style.active;
@@ -468,6 +473,15 @@ namespace ScammerNoScamming
             return v;
         }
 
+        // Label with a colour that changes every frame (hover) without creating a style per colour.
+        static void InkLabel(Rect r, string text, int size, Color color, FontStyle fontStyle, TextAnchor anchor)
+        {
+            var previous = GUI.contentColor;
+            GUI.contentColor = Ink(color);
+            GUI.Label(r, text, Text(size, Color.white, fontStyle, anchor));
+            GUI.contentColor = previous;
+        }
+
         // Primary (filled brass) or secondary (outlined) button. Returns true when clicked.
         public static bool Btn(Rect r, string text, int size = 32, bool primary = false)
         {
@@ -478,13 +492,13 @@ namespace ScammerNoScamming
             if (primary)
             {
                 Surfaced(r, Color.Lerp(Accent, new Color(0.96f, 0.76f, 0.4f), h));
-                GUI.Label(r, text, Text(size, Night, FontStyle.Bold, TextAnchor.MiddleCenter));
+                InkLabel(r, text, size, Night, FontStyle.Bold, TextAnchor.MiddleCenter);
             }
             else
             {
                 Surfaced(r, new Color(Gold.r, Gold.g, Gold.b, 0.14f * h + 0.03f),
                     Color.Lerp(new Color(Bone.r, Bone.g, Bone.b, 0.32f), Gold, h));
-                GUI.Label(r, text, Text(size, Color.Lerp(Bone, Gold, h), FontStyle.Bold, TextAnchor.MiddleCenter));
+                InkLabel(r, text, size, Color.Lerp(Bone, Gold, h), FontStyle.Bold, TextAnchor.MiddleCenter);
             }
             return GUI.Button(r, GUIContent.none, GUIStyle.none);
         }
@@ -498,7 +512,7 @@ namespace ScammerNoScamming
             Fill(r, new Color(Gold.r, Gold.g, Gold.b, 0.10f * h));
             Fill(new Rect(r.x, r.y + 8f, 3f, r.height - 16f), new Color(Gold.r, Gold.g, Gold.b, h));
             var label = new Rect(r.x + 28f + 12f * h, r.y, r.width - 40f, r.height);
-            GUI.Label(label, text, Text(size, Color.Lerp(Bone, Gold, h), FontStyle.Normal, TextAnchor.MiddleLeft));
+            InkLabel(label, text, size, Color.Lerp(Bone, Gold, h), FontStyle.Normal, TextAnchor.MiddleLeft);
             return GUI.Button(r, GUIContent.none, GUIStyle.none);
         }
 

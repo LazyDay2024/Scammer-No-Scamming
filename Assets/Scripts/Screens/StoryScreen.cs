@@ -50,7 +50,7 @@ namespace ScammerNoScamming
             const float x = 150f, w = 880f;
             float age = Age;
             float y = 130f;
-            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.15f)))
+            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.1f)))
             {
                 if (!string.IsNullOrEmpty(kicker))
                 {
@@ -58,7 +58,7 @@ namespace ScammerNoScamming
                     y += 70f;
                 }
             }
-            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.3f, 0.6f)))
+            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.2f, 0.5f)))
             {
                 if (!string.IsNullOrEmpty(title))
                 {
@@ -67,7 +67,7 @@ namespace ScammerNoScamming
                     y += 40f;
                 }
             }
-            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.55f, 0.6f)))
+            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.35f, 0.5f)))
             {
                 y += ThaiGui.Paragraphs(new Rect(x, y, w, 0f), body, ThaiGui.Text(ThaiGui.Lead - 2, ThaiGui.Bone), 18f) + 34f;
                 if (!string.IsNullOrEmpty(extra))
@@ -78,7 +78,7 @@ namespace ScammerNoScamming
                     GUI.Label(new Rect(x + 28f, y, w - 36f, h), extra, style);
                 }
             }
-            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.9f)))
+            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.6f)))
             {
                 var r = new Rect(x, canvas.height - 190f, 400f, 76f);
                 if (ThaiGui.Btn(r, button, 32, true)) Finish();
