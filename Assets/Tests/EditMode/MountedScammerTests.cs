@@ -108,6 +108,180 @@ namespace ScammerNoScamming.Tests
                 new Vector3(0f, 0f, 20f), Vector3.zero, 15f), Is.False);
         }
 
+        [Test]
+        public void UnsafeRoadSegmentHoldsPositionUntilPlayerMovesAway()
+        {
+            using (var scene = new MovementScene(true, new Vector3(12f, 0f, -18f)))
+            {
+                var waypoint = new GameObject("Unsafe road waypoint").transform;
+                waypoint.SetParent(scene.Root.transform);
+                waypoint.position = scene.Origin + new Vector3(6f, 0f, 5f);
+                scene.Actor.waypoints = new[] { waypoint };
+                Vector3 start = scene.Actor.transform.position;
+                scene.Actor.Alert(scene.Player.transform.position);
+                scene.Actor.Tick(.1f);
+                Assert.That(scene.Actor.transform.position, Is.EqualTo(start), "An unsafe route must not fall back to a direct flank.");
+
+                scene.Player.transform.position = scene.Origin + Vector3.forward * 40f;
+                Physics.SyncTransforms();
+                scene.Actor.Tick(.1f);
+                Vector3 movement = scene.Actor.transform.position - start;
+                Assert.That(movement.magnitude, Is.GreaterThan(.5f));
+                Assert.That(Vector3.Dot(movement.normalized, (waypoint.position - start).normalized), Is.GreaterThan(.99f),
+                    "The retained waypoint should resume when its full segment is safe.");
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void PlayerEnteringSpacingAllowsRetreatAfterRouteEnds(bool completedWaypoint)
+        {
+            using (var scene = new MovementScene(true, new Vector3(6f, 0f, -20f)))
+            {
+                if (completedWaypoint)
+                {
+                    var waypoint = new GameObject("Reached waypoint").transform;
+                    waypoint.SetParent(scene.Root.transform);
+                    waypoint.position = scene.Actor.transform.position;
+                    scene.Actor.waypoints = new[] { waypoint };
+                }
+                scene.Actor.Alert(scene.Player.transform.position);
+                scene.Actor.Tick(.1f);
+                Vector3 start = scene.Actor.transform.position;
+                scene.Player.transform.position = scene.Origin + Vector3.back * 10f;
+                Physics.SyncTransforms();
+                float before = Vector3.Distance(start, scene.Player.transform.position);
+
+                scene.Actor.Tick(.1f);
+
+                Vector3 end = scene.Actor.transform.position;
+                Assert.That(Vector3.Distance(start, end), Is.GreaterThan(.5f), "An exhausted route must allow a safe retreat.");
+                Assert.That(Vector3.Distance(end, scene.Player.transform.position), Is.GreaterThan(before));
+                Assert.That(Vector3.Dot(start - scene.Player.transform.position, end - start), Is.GreaterThan(0f),
+                    "The retreat must immediately increase clearance, without first moving toward the player.");
+            }
+        }
+
+        [Test]
+        public void PlayerEnteringSpacingCannotPullRiderCloserAlongUnsafeActiveRoute()
+        {
+            using (var scene = new MovementScene(true, new Vector3(6f, 0f, -20f)))
+            {
+                var waypoint = new GameObject("Unsafe active waypoint").transform;
+                waypoint.SetParent(scene.Root.transform);
+                waypoint.position = scene.Origin + new Vector3(6f, 0f, -10f);
+                scene.Actor.waypoints = new[] { waypoint };
+                scene.Actor.Alert(scene.Player.transform.position);
+                scene.Actor.Tick(.1f);
+                Vector3 start = scene.Actor.transform.position;
+                scene.Player.transform.position = scene.Origin + Vector3.back * 10f;
+                Physics.SyncTransforms();
+
+                scene.Actor.Tick(.1f);
+
+                Assert.That(scene.Actor.transform.position, Is.EqualTo(start),
+                    "Keep the active road route and hold instead of approaching the player or cutting off-road.");
+            }
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void TickCannotMoveHorseOrDismountedBodyThroughVerticalWall(bool mounted)
+        {
+            using (var scene = new MovementScene(mounted, Vector3.back * 40f))
+            {
+                var wall = new GameObject("Thin vertical wall");
+                wall.transform.SetParent(scene.Root.transform);
+                wall.transform.position = scene.Actor.transform.position + new Vector3(0f, 2f, 2f);
+                wall.AddComponent<BoxCollider>().size = new Vector3(12f, 4f, .1f);
+                Physics.SyncTransforms();
+                Vector3 start = scene.Actor.transform.position;
+                scene.Actor.Alert(start + Vector3.forward * 20f);
+                scene.Actor.Tick(1f);
+                Assert.That(scene.Actor.transform.position, Is.EqualTo(start), "A long tick must sweep the body rather than tunnel past the wall.");
+            }
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void TickMovesOnClearGroundIgnoringOwnCollidersAndTriggers(bool mounted)
+        {
+            using (var scene = new MovementScene(mounted, Vector3.back * 40f))
+            {
+                var trigger = new GameObject("Nonblocking trigger");
+                trigger.transform.SetParent(scene.Root.transform);
+                trigger.transform.position = scene.Actor.transform.position + new Vector3(0f, 2f, 2f);
+                var collider = trigger.AddComponent<BoxCollider>();
+                collider.size = new Vector3(12f, 4f, .1f);
+                collider.isTrigger = true;
+                Physics.SyncTransforms();
+                Vector3 start = scene.Actor.transform.position;
+                scene.Actor.Alert(start + Vector3.forward * 20f);
+                scene.Actor.Tick(1f);
+                Assert.That(Vector3.Distance(start, scene.Actor.transform.position), Is.GreaterThan(3f));
+                Assert.That(scene.Actor.transform.position.y, Is.EqualTo(0f).Within(.001f));
+            }
+        }
+
+        sealed class MovementScene : System.IDisposable
+        {
+            public readonly Vector3 Origin = new Vector3(10000f, 0f, 10000f);
+            public readonly GameObject Root;
+            public readonly MountedScammer Actor;
+            public readonly PlayerController Player;
+            readonly PlayerController previousPlayer;
+
+            public MovementScene(bool mounted, Vector3 position)
+            {
+                previousPlayer = PlayerLocator.Player;
+                Root = new GameObject("Mounted movement regression scene");
+                var ground = new GameObject("Ground");
+                ground.transform.SetParent(Root.transform);
+                ground.transform.position = Origin + Vector3.down * .5f;
+                ground.AddComponent<BoxCollider>().size = new Vector3(200f, 1f, 200f);
+                var playerObject = new GameObject("Inactive perception target");
+                playerObject.SetActive(false);
+                playerObject.transform.SetParent(Root.transform);
+                playerObject.transform.position = Origin;
+                Player = playerObject.AddComponent<PlayerController>();
+                PlayerLocator.Set(Player);
+
+                var actor = new GameObject("Movement actor");
+                actor.SetActive(false);
+                actor.transform.SetParent(Root.transform);
+                actor.transform.position = Origin + position;
+                var body = new GameObject("Body");
+                body.transform.SetParent(actor.transform, false);
+                body.transform.localPosition = Vector3.up * (mounted ? 2f : .99f);
+                var bodyCollider = body.AddComponent<BoxCollider>();
+                bodyCollider.size = new Vector3(.6f, 1.15f, .45f);
+                Actor = actor.AddComponent<MountedScammer>();
+                Actor.bodyCollider = bodyCollider;
+                Actor.turnSpeed = 0f;
+                if (mounted)
+                {
+                    var horse = new GameObject("Horse");
+                    horse.transform.SetParent(actor.transform, false);
+                    var horseCollider = horse.AddComponent<BoxCollider>();
+                    horseCollider.center = Vector3.up;
+                    horseCollider.size = new Vector3(.85f, 1.3f, 2.3f);
+                    Actor.horseRoot = horse.transform;
+                    Actor.horseHealth = horse.AddComponent<Health>();
+                }
+                actor.SetActive(true);
+                Actor.enabled = false;
+                Actor.ResetForAction();
+                Physics.SyncTransforms();
+            }
+
+            public void Dispose()
+            {
+                PlayerLocator.Set(previousPlayer);
+                Object.DestroyImmediate(Root);
+                Physics.SyncTransforms();
+            }
+        }
+
         [TestCase(true, true, false, true)]
         [TestCase(true, false, false, false)]
         [TestCase(false, true, false, false)]

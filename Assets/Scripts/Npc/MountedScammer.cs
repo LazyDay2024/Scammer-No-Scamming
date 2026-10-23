@@ -33,6 +33,8 @@ namespace ScammerNoScamming
         public bool IsMounted { get; private set; }
 
         readonly RaycastHit[] groundHits = new RaycastHit[64];
+        readonly RaycastHit[] movementHits = new RaycastHit[64];
+        enum PathDestination { Complete, Ready, Blocked }
         BanditAnimator bandit;
         Health subscribedHorse;
         bool resetCaptured;
@@ -215,9 +217,11 @@ namespace ScammerNoScamming
                     if (player != null)
                         destination = CalculateFlankDestination(transform.position, target, RoadForward(target, player.transform.forward),
                             flankSide, minimumFlankDistance, maximumFlankDistance, lateralFlankDistance);
-                    if (TryPathDestination(destination, player != null ? target : (Vector3?)null,
-                        out Vector3 pathDestination)) destination = pathDestination;
-                    MoveOverGround(destination, ridingSpeed, dt, true, player != null ? target : (Vector3?)null);
+                    var route = TryPathDestination(destination, player != null ? target : (Vector3?)null,
+                        out Vector3 pathDestination);
+                    if (route == PathDestination.Ready) destination = pathDestination;
+                    if (route != PathDestination.Blocked)
+                        MoveOverGround(destination, ridingSpeed, dt, true, player != null ? target : (Vector3?)null);
                     if (player != null && riderRoot != null)
                     {
                         Vector3 aim = target - riderRoot.position;
@@ -256,11 +260,9 @@ namespace ScammerNoScamming
             UpdateHorseAnimation(IsMounted ? speed : 0f);
         }
 
-        bool TryPathDestination(Vector3 flankDestination, Vector3? playerPosition, out Vector3 destination)
+        PathDestination TryPathDestination(Vector3 flankDestination, Vector3? playerPosition, out Vector3 destination)
         {
             destination = transform.position;
-            if (playerPosition.HasValue && !IsWaypointOutsideMinimumDistance(transform.position,
-                transform.position, playerPosition.Value, minimumFlankDistance)) return false;
             while (waypoints != null && pathIndex < waypoints.Length)
             {
                 var point = waypoints[pathIndex];
@@ -273,16 +275,16 @@ namespace ScammerNoScamming
                 // Retain the index while unsafe, so a moving player can open this road segment later.
                 // Check the entire segment, including the initial egress and join, not only its endpoint.
                 if (playerPosition.HasValue && !IsWaypointOutsideMinimumDistance(transform.position,
-                    point.position, playerPosition.Value, minimumFlankDistance)) return false;
+                    point.position, playerPosition.Value, minimumFlankDistance)) return PathDestination.Blocked;
                 if (pathIndex >= 2)
                 {
                     // Preserve the initial rock egress, then use only road points between us and the flank.
-                    if (Vector3.Dot(flankDestination - point.position, tangent) < 0f) return false;
+                    if (Vector3.Dot(flankDestination - point.position, tangent) < 0f) return PathDestination.Complete;
                 }
                 destination = point.position;
-                return true;
+                return PathDestination.Ready;
             }
-            return false;
+            return PathDestination.Complete;
         }
 
         Vector3 RoadForward(Vector3 position, Vector3 fallback)
@@ -319,8 +321,40 @@ namespace ScammerNoScamming
             if (!TryGround(next, out Vector3 grounded)) return;
             float stepLength = Vector3.Distance(next, transform.position);
             if (Mathf.Abs(grounded.y - transform.position.y) > Mathf.Max(.1f, maximumGroundStep) + stepLength) return;
+            Vector3 movement = next - transform.position;
+            if (IsMounted && horseColliders != null)
+                foreach (var collider in horseColliders)
+                    if (!CanSweepBody(collider, movement)) return;
+            if (!CanSweepBody(bodyCollider, movement)) return;
             transform.position = grounded;
             if (faceMovement) FaceTarget(destination, dt);
+        }
+
+        bool CanSweepBody(Collider body, Vector3 movement)
+        {
+            if (body == null || !body.enabled || !body.gameObject.activeInHierarchy || body.isTrigger) return true;
+            // World bounds conservatively cover rotated horse/body shapes, including the legs
+            // below the hitbox. Lift the bottom slightly to avoid resting ground contact.
+            Bounds bounds = body.bounds;
+            float bottom = transform.position.y + .02f;
+            float top = Mathf.Max(bottom + .02f, bounds.max.y);
+            Vector3 center = new Vector3(bounds.center.x, (bottom + top) * .5f, bounds.center.z);
+            Vector3 extents = new Vector3(bounds.extents.x + .02f, (top - bottom) * .5f, bounds.extents.z + .02f);
+            float distance = movement.magnitude;
+            if (distance < .0001f) return true;
+            int count = Physics.BoxCastNonAlloc(center, extents, movement / distance, movementHits,
+                Quaternion.identity, distance + .02f, ~0, QueryTriggerInteraction.Ignore);
+            // A full buffer cannot establish that the unreported hits are safe.
+            if (count == movementHits.Length) return false;
+            for (int i = 0; i < count; i++)
+            {
+                var hit = movementHits[i];
+                if (hit.collider == null || hit.collider.transform.IsChildOf(transform) ||
+                    (horseRoot != null && hit.collider.transform.IsChildOf(horseRoot))) continue;
+                if (hit.normal.y >= Mathf.Max(.01f, minimumGroundNormal)) continue;
+                return false;
+            }
+            return true;
         }
 
         bool TryGround(Vector3 point, out Vector3 grounded)
