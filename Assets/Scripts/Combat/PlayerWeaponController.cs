@@ -81,6 +81,7 @@ namespace ScammerNoScamming
                 ? viewModel.Muzzle.position : cam.TransformPoint(muzzleOffset);
             ShowTracer(muzzlePosition, shot.EndPoint);
             Fired?.Invoke(shot.NoisePosition);
+            GameEvents.RaisePlayerFired(shot.NoisePosition);
         }
 
         bool IsOwnCollider(Collider other)
