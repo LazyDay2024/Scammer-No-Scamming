@@ -65,6 +65,7 @@ public static class FrontierLevelBuilder
         var hideout = BuildCamp(level, terrain);
         CampDressing.Build(level, hideout);   // Codex: camp encounter dressing
         BuildTraps(level, terrain);
+        RiderAmbush.Build(level);
         Scatter(level, terrain);
         MenuCameras(level);
 
