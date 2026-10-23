@@ -135,6 +135,15 @@ namespace ScammerNoScamming.Tests
         }
 
         [Test]
+        public void InteractOnlyCountsOnFootAndNotOnTheMountOrDismountPress()
+        {
+            Assert.IsTrue(Trap.IsOnFootInteract(true, false, false));
+            Assert.IsFalse(Trap.IsOnFootInteract(false, false, false));
+            Assert.IsFalse(Trap.IsOnFootInteract(true, true, false));
+            Assert.IsFalse(Trap.IsOnFootInteract(true, false, true));
+        }
+
+        [Test]
         public void AmbushBaitRadiusIgnoresHeight()
         {
             var bait = New("Bait").AddComponent<AmbushBait>();

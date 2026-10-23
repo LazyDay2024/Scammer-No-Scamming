@@ -20,6 +20,20 @@ namespace ScammerNoScamming
 
         public bool IsRevealed { get; private set; }
 
+        Material beaconMaterial;
+
+        void OnDestroy()
+        {
+            if (beaconMaterial == null) return;
+            if (Application.isPlaying) Destroy(beaconMaterial);
+            else DestroyImmediate(beaconMaterial);
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetRegistry() => All.Clear();
+
+        // Hideouts register while enabled, so keep the hideout object active and hide its contents instead.
+
         void OnEnable()
         {
             All.Add(this);
@@ -41,6 +55,7 @@ namespace ScammerNoScamming
         {
             IsRevealed = true;
             if (beacon == null) beacon = CreatePillar();
+            else if (!beacon.scene.IsValid()) beacon = Instantiate(beacon, transform);
             beacon.SetActive(true);
         }
 
@@ -61,7 +76,8 @@ namespace ScammerNoScamming
             pillar.transform.localPosition = Vector3.up * beaconHeight * 0.5f;
             pillar.transform.localScale = new Vector3(1.2f, beaconHeight * 0.5f, 1.2f);
             var renderer = pillar.GetComponent<Renderer>();
-            renderer.sharedMaterial = new Material(renderer.sharedMaterial) { color = beaconColor };
+            beaconMaterial = new Material(renderer.sharedMaterial) { color = beaconColor };
+            renderer.sharedMaterial = beaconMaterial;
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             return pillar;
         }

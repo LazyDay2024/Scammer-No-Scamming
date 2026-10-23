@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace ScammerNoScamming
 {
@@ -39,7 +40,8 @@ namespace ScammerNoScamming
 
             if (target != null && Damage > 0f)
             {
-                var damageable = target.GetComponentInChildren<IDamageable>() ?? target.GetComponentInParent<IDamageable>();
+                var damageable = Alive(target.GetComponentInChildren<IDamageable>())
+                    ?? Alive(target.GetComponentInParent<IDamageable>());
                 damageable?.TakeDamage(new DamageInfo(Damage, HitZoneType.Body, Faction.Scammer, target.transform.position));
             }
             foreach (var go in activateOnSpring)
@@ -60,6 +62,37 @@ namespace ScammerNoScamming
         }
 
         protected virtual void OnSprung(GameObject target) { }
+
+        // Unity overloads == for destroyed objects but ?. and ?? do not, so normalise first.
+        static IDamageable Alive(IDamageable damageable) =>
+            damageable is Object unityObject && unityObject == null ? null : damageable;
+
+        // E is shared with PlayerMount, which reads it in Update. Traps read it in LateUpdate, after the
+        // mount state for this frame is settled, and ignore presses that mounted or dismounted the player.
+        public static bool IsOnFootInteract(bool pressed, bool mountedNow, bool mountedLastFrame)
+        {
+            return pressed && !mountedNow && !mountedLastFrame;
+        }
+
+        bool wasMounted;
+
+        // Call once per frame from LateUpdate.
+        protected bool InteractPressedOnFoot(PlayerController player)
+        {
+            bool mounted = player.IsMounted;
+            var controls = player.GetComponent<PlayerControls>();
+            bool pressed = controls != null && controls.Interact != null && controls.Interact.WasPressedThisFrame();
+            bool result = IsOnFootInteract(pressed, mounted, wasMounted);
+            wasMounted = mounted;
+            return result;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStatics()
+        {
+            Sprung = null;
+            Defused = null;
+        }
 
         protected static PlayerController FindPlayer() => PlayerLocator.Player;
     }

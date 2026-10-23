@@ -22,14 +22,17 @@ namespace ScammerNoScamming
             return offset.sqrMagnitude <= interactRange * interactRange;
         }
 
-        void Update()
+        void LateUpdate()
         {
             var player = FindPlayer();
-            if (IsUsed || player == null || player.IsMounted || !InRange(player.transform.position)) return;
-            var controls = player.GetComponent<PlayerControls>();
-            if (controls != null && controls.Interact != null && controls.Interact.WasPressedThisFrame())
+            if (IsUsed || player == null) return;
+            bool pressed = InteractPressedOnFoot(player);
+            if (pressed && InRange(player.transform.position))
                 Use(player.gameObject);
         }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetCollected() => Collected = null;
 
         public void Use(GameObject user)
         {

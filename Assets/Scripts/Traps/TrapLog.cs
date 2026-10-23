@@ -12,6 +12,7 @@ namespace ScammerNoScamming
         public static IReadOnlyList<TrapKind> SprungKinds => sprung;
         public static IReadOnlyList<TrapKind> DefusedKinds => defused;
 
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         public static void Reset()
         {
             sprung.Clear();

@@ -17,5 +17,8 @@ namespace ScammerNoScamming
         }
 
         public static void Set(PlayerController player) => cached = player;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetCache() => cached = null;
     }
 }

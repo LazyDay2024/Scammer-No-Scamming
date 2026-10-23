@@ -31,7 +31,10 @@ namespace ScammerNoScamming.Tests
                 var m = loadout.BuildModifiers();
                 bool hasDownside = m.HorseTrotSpeed < 1f || m.HorseGallopSpeed < 1f || m.HorseTurnRate < 1f
                     || m.PlayerMaxHealth < 1f || m.TroubleGain > 1f || m.DamageTaken > 1f || m.EnemySightRange > 1f;
+                bool hasUpside = m.HorseTrotSpeed > 1f || m.HorseGallopSpeed > 1f || m.PlayerMaxHealth > 1f
+                    || m.EnemySightRange < 1f || m.ShowEnemyMarkers;
                 Assert.IsTrue(hasDownside, gene.GeneId + " has no downside");
+                Assert.IsTrue(hasUpside, gene.GeneId + " has no upside");
             }
         }
 
