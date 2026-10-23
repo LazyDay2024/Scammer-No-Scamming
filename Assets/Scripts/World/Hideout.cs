@@ -17,6 +17,8 @@ namespace ScammerNoScamming
         public GameObject beacon;
         public Color beaconColor = new Color(0.9f, 0.73f, 0.43f);
         public float beaconHeight = 120f;
+        [Tooltip("Serialized URP material, so its shader is included in Windows builds.")]
+        public Material beaconMaterialAsset;
 
         public bool IsRevealed { get; private set; }
 
@@ -76,8 +78,15 @@ namespace ScammerNoScamming
             pillar.transform.localPosition = Vector3.up * beaconHeight * 0.5f;
             pillar.transform.localScale = new Vector3(1.2f, beaconHeight * 0.5f, 1.2f);
             var renderer = pillar.GetComponent<Renderer>();
-            beaconMaterial = new Material(renderer.sharedMaterial) { color = beaconColor };
-            renderer.sharedMaterial = beaconMaterial;
+            if (beaconMaterialAsset != null) renderer.sharedMaterial = beaconMaterialAsset;
+            else
+            {
+                var shader = Shader.Find("Universal Render Pipeline/Unlit");
+                if (shader == null) shader = Shader.Find("Unlit/Color");
+                if (shader == null) { renderer.enabled = false; return pillar; }
+                beaconMaterial = new Material(shader) { color = beaconColor };
+                renderer.sharedMaterial = beaconMaterial;
+            }
             renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             return pillar;
         }

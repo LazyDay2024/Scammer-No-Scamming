@@ -19,6 +19,7 @@ namespace ScammerNoScamming
             for (int i = 0; i < args.Length - 1; i++)
                 if (args[i] == "-screentour")
                 {
+                    Application.runInBackground = true;
                     var go = new GameObject("ScreenTour");
                     go.AddComponent<ScreenTour>().folder = args[i + 1];
                     DontDestroyOnLoad(go);

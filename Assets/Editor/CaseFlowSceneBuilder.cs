@@ -31,7 +31,6 @@ public static class CaseFlowSceneBuilder
         if (mats.Ground != null)
             mats.Ground.SetTextureScale("_BaseMap", Vector2.one * (CityBuilder.GroundSize / 8f));
         var city = CityBuilder.Build(mats);
-        Lighting();
 
         var player = PlayerSandbox.CreatePlayer();
         player.transform.position = new Vector3(0f, 0.05f, -24f);
@@ -39,24 +38,41 @@ public static class CaseFlowSceneBuilder
         var camera = player.GetComponentInChildren<Camera>();
         camera.clearFlags = CameraClearFlags.Skybox;
         camera.farClipPlane = 700f;
+        WorldSceneArt.Lighting(camera);
         var horse = PlayerSandbox.CreateHorse(Flat);
         horse.transform.position = new Vector3(4f, 0.05f, -26f);
         horse.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
         horse.AddComponent<HorseGenes>();
+        WorldSceneArt.Horse(horse);
 
         var counter = Prop("EvidenceCounter", new Vector3(0f, 0.6f, -16f), new Vector3(3.2f, 1.2f, 1.2f), 0f,
             Textured("tex_evidence_seal_table", new Color(0.4f, 0.3f, 0.2f)));
 
         var hideouts = new GameObject("Hideouts").transform;
-        AddHideout(hideouts, "east_shophouse", CityZone.Shophouse, CityDirection.East);
-        AddHideout(hideouts, "north_tower", CityZone.Tower, CityDirection.North);
-        AddHideout(hideouts, "south_house", CityZone.House, CityDirection.South);
-        AddHideout(hideouts, "west_tower", CityZone.Tower, CityDirection.West);
+        AddHideout(hideouts, "east_shophouse", CityZone.Shophouse, CityDirection.East, city, 0);
+        AddHideout(hideouts, "north_tower", CityZone.Tower, CityDirection.North, city, 1);
+        AddHideout(hideouts, "south_house", CityZone.House, CityDirection.South, city, 2);
+        AddHideout(hideouts, "west_tower", CityZone.Tower, CityDirection.West, city, 3);
 
         AddTraps(new GameObject("Traps").transform);
 
         var flow = new GameObject("CaseFlow").AddComponent<CaseFlowDemo>();
         flow.sealPoint = counter.transform;
+        var oldInterior = city.Station.transform.Find("Interior");
+        if (oldInterior != null) Object.DestroyImmediate(oldInterior.gameObject);
+        var station = flow.gameObject.AddComponent<StationInvestigation>();
+        station.stationAnchor = city.Station.transform;
+        station.victimPrefabs = new[] {
+            AssetDatabase.LoadAssetAtPath<GameObject>("Assets/ThirdParty/Quaternius/Characters/Chef_Female.fbx"),
+            AssetDatabase.LoadAssetAtPath<GameObject>("Assets/ThirdParty/Quaternius/Characters/Casual2_Male.fbx"),
+            AssetDatabase.LoadAssetAtPath<GameObject>("Assets/ThirdParty/Quaternius/Characters/OldClassy_Male.fbx"),
+            AssetDatabase.LoadAssetAtPath<GameObject>("Assets/ThirdParty/Quaternius/Characters/Suit_Female.fbx")
+        };
+        station.interiorPrefabs = new[] {
+            AssetDatabase.LoadAssetAtPath<GameObject>("Assets/ThirdParty/Quaternius/Interior/Bookshelf.fbx"),
+            AssetDatabase.LoadAssetAtPath<GameObject>("Assets/ThirdParty/Quaternius/Interior/Chair_1.fbx"),
+            AssetDatabase.LoadAssetAtPath<GameObject>("Assets/ThirdParty/Quaternius/Interior/Light_Desk.fbx")
+        };
 
         MarkStatic(city.Root);
         EditorSceneManager.SaveScene(scene, ScenePath);
@@ -65,21 +81,19 @@ public static class CaseFlowSceneBuilder
         Debug.Log($"Case flow demo scene saved to {ScenePath}");
     }
 
-    static void AddHideout(Transform parent, string id, CityZone zone, CityDirection direction)
+    static void AddHideout(Transform parent, string id, CityZone zone, CityDirection direction, CityResult city, int index)
     {
-        Vector3 pos = FreeSpot(CityLayoutPoints.Point(zone, direction, 14f), CityLayoutPoints.Direction(direction));
+        Vector3 pos = CityLayoutPoints.Point(zone, direction, 13f);
         var root = new GameObject("Hideout_" + id);
         root.transform.SetParent(parent, false);
         root.transform.position = pos;
+        // Local +Z goes into the compound; local -Z is the open entrance facing the road.
+        root.transform.rotation = Quaternion.LookRotation(Vector3.Cross(Vector3.up, CityLayoutPoints.Direction(direction)));
         var hideout = root.AddComponent<Hideout>();
         hideout.hideoutId = id;
         hideout.zoneHint = CityLayoutPoints.Describe(zone, direction);
 
-        // A reinforced door facing the road, so the player knows where to hold E.
-        Vector3 toRoad = -Vector3.Cross(Vector3.up, CityLayoutPoints.Direction(direction));
-        float yaw = Quaternion.LookRotation(toRoad).eulerAngles.y;
-        var door = Prop("Door", pos + Vector3.up * 2f, new Vector3(3f, 4f, 0.4f), yaw, Textured("tex_hideout_door", new Color(0.2f, 0.22f, 0.24f)));
-        door.transform.SetParent(root.transform, true);
+        WorldSceneArt.Compound(hideout, city, index == 3, index);
     }
 
     // Moves a door spot along the road until no building collider overlaps it.
@@ -117,19 +131,19 @@ public static class CaseFlowSceneBuilder
 
         // North road: a floating ad with a misspelled link.
         Vector3 north = CityLayoutPoints.Direction(CityDirection.North);
-        var sign = Prop("PhishingSign", north * 42f + Vector3.Cross(Vector3.up, north) * 6f + Vector3.up * 2.2f,
-            new Vector3(3f, 1.5f, 0.1f), 180f, Textured("tex_sign_phishing", new Color(0.9f, 0.2f, 0.2f)));
+        var sign = RoadSign(parent, "PhishingSign", north * 42f + Vector3.Cross(Vector3.up, north) * 7f,
+            new Vector2(3f, 1.5f), 0f, "tex_sign_phishing");
         sign.AddComponent<PhishingSign>();
         sign.transform.SetParent(parent, true);
 
         // East road: a "villager" in an off-colour uniform who stares too long.
         Vector3 east = CityLayoutPoints.Direction(CityDirection.East);
-        var villager = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        var villager = WorldSceneArt.Character(parent, "Soldier_Male",
+            east * 70f + Vector3.Cross(Vector3.up, east) * 5f + Vector3.up * .12f, true, Faction.Scammer);
         villager.name = "DisguisedScammer";
-        villager.transform.position = east * 70f + Vector3.Cross(Vector3.up, east) * 5f + Vector3.up;
-        villager.GetComponent<Renderer>().sharedMaterial = Textured("tex_uniform_fake_police", new Color(0.3f, 0.35f, 0.5f));
-        var health = villager.AddComponent<Health>();
-        health.max = 3f;
+        // The disguise is a trap until exposed, rather than a guard shooting before its tell.
+        Object.DestroyImmediate(villager.GetComponent<ArmedEnemy>());
+        Object.DestroyImmediate(villager.GetComponent<UnityEngine.AI.NavMeshAgent>());
         villager.AddComponent<DisguisedScammer>();
         villager.transform.SetParent(parent, true);
 
@@ -141,28 +155,40 @@ public static class CaseFlowSceneBuilder
         var bait = bag.AddComponent<AmbushBait>();
         bait.activateOnSpring = new[] { HiddenScammer(parent, bag.transform.position + westSide * 5f), HiddenScammer(parent, bag.transform.position - westSide * 5f + west * 3f) };
         bag.transform.SetParent(parent, true);
-        var rentSign = Prop("RentHorseSign", west * 50f + westSide * 9f + Vector3.up * 2f, new Vector3(2.4f, 1.2f, 0.1f), 90f,
-            Textured("tex_sign_rent_horse", new Color(0.8f, 0.7f, 0.4f)));
+        var rentSign = RoadSign(parent, "RentHorseSign", west * 50f + westSide * 9f,
+            new Vector2(2.4f, 1.2f), -90f, "tex_sign_rent_horse");
         rentSign.transform.SetParent(parent, true);
 
         // South road further out: a phone booth that never stops ringing.
-        var booth = Prop("CallCenterBooth", south * 100f - southSide * 7f + Vector3.up * 1.3f, new Vector3(1.2f, 2.6f, 1.2f), 0f,
-            Textured("tex_phone_booth", new Color(0.2f, 0.45f, 0.5f)));
+        var booth = WorldSceneArt.Empty(parent, "CallCenterBooth", south * 100f - southSide * 8f, 180f).gameObject;
+        var teal = WorldSceneArt.Paint("BoothTeal", new Color(.12f, .27f, .27f));
+        WorldSceneArt.Box(booth.transform, "BoothBack", new Vector3(0f, 1.35f, .52f), new Vector3(1.45f, 2.7f, .14f), teal);
+        for (int side = -1; side <= 1; side += 2)
+            WorldSceneArt.Box(booth.transform, "BoothSide", new Vector3(side * .68f, 1.35f, 0f), new Vector3(.12f, 2.7f, 1.1f), teal);
+        WorldSceneArt.Box(booth.transform, "BoothRoof", new Vector3(0f, 2.75f, 0f), new Vector3(1.6f, .17f, 1.25f), teal);
+        WorldSceneArt.FrontArt(booth.transform, "PhonePanel", new Vector3(0f, 1.35f, .43f), new Vector2(1.15f, 2.2f), Textured("tex_phone_booth", Color.white));
+        WorldSceneArt.Model(booth.transform, "Props/Phone", new Vector3(0f, .9f, -.05f), .35f);
         booth.AddComponent<CallCenterBooth>();
         booth.transform.SetParent(parent, true);
     }
 
     static GameObject HiddenScammer(Transform parent, Vector3 position)
     {
-        var scammer = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        var scammer = WorldSceneArt.Character(parent, "Casual3_Male", position + Vector3.up * .12f, true, Faction.Scammer);
         scammer.name = "HiddenScammer";
-        scammer.transform.position = position + Vector3.up;
-        scammer.GetComponent<Renderer>().sharedMaterial = Textured("tex_outfit_scammer", new Color(0.66f, 0.29f, 0.2f));
-        var health = scammer.AddComponent<Health>();
-        health.max = 3f;
         scammer.transform.SetParent(parent, true);
         scammer.SetActive(false);
         return scammer;
+    }
+
+    static GameObject RoadSign(Transform parent, string name, Vector3 position, Vector2 size, float yaw, string texture)
+    {
+        var sign = WorldSceneArt.Empty(parent, name, position, yaw).gameObject;
+        var wood = WorldSceneArt.Paint("RoadSignWood", new Color(.27f, .17f, .1f));
+        WorldSceneArt.Box(sign.transform, "SignPost", new Vector3(0f, 1.3f, 0f), new Vector3(.18f, 2.6f, .18f), wood);
+        WorldSceneArt.Box(sign.transform, "SignBacking", new Vector3(0f, 2.2f, 0f), new Vector3(size.x + .14f, size.y + .14f, .16f), wood);
+        WorldSceneArt.FrontArt(sign.transform, "SignArtwork", new Vector3(0f, 2.2f, -.086f), size, Textured(texture, Color.white));
+        return sign;
     }
 
     static GameObject Prop(string name, Vector3 position, Vector3 scale, float yaw, Material material)
