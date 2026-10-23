@@ -34,7 +34,7 @@ namespace ScammerNoScamming
                 if (SettingsPanel.Draw(canvas)) showSettings = false;
                 return;
             }
-            var r = new Rect(canvas.center.x - 330f, 270f, 660f, 520f);
+            var r = new Rect(canvas.center.x - 330f, 290f, 660f, 470f);
             ThaiGui.Panel(r, 0.9f);
             const float pad = 60f;
             GUI.Label(new Rect(r.x + pad - 4f, r.y + 48f, r.width - pad * 2f, 90f), "พักเกม", ThaiGui.Headline(ThaiGui.H1 - 6, ThaiGui.Bone, FontStyle.Bold));
