@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 
 namespace ScammerNoScamming
 {
@@ -54,14 +53,67 @@ namespace ScammerNoScamming
             genes = gameObject.AddComponent<GeneSelectionScreen>();
             lesson = gameObject.AddComponent<LessonScreen>();
             pause = gameObject.AddComponent<PauseScreen>();
-            pause.OnQuitToMenu = () => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            pause.OnQuitToMenu = ReturnToMenu;
         }
+
+        Vector3 playerStart, horseStart;
+        Quaternion playerStartRot, horseStartRot;
+        HorseController horse;
 
         void Start()
         {
+            MainMenuScreen.LoadSensitivity();
+            var player = PlayerLocator.Player;
+            if (player != null)
+            {
+                playerStart = player.transform.position;
+                playerStartRot = player.transform.rotation;
+            }
+            horse = HorseController.All.Count > 0 ? HorseController.All[0] : null;
+            if (horse != null)
+            {
+                horseStart = horse.transform.position;
+                horseStartRot = horse.transform.rotation;
+            }
+            ShowMenu();
+        }
+
+        void ShowMenu()
+        {
+            step = Step.Idle;
             Hideout.HideAll();
+            ArmTraps(null);
             menu.Show(() => story.Show("bg_opening", "2035 · สยามภิรมย์", "ม้าเหล็กหมดน้ำมัน", db.Text.Opening, null,
                 "รับคดีแรก", BeginRun));
+        }
+
+        // Back to the menu without reloading the scene (the scene does not need to be in Build Settings).
+        void ReturnToMenu()
+        {
+            loadout = null;
+            if (horse != null) Teleport(horse.gameObject, horseStart, horseStartRot);
+            var player = PlayerLocator.Player;
+            if (player != null && !player.IsMounted) Teleport(player.gameObject, playerStart, playerStartRot);
+            ShowMenu();
+        }
+
+        static void Teleport(GameObject go, Vector3 position, Quaternion rotation)
+        {
+            var cc = go.GetComponent<CharacterController>();
+            if (cc != null) cc.enabled = false;
+            go.transform.SetPositionAndRotation(position, rotation);
+            if (cc != null) cc.enabled = true;
+        }
+
+        // Re-arms every road trap and keeps only the ones this case uses (all of them when case is null).
+        void ArmTraps(CaseDefinition caseDefinition)
+        {
+            foreach (var trap in FindObjectsByType<Trap>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                trap.ResetTrap();
+                bool wanted = caseDefinition == null || caseDefinition.Traps.Count == 0 || caseDefinition.Traps.Contains(trap.Kind);
+                if (!trap.IsDefused) trap.gameObject.SetActive(wanted);
+            }
         }
 
         void BeginRun()
@@ -77,6 +129,7 @@ namespace ScammerNoScamming
             current = run[caseIndex];
             TrapLog.Reset();
             Hideout.HideAll();
+            ArmTraps(current);
             step = Step.Idle;
             analysis.Show(current, troublePerWrongAnswer, OnAnalysed);
         }
@@ -141,6 +194,18 @@ namespace ScammerNoScamming
             }
         }
 
+        // ScreenTour hook: jump straight into the ride for a case.
+        public void DebugStartAction(CaseDefinition caseDefinition)
+        {
+            current = caseDefinition;
+            run = new List<CaseDefinition> { caseDefinition };
+            caseIndex = 0;
+            ArmTraps(current);
+            var hideout = Hideout.Find(current.HideoutId);
+            if (hideout != null) hideout.Reveal();
+            step = Step.ToHideout;
+        }
+
         void NextCase()
         {
             caseIndex++;
@@ -149,12 +214,13 @@ namespace ScammerNoScamming
                 StartCase();
                 return;
             }
+            // Innocents hit come from the friend's NPC system (item 3); until then only Trouble decides.
             var ending = EndingEvaluator.Evaluate(0, trouble);
             bool clean = ending == EndingType.Clean;
             string stat = db.Text.Stat != null ? db.Text.Stat.Description + "\n(" + db.Text.Stat.SourceName + ")" : null;
             story.Show(clean ? "bg_ending_clean" : "bg_ending_messy", clean ? "ฉากจบ: สะอาด" : "ฉากจบ: เละ",
                 clean ? "เมืองได้แสงกลับมา" : "ชนะ แต่ยังไม่จบ", clean ? db.Text.EndingClean : db.Text.EndingMessy,
-                stat, "กลับเมนูหลัก", () => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex));
+                stat, "กลับเมนูหลัก", ReturnToMenu);
         }
 
         Vector3 HideoutPosition()

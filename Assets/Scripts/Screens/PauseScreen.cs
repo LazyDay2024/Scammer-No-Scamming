@@ -16,9 +16,15 @@ namespace ScammerNoScamming
             else if (!AnyOpen) Open();
         }
 
+        protected override bool FillsScreen => false;
+
+        public void DebugOpen() => Open();
+
         protected override void Draw(Rect canvas)
         {
-            GUI.DrawTexture(canvas, ThaiGui.Solid(new Color(0.04f, 0.07f, 0.08f, 0.75f)));
+            GUI.matrix = Matrix4x4.identity;
+            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), ThaiGui.Solid(new Color(0.04f, 0.07f, 0.08f, 0.75f)));
+            ThaiGui.BeginCanvas();
             var r = new Rect(660f, 260f, 600f, 560f);
             ThaiGui.Panel(r);
             ThaiGui.Label(new Rect(r.x + 50f, r.y + 40f, 500f, 80f), "พักเกม", ThaiGui.Text(64, ThaiGui.Gold, FontStyle.Bold));

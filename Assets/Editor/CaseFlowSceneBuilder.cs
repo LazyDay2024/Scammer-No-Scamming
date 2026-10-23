@@ -60,13 +60,14 @@ public static class CaseFlowSceneBuilder
 
         MarkStatic(city.Root);
         EditorSceneManager.SaveScene(scene, ScenePath);
+        RegisterFirst(ScenePath);
         AssetDatabase.SaveAssets();
         Debug.Log($"Case flow demo scene saved to {ScenePath}");
     }
 
     static void AddHideout(Transform parent, string id, CityZone zone, CityDirection direction)
     {
-        Vector3 pos = CityLayoutPoints.Point(zone, direction);
+        Vector3 pos = FreeSpot(CityLayoutPoints.Point(zone, direction, 14f), CityLayoutPoints.Direction(direction));
         var root = new GameObject("Hideout_" + id);
         root.transform.SetParent(parent, false);
         root.transform.position = pos;
@@ -79,6 +80,23 @@ public static class CaseFlowSceneBuilder
         float yaw = Quaternion.LookRotation(toRoad).eulerAngles.y;
         var door = Prop("Door", pos + Vector3.up * 2f, new Vector3(3f, 4f, 0.4f), yaw, Textured("tex_hideout_door", new Color(0.2f, 0.22f, 0.24f)));
         door.transform.SetParent(root.transform, true);
+    }
+
+    // Moves a door spot along the road until no building collider overlaps it.
+    static Vector3 FreeSpot(Vector3 point, Vector3 along)
+    {
+        Physics.SyncTransforms();
+        for (int i = 0; i < 20; i++)
+        {
+            Vector3 p = point + along * (i % 2 == 0 ? i * 2f : -i * 2f);
+            var hits = Physics.OverlapBox(p + Vector3.up * 2f, new Vector3(2f, 1.8f, 2f));
+            bool blocked = false;
+            foreach (var h in hits)
+                if (h.gameObject.name != "Ground" && !(h is TerrainCollider) && h.bounds.size.y > 0.5f) { blocked = true; break; }
+            if (!blocked) return p;
+        }
+        Debug.LogWarning($"No free spot near {point}");
+        return point;
     }
 
     static void AddTraps(Transform parent)
@@ -195,6 +213,15 @@ public static class CaseFlowSceneBuilder
         mat.SetColor("_BaseColor", color);
         AssetDatabase.CreateAsset(mat, path);
         return mat;
+    }
+
+    // The jam build should open on this flow, so put the scene first in Build Settings (others kept).
+    static void RegisterFirst(string path)
+    {
+        var scenes = new System.Collections.Generic.List<EditorBuildSettingsScene> { new EditorBuildSettingsScene(path, true) };
+        foreach (var s in EditorBuildSettings.scenes)
+            if (s.path != path) scenes.Add(s);
+        EditorBuildSettings.scenes = scenes.ToArray();
     }
 
     static Material LoadCity(string name) => AssetDatabase.LoadAssetAtPath<Material>($"{CityMaterialFolder}/{name}.mat");

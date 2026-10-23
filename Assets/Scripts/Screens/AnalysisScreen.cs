@@ -19,6 +19,16 @@ namespace ScammerNoScamming
 
         public AnalysisSession Session => session;
 
+        // ScreenTour hooks: 0 story, 1 question, 2 feedback, 3 summary.
+        public void DebugStage(int s) => stage = (Stage)s;
+
+        public void DebugAnswer(int option)
+        {
+            lastChoice = option;
+            lastCorrect = session.Answer(option);
+            stage = Stage.Feedback;
+        }
+
         public void Show(CaseDefinition caseDefinition, float troublePerWrong, Action<AnalysisResult> done)
         {
             session = new AnalysisSession(caseDefinition, troublePerWrong);
@@ -94,13 +104,13 @@ namespace ScammerNoScamming
             y += ThaiGui.Label(new Rect(area.x, y, area.width, 200f), q.Prompt, ThaiGui.Text(42, ThaiGui.Bone, FontStyle.Bold)) + 40f;
             for (int i = 0; i < q.Options.Count; i++)
             {
-                if (GUI.Button(new Rect(area.x, y, area.width, 110f), q.Options[i].Text, ThaiGui.Button(32)))
+                if (GUI.Button(new Rect(area.x, y, area.width, 130f), q.Options[i].Text, ThaiGui.Button(30)))
                 {
                     lastChoice = i;
                     lastCorrect = session.Answer(i);
                     stage = Stage.Feedback;
                 }
-                y += 128f;
+                y += 148f;
             }
             if (GUI.Button(new Rect(area.x, area.yMax - 80f, 320f, 70f), "ดูเบาะแสอีกครั้ง", ThaiGui.Button(26)))
                 stage = Stage.Story;

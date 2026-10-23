@@ -35,6 +35,7 @@ namespace ScammerNoScamming.Tests
 
             other.GetComponent<MainMenuScreen>().Close();
             Assert.IsFalse(GameScreen.AnyOpen);
+            yield return null;
             Assert.AreEqual(1f, Time.timeScale);
             Assert.IsTrue(player.GetComponent<PlayerControls>().enabled);
         }

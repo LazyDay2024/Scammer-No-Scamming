@@ -18,15 +18,27 @@ namespace ScammerNoScamming
         {
             if (IsOpen) return;
             IsOpen = true;
-            if (open.Count == 0) Focus(true);
+            if (open.Count == 0 && !releasePending) Focus(true);
+            releasePending = false;
             open.Add(this);
         }
+
+        // Releasing focus waits until the end of the frame, so closing one screen and opening the next
+        // (analysis -> genes) does not flicker the cursor lock and time scale.
+        static bool releasePending;
 
         public void Close()
         {
             if (!IsOpen) return;
             IsOpen = false;
             open.Remove(this);
+            if (open.Count == 0) releasePending = true;
+        }
+
+        void LateUpdate()
+        {
+            if (!releasePending) return;
+            releasePending = false;
             if (open.Count == 0) Focus(false);
         }
 
@@ -48,6 +60,7 @@ namespace ScammerNoScamming
             if (controls != null) controls.enabled = !screenOpen;
             Cursor.lockState = screenOpen ? CursorLockMode.None : CursorLockMode.Locked;
             Cursor.visible = screenOpen;
+            AudioListener.pause = screenOpen;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -55,6 +68,7 @@ namespace ScammerNoScamming
         {
             open.Clear();
             savedTimeScale = 1f;
+            releasePending = false;
         }
 
         void OnGUI()
@@ -67,10 +81,14 @@ namespace ScammerNoScamming
                 Cursor.visible = true;
             }
             GUI.depth = -10;
+            // Fill the letterbox bars so the frozen world never shows around the 16:9 canvas.
+            if (FillsScreen) GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), ThaiGui.Solid(ThaiGui.Night));
             var canvas = ThaiGui.BeginCanvas();
             Draw(canvas);
             ThaiGui.EndCanvas();
         }
+
+        protected virtual bool FillsScreen => true;
 
         protected abstract void Draw(Rect canvas);
     }

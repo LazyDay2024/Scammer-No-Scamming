@@ -31,12 +31,30 @@ namespace ScammerNoScamming
                 Application.Quit();
         }
 
+        public const string SensitivityKey = "lookSensitivity";
+
+        public static void LoadSensitivity()
+        {
+            var player = PlayerLocator.Player;
+            if (player == null) return;
+            try
+            {
+                if (PlayerPrefs.HasKey(SensitivityKey)) player.lookSensitivity = PlayerPrefs.GetFloat(SensitivityKey);
+            }
+            catch { }
+        }
+
         public static void SensitivitySlider(Rect r)
         {
             var player = PlayerLocator.Player;
             if (player == null) return;
             ThaiGui.Label(new Rect(r.x, r.y, r.width, 40f), $"ความไวเมาส์ {player.lookSensitivity:0.00}", ThaiGui.Text(28, ThaiGui.Bone));
-            player.lookSensitivity = GUI.HorizontalSlider(new Rect(r.x, r.y + 52f, r.width, 30f), player.lookSensitivity, 0.02f, 0.4f);
+            float value = GUI.HorizontalSlider(new Rect(r.x, r.y + 52f, r.width, 30f), player.lookSensitivity, 0.02f, 0.4f);
+            if (!Mathf.Approximately(value, player.lookSensitivity))
+            {
+                player.lookSensitivity = value;
+                try { PlayerPrefs.SetFloat(SensitivityKey, value); } catch { }
+            }
         }
     }
 }
