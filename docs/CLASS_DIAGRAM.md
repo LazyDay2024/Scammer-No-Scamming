@@ -516,6 +516,8 @@ classDiagram
 
 ## 8. NPC และศัตรู
 
+**โค้ดจริง (2026-10-23, รอบ 1) ต่างจากแผนภาพข้างล่าง**: ลำดับชั้นคือ `Character` (Health + Faction) → `PlayerCharacter` / `Npc` → `Enemy` (abstract) → `ShooterScammer` ยังไม่มี `EnemyBrain`/`EnemyState`/`EnemyPerception` แยกคลาส การรับรู้ (สายตา+เสียงปืน) และการลาดตระเวนอยู่ใน `Enemy` ตรงๆ และฝั่ง `Bystander` ยังไม่ทำ (จะเป็น `Civilian` ใต้ `Npc`) ยึดโค้ดเป็นหลักจนกว่าจะปรับแผนภาพ
+
 ```mermaid
 classDiagram
     class Faction {

@@ -9,6 +9,7 @@ namespace ScammerNoScamming
     {
         public bool automatic;
         public bool requireLockedCursor = true;
+        public int maxAmmo = 30;
 
         [Header("Tracer")]
         public Material tracerMaterial;
@@ -20,6 +21,10 @@ namespace ScammerNoScamming
 
         public float LastHitTime { get; private set; } = -10f;
         public HitscanWeapon Weapon => weapon;
+        public int Ammo { get; private set; }
+
+        public void Refill() { Ammo = maxAmmo; }
+        public void Drain() { Ammo = 0; }
 
         PlayerControls controls;
         PlayerMount mount;
@@ -35,6 +40,7 @@ namespace ScammerNoScamming
             weapon = GetComponent<HitscanWeapon>();
             if (weapon == null) weapon = gameObject.AddComponent<HitscanWeapon>();
             weapon.Ignore = IsOwnCollider;
+            Ammo = maxAmmo;
         }
 
         void Start()
@@ -52,14 +58,16 @@ namespace ScammerNoScamming
             if (requireLockedCursor && Cursor.lockState != CursorLockMode.Locked) return;
 
             bool wantsToFire = automatic ? controls.Fire.IsPressed() : controls.Fire.WasPressedThisFrame();
-            if (!wantsToFire) return;
+            if (!wantsToFire || Ammo <= 0) return;
 
             Transform cam = aimCamera.transform;
             if (!weapon.TryFire(cam.position, cam.forward, Faction.Player, out ShotResult shot)) return;
+            Ammo--;
 
             if (shot.HitDamageable) LastHitTime = Time.time;
             ShowTracer(cam.TransformPoint(muzzleOffset), shot.EndPoint);
             Fired?.Invoke(shot.NoisePosition);
+            GameEvents.RaisePlayerFired(shot.NoisePosition);
         }
 
         bool IsOwnCollider(Collider other)

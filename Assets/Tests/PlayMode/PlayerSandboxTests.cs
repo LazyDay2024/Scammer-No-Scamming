@@ -27,6 +27,8 @@ namespace ScammerNoScamming.Tests
                 Object.Destroy(world.Horse);
                 foreach (var target in world.Targets)
                     if (target != null) Object.Destroy(target.gameObject);
+                Object.Destroy(world.Spawner.gameObject);
+                Object.Destroy(world.Replay.gameObject);
             }
             base.TearDown();
         }
@@ -68,6 +70,7 @@ namespace ScammerNoScamming.Tests
             Assert.AreSame(horse.Seat, world.Player.transform.parent, "player should sit on the horse seat");
             Assert.IsTrue(horse.HasRider);
             Assert.IsFalse(world.Player.GetComponent<CharacterController>().enabled, "walking collider is off while riding");
+            Assert.IsTrue(world.Player.GetComponent<PlayerCharacter>().RiderHitboxActive, "the rider can still be hit");
 
             float startZ = world.Horse.transform.position.z;
             Press(keyboard.wKey);
@@ -81,7 +84,57 @@ namespace ScammerNoScamming.Tests
             Assert.IsNull(world.Player.transform.parent);
             Assert.IsFalse(horse.HasRider);
             Assert.IsTrue(world.Player.GetComponent<CharacterController>().enabled);
+            Assert.IsFalse(world.Player.GetComponent<PlayerCharacter>().RiderHitboxActive);
             Assert.IsNull(mount.CurrentHorse);
+        }
+
+        [UnityTest]
+        public IEnumerator Player_is_thrown_when_the_horse_goes_down_and_cannot_remount_it()
+        {
+            world = PlayerSandbox.Create();
+            var player = world.Player.GetComponent<PlayerController>();
+            var horse = world.Horse.GetComponent<HorseController>();
+            yield return null;
+            yield return Tap(keyboard.eKey);
+            Assert.IsTrue(player.IsMounted);
+
+            world.Horse.GetComponent<Health>().TakeDamage(new DamageInfo(99f, HitZoneType.Body, Faction.Scammer, Vector3.zero));
+            yield return null;
+            yield return null;
+
+            Assert.IsTrue(horse.IsDown);
+            Assert.IsFalse(player.IsMounted, "a downed horse throws its rider");
+            Assert.IsFalse(horse.HasRider);
+
+            yield return Tap(keyboard.eKey);
+            Assert.IsFalse(player.IsMounted, "a downed horse cannot be mounted");
+        }
+
+        [UnityTest]
+        public IEnumerator Mounted_player_loses_health_to_an_enemy_shooting_over_the_horse()
+        {
+            world = PlayerSandbox.Create();
+            var character = world.Player.GetComponent<PlayerCharacter>();
+            yield return null;
+            yield return Tap(keyboard.eKey);
+            Assert.IsTrue(world.Player.GetComponent<PlayerController>().IsMounted);
+
+            var enemy = PlayerSandbox.CreateEnemy(new Vector3(2f, 0f, 16f));
+            enemy.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+            enemy.patrolRadius = 0f;
+            enemy.spreadDegrees = 0f;
+            enemy.reactionTime = 0.1f;
+            try
+            {
+                float deadline = Time.time + 4f;
+                while (character.Health.Current >= 100f && Time.time < deadline) yield return null;
+
+                Assert.Less(character.Health.Current, 100f, "a rider must be hittable");
+            }
+            finally
+            {
+                Object.Destroy(enemy.gameObject);
+            }
         }
 
         [UnityTest]

@@ -18,17 +18,20 @@ public static class PlayerSandboxBuilder
         var world = PlayerSandbox.Create(MaterialFor);
         world.Player.GetComponent<PlayerWeaponController>().tracerMaterial = GetMaterial("Tracer", new Color(1f, 0.9f, 0.4f), "Universal Render Pipeline/Unlit");
 
+        PlayerSandbox.AddTrapCourse(MaterialFor);
+        world.Spawner.enemyMaterial = MaterialFor(new Color(0.75f, 0.2f, 0.2f));
+
         EditorSceneManager.SaveScene(scene, ScenePath);
         AssetDatabase.SaveAssets();
         Debug.Log("Player sandbox scene saved to " + ScenePath);
     }
 
-    static Material MaterialFor(Color color)
+    public static Material MaterialFor(Color color)
     {
         return GetMaterial("Sandbox_" + ColorUtility.ToHtmlStringRGB(color), color, "Universal Render Pipeline/Lit");
     }
 
-    static Material GetMaterial(string name, Color color, string shaderName)
+    public static Material GetMaterial(string name, Color color, string shaderName)
     {
         string path = MaterialFolder + "/" + name + ".mat";
         var material = AssetDatabase.LoadAssetAtPath<Material>(path);
