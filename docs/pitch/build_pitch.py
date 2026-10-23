@@ -39,6 +39,7 @@ DECK = [
      "ฟังเรื่องผู้เสียหายแล้วหารังบนแผนที่ แต่งยีนม้าที่มีข้อเสีย ขี่ม้าผ่านกับดัก บุกรังโดยห้ามยิงเหยื่อ แล้วนำหลักฐานกลับไปปิดคดี"),
     (17, "Unique Selling Point", "กับดักที่ต้องคิดก่อนลงมือ",
      ["กับดักเลียนแบบสแกมจริง: กล่องของฟรี · ลิงก์ปลอม · คนปลอมตัว · พวกซุ่ม",
+      "<span class='src'>ภาพขวา: กล่องจริง (มีตราทางการ) กับกล่องปลอม (ฟรี! ด่วน! ไม่มีตรา)</span>",
       "ทุกกับดักมี \"สัญญาณ\" ให้สังเกตก่อนเสมอ: หยุดคิด = รอด, รีบ = โดน",
       "ห้ามยิงเหยื่อและลูกจ้างที่ถูกบังคับ",
       "ไม่ได้สอนวิธีในเกม แต่ฝึกให้คิด เพื่อภูมิต้านทานในชีวิตจริง"],
@@ -81,8 +82,18 @@ li.nob{padding-left:0} li.nob:before{display:none}
 .again{margin-top:46px;font-size:36px;color:#C8B894}
 .cap{position:absolute;left:0;right:0;bottom:0;background:rgba(17,25,29,.92);border-top:4px solid #A84932;
  padding:26px 150px;font-size:38px;line-height:1.45;color:#fff}
+.split{display:flex;gap:40px;align-items:flex-start}.txt{flex:1.4}.txt li{font-size:36px;margin-bottom:18px}
+.art{flex:1;display:flex;gap:20px;margin-top:40px}.art img{flex:1;min-width:0;width:0;max-height:520px;object-fit:contain;border-radius:14px}
 .num{position:absolute;right:60px;top:40px;font-size:30px;color:#69524A}
 """
+
+
+# Optional art per slide (paths relative to the repo root). AI reference art, see docs/AI_ART_LOG.md.
+ART = {
+    3: ["docs/art-reference/ref_characters.png"],
+    5: ["Assets/Art/Textures/AI/tex_supply_box_real.png", "Assets/Art/Textures/AI/tex_supply_box_fake.png"],
+}
+ROOT = os.path.dirname(os.path.dirname(HERE))
 
 
 def slide_html(i, item):
@@ -95,6 +106,9 @@ def slide_html(i, item):
     else:
         cls = " class='nob'" if len(bullets) == 1 and i == 0 else ""
         body = "<ul>" + "".join(f"<li{cls}>{b}</li>" for b in bullets) + "</ul>"
+        if i in ART:
+            imgs = "".join(f"<img src='file:///{os.path.join(ROOT, a).replace(chr(92), '/')}'>" for a in ART[i])
+            body = f"<div class='split'><div class='txt'>{body}</div><div class='art'>{imgs}</div></div>"
     return (f"<!doctype html><html lang='th'><head><meta charset='utf-8'><style>{CSS}</style></head><body>"
             f"<div class='band'></div><div class='num'>{i + 1}/{len(DECK)}</div>"
             f"<div class='wrap'><div class='kicker'>{kicker}</div><h1>{title}</h1>{body}</div>"
