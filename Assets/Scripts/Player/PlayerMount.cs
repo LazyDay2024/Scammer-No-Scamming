@@ -26,7 +26,7 @@ namespace ScammerNoScamming
             if (CurrentHorse == null)
             {
                 Candidate = FindNearestFreeHorse();
-                if (Candidate != null && controls.Interact.WasPressedThisFrame())
+                if (Candidate != null && !WorldInteractor.HasFocusedInteraction && controls.Interact.WasPressedThisFrame())
                     Mount(Candidate);
             }
             else if (controls.Interact.WasPressedThisFrame())
@@ -43,7 +43,7 @@ namespace ScammerNoScamming
             player.EnterMount(horse.Seat);
         }
 
-        void Dismount()
+        public void Dismount()
         {
             var horse = CurrentHorse;
             Vector3 exitPoint = horse.GetDismountPoint();
