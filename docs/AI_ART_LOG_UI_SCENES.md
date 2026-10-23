@@ -14,16 +14,16 @@
 
 | Path | ขนาด | Purpose / prompt summary | Tool |
 |---|---|---|---|
-| `Assets/Art/UI/AI/bg_main_menu.png` | 1920×1080 | เมนู: สารวัตรบนม้าสีน้ำตาลบนสันเขายามค่ำ เมืองวงแหวนดับไฟ หอบอสเรืองทอง; แก้หอเป็นยอดแยกและสัญลักษณ์เมฆเล็กที่ผนังให้ต่อเนื่องกับฉากอื่น | image_gen.imagegen; System.Drawing resize |
-| `Assets/Art/UI/AI/bg_opening.png` | 1920×1080 | เปิดเรื่อง: ถนนตึกแถวไทย รถจอดไร้น้ำมัน สายไฟและไฟถนนดับ ม้าหนึ่งตัวดื่มน้ำจากรางด้านขวา หอบอสไกลออกไป | image_gen.imagegen; System.Drawing resize |
-| `Assets/Art/UI/AI/bg_case_board.png` | 1920×1080 | สถานีตำรวจ: กระดานคอร์ก ภาพหลักฐานพัสดุ/อิฐ/โทรศัพท์/บ้าน/หอคอย/เมือง/สายไฟ เชื่อมด้วยด้ายแดง ตะเกียงบนโต๊ะ ไม่มีตัวหนังสือ | image_gen.imagegen; System.Drawing resize |
-| `Assets/Art/UI/AI/bg_lesson.png` | 1920×1080 | บทเรียน: เมืองวงแหวนยามอรุณ แสงทองนุ่ม หมอกเขียวอมฟ้า ระเบียงและต้นไม้เล็กทางขวา สงบและมีความหวัง | image_gen.imagegen; System.Drawing resize |
-| `Assets/Art/UI/AI/bg_ending_clean.png` | 1920×1080 | จบสะอาด: ไฟถนนและบ้านกลับมาสว่างทีละแนวในยามเช้า คนช่วยเหลือกัน ม้าสงบ หอบอสยอดแยกดับไฟ; แก้รูปทรงหอให้เข้าชุด | image_gen.imagegen; System.Drawing resize |
-| `Assets/Art/UI/AI/bg_ending_messy.png` | 1920×1080 | จบเละ: เมืองกลางคืน หอบอสยังเรืองทอง รถพยาบาลจอด ไฟฉุกเฉินแดง/teal กระดาษหลักฐานปลิว ไม่มีผู้บาดเจ็บหรือความรุนแรง | image_gen.imagegen; System.Drawing resize |
-| `Assets/Art/UI/AI/portrait_nida.png` | 512×512 | นิดา: หญิงไทยวัยทำงานร้านกาแฟ เสื้อ bone ผ้ากันเปื้อน rust ผมมวย ถืออิฐจากพัสดุ หงุดหงิดและเจ็บใจอย่างมีศักดิ์ศรี | image_gen.imagegen; System.Drawing resize |
-| `Assets/Art/UI/AI/portrait_phum.png` | 512×512 | ภูมิ: นักศึกษาชายไทย hoodie charcoal/teal มองโทรศัพท์ ก้มหน้าอย่างละอายและกังวล ไฟอุ่น ไม่มีข้อความบนมือถือ | image_gen.imagegen; System.Drawing resize |
-| `Assets/Art/UI/AI/portrait_somporn.png` | 512×512 | ลุงสมพร: ข้าราชการเกษียณ ผมเงิน แว่น เสื้อเชิ้ต bone ถือโทรศัพท์ปุ่มกดเก่า สีหน้ากังวลแต่มีศักดิ์ศรี ปุ่มไม่มีตัวเลข | image_gen.imagegen; System.Drawing resize |
-| `Assets/Art/UI/AI/portrait_prae.png` | 512×512 | แพร: พนักงานบริษัทไทย blazer charcoal ท่าทีเสียใจหมดแรง ถือโทรศัพท์ที่แสดงเพียงกราฟพุ่งขึ้นเรือง teal ไม่มีข้อความหรือตัวเลข | image_gen.imagegen; System.Drawing resize |
+| `Assets/Resources/UI/bg_main_menu.png` | 1920×1080 | เมนู: สารวัตรบนม้าสีน้ำตาลบนสันเขายามค่ำ เมืองวงแหวนดับไฟ หอบอสเรืองทอง; แก้หอเป็นยอดแยกและสัญลักษณ์เมฆเล็กที่ผนังให้ต่อเนื่องกับฉากอื่น | image_gen.imagegen; System.Drawing resize |
+| `Assets/Resources/UI/bg_opening.png` | 1920×1080 | เปิดเรื่อง: ถนนตึกแถวไทย รถจอดไร้น้ำมัน สายไฟและไฟถนนดับ ม้าหนึ่งตัวดื่มน้ำจากรางด้านขวา หอบอสไกลออกไป | image_gen.imagegen; System.Drawing resize |
+| `Assets/Resources/UI/bg_case_board.png` | 1920×1080 | สถานีตำรวจ: กระดานคอร์ก ภาพหลักฐานพัสดุ/อิฐ/โทรศัพท์/บ้าน/หอคอย/เมือง/สายไฟ เชื่อมด้วยด้ายแดง ตะเกียงบนโต๊ะ ไม่มีตัวหนังสือ | image_gen.imagegen; System.Drawing resize |
+| `Assets/Resources/UI/bg_lesson.png` | 1920×1080 | บทเรียน: เมืองวงแหวนยามอรุณ แสงทองนุ่ม หมอกเขียวอมฟ้า ระเบียงและต้นไม้เล็กทางขวา สงบและมีความหวัง | image_gen.imagegen; System.Drawing resize |
+| `Assets/Resources/UI/bg_ending_clean.png` | 1920×1080 | จบสะอาด: ไฟถนนและบ้านกลับมาสว่างทีละแนวในยามเช้า คนช่วยเหลือกัน ม้าสงบ หอบอสยอดแยกดับไฟ; แก้รูปทรงหอให้เข้าชุด | image_gen.imagegen; System.Drawing resize |
+| `Assets/Resources/UI/bg_ending_messy.png` | 1920×1080 | จบเละ: เมืองกลางคืน หอบอสยังเรืองทอง รถพยาบาลจอด ไฟฉุกเฉินแดง/teal กระดาษหลักฐานปลิว ไม่มีผู้บาดเจ็บหรือความรุนแรง | image_gen.imagegen; System.Drawing resize |
+| `Assets/Resources/UI/portrait_nida.png` | 512×512 | นิดา: หญิงไทยวัยทำงานร้านกาแฟ เสื้อ bone ผ้ากันเปื้อน rust ผมมวย ถืออิฐจากพัสดุ หงุดหงิดและเจ็บใจอย่างมีศักดิ์ศรี | image_gen.imagegen; System.Drawing resize |
+| `Assets/Resources/UI/portrait_phum.png` | 512×512 | ภูมิ: นักศึกษาชายไทย hoodie charcoal/teal มองโทรศัพท์ ก้มหน้าอย่างละอายและกังวล ไฟอุ่น ไม่มีข้อความบนมือถือ | image_gen.imagegen; System.Drawing resize |
+| `Assets/Resources/UI/portrait_somporn.png` | 512×512 | ลุงสมพร: ข้าราชการเกษียณ ผมเงิน แว่น เสื้อเชิ้ต bone ถือโทรศัพท์ปุ่มกดเก่า สีหน้ากังวลแต่มีศักดิ์ศรี ปุ่มไม่มีตัวเลข | image_gen.imagegen; System.Drawing resize |
+| `Assets/Resources/UI/portrait_prae.png` | 512×512 | แพร: พนักงานบริษัทไทย blazer charcoal ท่าทีเสียใจหมดแรง ถือโทรศัพท์ที่แสดงเพียงกราฟพุ่งขึ้นเรือง teal ไม่มีข้อความหรือตัวเลข | image_gen.imagegen; System.Drawing resize |
 
 ## ต้นฉบับจากเครื่องมือและการสร้างซ้ำ
 

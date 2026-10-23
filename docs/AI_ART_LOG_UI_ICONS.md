@@ -14,22 +14,22 @@ All paths below are relative to the project root. PNG images use RGBA. Except th
 
 | Path | Purpose and prompt summary | Size | Tool / processing |
 |---|---|---|---|
-| Assets/Art/UI/AI/icon_gene_fast.png | Fast horse gene: orange/gold horseshoe, six nail holes, three bold speed streaks. | 256×256 | image_gen + System.Drawing resize |
-| Assets/Art/UI/AI/icon_gene_armored.png | Armoured horse gene: equine head in profile with fitted iron/teal face and neck plates and gold rivets. | 256×256 | image_gen + System.Drawing resize |
-| Assets/Art/UI/AI/icon_gene_tracker.png | Tracker horse gene: jade-teal muzzle, visible nostril and alert eye, gold scent ribbons. | 256×256 | image_gen + System.Drawing resize |
-| Assets/Art/UI/AI/icon_gene_stealth.png | Stealth gene; anatomically correct walking horse, dark teal silhouette, bright teal facet edges, hindquarters dissolve into transparent shadow ribbons. | 256×256 | image_gen + System.Drawing resize |
-| Assets/Art/UI/AI/icon_trap_supply.png | Fake supply trap; orange/rust wooden crate, gold reinforced corners, teal bands and tempting four-point sparkles; no labels. | 256×256 | image_gen + System.Drawing resize |
-| Assets/Art/UI/AI/icon_trap_link.png | Phishing trap; teal smartphone with gold hook-shaped chain link on its blank dark screen. | 256×256 | image_gen + System.Drawing resize |
-| Assets/Art/UI/AI/icon_trap_disguise.png | Impersonation trap; bone smiling theatrical mask with sharp dark eyes, rust/teal angular facets. | 256×256 | image_gen + System.Drawing resize |
-| Assets/Art/UI/AI/icon_trap_ambush.png | Ambush trap; tempting gold money bag, shadow silhouette and two watchful eyes behind it; no currency glyphs. | 256×256 | image_gen + System.Drawing resize |
-| Assets/Art/UI/AI/icon_trap_callcenter.png | Callcenter trap; old teal rotary telephone with raised receiver, rust jagged angry ringing waves. | 256×256 | image_gen + System.Drawing resize |
-| Assets/Art/UI/AI/icon_check.png | Correct answer; bold gold check with broad angular facets and restrained teal shadow. | 256×256 | image_gen + System.Drawing resize |
-| Assets/Art/UI/AI/icon_cross.png | Wrong answer; bold rust diagonal cross with orange angular bevels. | 256×256 | image_gen + System.Drawing resize |
-| Assets/Art/UI/AI/ui_panel.png | Charcoal 9-slice panel; straight weathered wood/metal frame, gold/rust corners, quiet empty charcoal centre, transparent corners. | 512×512 | image_gen + System.Drawing resize |
-| Assets/Art/UI/AI/ui_card.png | Blank aged bone-paper square clue card with one teal/gold pushpin at top, empty clean text centre, subtle weathered paper edges. | 512×512 | image_gen + System.Drawing resize |
-| Assets/Art/UI/AI/ui_button.png | Wide empty dark teal-charcoal button plate with bone/gold trim, straight stretchable middle, restrained bevel and worn corners. | 512×128 | image_gen + System.Drawing; alpha-bounds crop and high-quality resize, 4px transparent margin |
-| Assets/Art/UI/AI/ui_stamp_sealed.png | Rust-red distressed rubber stamp border with transparent empty centre; Thai text to be composited separately with installed Windows font. | 512×512 | image_gen + System.Drawing resize; EMPTY FRAME ONLY; Thai text pending |
-| Assets/Art/UI/AI/ui_hotline_banner.png | Wide dark teal hotline banner with large bone/gold telephone receiver icon on left and quiet empty text space on right. | 1024×256 | image_gen + System.Drawing; crop dark exterior bars at source rect (0,74,2172,568), resize to 1024×256 over opaque #11191D |
+| Assets/Resources/UI/icon_gene_fast.png | Fast horse gene: orange/gold horseshoe, six nail holes, three bold speed streaks. | 256×256 | image_gen + System.Drawing resize |
+| Assets/Resources/UI/icon_gene_armored.png | Armoured horse gene: equine head in profile with fitted iron/teal face and neck plates and gold rivets. | 256×256 | image_gen + System.Drawing resize |
+| Assets/Resources/UI/icon_gene_tracker.png | Tracker horse gene: jade-teal muzzle, visible nostril and alert eye, gold scent ribbons. | 256×256 | image_gen + System.Drawing resize |
+| Assets/Resources/UI/icon_gene_stealth.png | Stealth gene; anatomically correct walking horse, dark teal silhouette, bright teal facet edges, hindquarters dissolve into transparent shadow ribbons. | 256×256 | image_gen + System.Drawing resize |
+| Assets/Resources/UI/icon_trap_supply.png | Fake supply trap; orange/rust wooden crate, gold reinforced corners, teal bands and tempting four-point sparkles; no labels. | 256×256 | image_gen + System.Drawing resize |
+| Assets/Resources/UI/icon_trap_link.png | Phishing trap; teal smartphone with gold hook-shaped chain link on its blank dark screen. | 256×256 | image_gen + System.Drawing resize |
+| Assets/Resources/UI/icon_trap_disguise.png | Impersonation trap; bone smiling theatrical mask with sharp dark eyes, rust/teal angular facets. | 256×256 | image_gen + System.Drawing resize |
+| Assets/Resources/UI/icon_trap_ambush.png | Ambush trap; tempting gold money bag, shadow silhouette and two watchful eyes behind it; no currency glyphs. | 256×256 | image_gen + System.Drawing resize |
+| Assets/Resources/UI/icon_trap_callcenter.png | Callcenter trap; old teal rotary telephone with raised receiver, rust jagged angry ringing waves. | 256×256 | image_gen + System.Drawing resize |
+| Assets/Resources/UI/icon_check.png | Correct answer; bold gold check with broad angular facets and restrained teal shadow. | 256×256 | image_gen + System.Drawing resize |
+| Assets/Resources/UI/icon_cross.png | Wrong answer; bold rust diagonal cross with orange angular bevels. | 256×256 | image_gen + System.Drawing resize |
+| Assets/Resources/UI/ui_panel.png | Charcoal 9-slice panel; straight weathered wood/metal frame, gold/rust corners, quiet empty charcoal centre, transparent corners. | 512×512 | image_gen + System.Drawing resize |
+| Assets/Resources/UI/ui_card.png | Blank aged bone-paper square clue card with one teal/gold pushpin at top, empty clean text centre, subtle weathered paper edges. | 512×512 | image_gen + System.Drawing resize |
+| Assets/Resources/UI/ui_button.png | Wide empty dark teal-charcoal button plate with bone/gold trim, straight stretchable middle, restrained bevel and worn corners. | 512×128 | image_gen + System.Drawing; alpha-bounds crop and high-quality resize, 4px transparent margin |
+| Assets/Resources/UI/ui_stamp_sealed.png | Rust-red distressed rubber stamp border with transparent empty centre; Thai text to be composited separately with installed Windows font. | 512×512 | image_gen + System.Drawing resize; EMPTY FRAME ONLY; Thai text pending |
+| Assets/Resources/UI/ui_hotline_banner.png | Wide dark teal hotline banner with large bone/gold telephone receiver icon on left and quiet empty text space on right. | 1024×256 | image_gen + System.Drawing; crop dark exterior bars at source rect (0,74,2172,568), resize to 1024×256 over opaque #11191D |
 | docs/AI_ART_LOG_UI_ICONS.md | This provenance, prompt-summary and verification log; includes every created final and automatic generation source. | Markdown | Codex via PowerShell and Node filesystem tools |
 
 ## Automatic image-generation sources

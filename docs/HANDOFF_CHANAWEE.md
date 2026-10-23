@@ -23,7 +23,14 @@
 | เนื้อหา | 3 คดี + บอส, ข้อความทั้งหมดในเกม ภาษาไทยเกลาแล้ว | `Resources/Content/game_content.json` |
 | อาร์ต | เท็กซ์เจอร์/ไอคอน/ภาพหน้าจอ ทำโดย AI ตามกฎทีม (บันทึกใน `docs/AI_ART_LOG*.md`) ภาพหน้าจออยู่ใน `Resources/UI` | `Assets/Art/*/AI`, `Assets/Resources/UI` |
 
-เทสต์: EditMode + PlayMode ผ่านทั้งหมดใน batchmode (ดูข้อความ commit) **ยังไม่มีคนลองเล่นจริง**
+เทสต์: EditMode 25/25 และ PlayMode 19/19 ผ่านใน batchmode · Windows build ผ่าน (116 MB) · ตรวจหน้าจอจริงจาก build ด้วยโหมดทัวร์ (ภาษาไทยแสดงถูก) **ยังไม่มีคนลองเล่นจนจบด้วยมือ**
+
+## Build Windows / ตรวจหน้าจอ
+
+- เมนู **Tools > Scammer No Scamming > Build Windows** หรือ batch: `Unity.exe -batchmode -quit -projectPath . -executeMethod WindowsBuild.Build` ได้ `Builds/Windows/` (zip ทั้งโฟลเดอร์ขึ้น itch.io)
+- ตรวจทุกหน้าจอโดยไม่ต้องกดเอง: `Builds/Windows/ScammerNoScamming.exe -screen-fullscreen 0 -screentour <โฟลเดอร์>` จะจับภาพ 11 หน้าจอแล้วปิดเอง
+- `CaseFlowDemo.unity` ถูกตั้งเป็นฉากแรกใน Build Settings แล้ว ถ้าเพื่อนมีฉากหลักของตัวเอง ย้ายลำดับได้
+- ชื่อเกมใน Player Settings ยังเป็น "My project" (หน้าต่างเกมขึ้นชื่อนี้) ควรเปลี่ยนเป็น Scammer No Scamming ก่อนส่ง ฉันไม่แก้ ProjectSettings ของเพื่อนเอง
 
 ## จุดเชื่อมกับงานเพื่อน (ข้อ 1-7, 14)
 

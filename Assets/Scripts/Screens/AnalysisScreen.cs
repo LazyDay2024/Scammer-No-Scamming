@@ -84,11 +84,11 @@ namespace ScammerNoScamming
             var style = ThaiGui.Text(30, card != null ? ThaiGui.Night : ThaiGui.Bone);
             foreach (var clue in session.Case.Clues)
             {
-                float h = Mathf.Max(90f, style.CalcHeight(new GUIContent(clue), area.width - 80f) + 40f);
+                float h = Mathf.Max(90f, style.CalcHeight(new GUIContent(clue), area.width - 140f) + 40f);
                 var r = new Rect(area.x, y, area.width, h);
                 if (card != null) GUI.DrawTexture(r, card, ScaleMode.StretchToFill);
                 else ThaiGui.Panel(r, 0.8f);
-                GUI.Label(new Rect(r.x + 40f, r.y + 20f, r.width - 80f, r.height - 30f), clue, style);
+                GUI.Label(new Rect(r.x + 70f, r.y + 20f, r.width - 140f, r.height - 30f), clue, style);
                 y += h + 16f;
             }
             if (withStart && GUI.Button(new Rect(area.x, area.yMax - 100f, area.width, 90f),

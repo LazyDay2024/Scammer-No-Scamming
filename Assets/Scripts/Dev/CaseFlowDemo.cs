@@ -241,7 +241,7 @@ namespace ScammerNoScamming
         {
             if (step == Step.Idle || step == Step.Done || GameScreen.AnyOpen || current == null) return;
             var canvas = ThaiGui.BeginCanvas();
-            var hud = new Rect(40f, 36f, 760f, 200f);
+            var hud = new Rect(40f, 70f, 760f, 200f);
             GUI.DrawTexture(hud, ThaiGui.Solid(new Color(0.04f, 0.07f, 0.08f, 0.7f)));
             GUI.DrawTexture(new Rect(hud.x, hud.y, 6f, hud.height), ThaiGui.Solid(ThaiGui.Orange));
             GUI.Label(new Rect(hud.x + 26f, hud.y + 14f, 720f, 50f), current.Title, ThaiGui.Text(34, ThaiGui.Gold, FontStyle.Bold));
