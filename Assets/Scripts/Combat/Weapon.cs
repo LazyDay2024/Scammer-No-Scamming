@@ -17,11 +17,15 @@ namespace ScammerNoScamming
         public float Damage { get => damage; set => damage = value; }
         public float Range { get => range; set => range = value; }
         public float FireInterval { get => fireInterval; set => fireInterval = value; }
+        public RevolverAmmo Ammo => GetComponent<RevolverAmmo>();
 
         public bool TryFire(Vector3 origin, Vector3 direction, Faction owner, out ShotResult result)
         {
             result = default;
             if (Time.time < nextFireTime) return false;
+            // Look up at shot time: sandbox components can be added after this weapon's Awake.
+            var ammo = Ammo;
+            if (ammo != null && !ammo.TryConsumeRound()) return false;
             nextFireTime = Time.time + fireInterval;
 
             result = Resolve(origin, direction, owner);

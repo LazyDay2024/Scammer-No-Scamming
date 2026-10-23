@@ -74,6 +74,7 @@ namespace ScammerNoScamming
 
             player.AddComponent<PlayerController>();
             player.AddComponent<PlayerMount>();
+            player.AddComponent<RevolverAmmo>();
             player.AddComponent<PlayerWeaponController>();
             player.AddComponent<PlayerHud>();
             var viewModel = player.AddComponent<RevolverViewModel>();
@@ -81,7 +82,15 @@ namespace ScammerNoScamming
 #if UNITY_EDITOR
             // Serialized asset references survive into the player; no AssetDatabase at runtime.
             viewModel.revolverPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/ThirdParty/Quaternius/Props/Revolver_1.fbx");
+                "Assets/Art/Models/WesternRevolver/WesternRevolver.fbx");
+            viewModel.metalMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Art/Models/WesternRevolver/gunMetal.mat");
+            viewModel.handleMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(
+                "Assets/Art/Models/WesternRevolver/gunHandle.mat");
+            viewModel.metalTexture = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Art/Models/WesternRevolver/Textures/gunMetal_basic.jpg");
+            viewModel.handleTexture = UnityEditor.AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Art/Models/WesternRevolver/Textures/gunHandle_wood.jpg");
             feel.particleShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/FeelParticle.shader");
 #endif
             cameraObject.AddComponent<PlayerCameraFeel>();

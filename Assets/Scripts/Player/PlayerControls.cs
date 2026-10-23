@@ -9,6 +9,7 @@ namespace ScammerNoScamming
         public InputAction Move { get; private set; }
         public InputAction Look { get; private set; }
         public InputAction Fire { get; private set; }
+        public InputAction Reload { get; private set; }
         public InputAction Jump { get; private set; }
         public InputAction Sprint { get; private set; }
         public InputAction Interact { get; private set; }
@@ -26,11 +27,12 @@ namespace ScammerNoScamming
 
             Look = new InputAction("Look", InputActionType.Value, "<Mouse>/delta", expectedControlType: "Vector2");
             Fire = new InputAction("Fire", InputActionType.Button, "<Mouse>/leftButton");
+            Reload = new InputAction("Reload", InputActionType.Button, "<Keyboard>/r");
             Jump = new InputAction("Jump", InputActionType.Button, "<Keyboard>/space");
             Sprint = new InputAction("Sprint", InputActionType.Button, "<Keyboard>/leftShift");
             Interact = new InputAction("Interact", InputActionType.Button, "<Keyboard>/e");
 
-            all = new[] { Move, Look, Fire, Jump, Sprint, Interact };
+            all = new[] { Move, Look, Fire, Reload, Jump, Sprint, Interact };
         }
 
         void OnEnable()

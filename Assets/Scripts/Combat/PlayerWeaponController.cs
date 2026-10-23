@@ -20,6 +20,7 @@ namespace ScammerNoScamming
 
         public float LastHitTime { get; private set; } = -10f;
         public HitscanWeapon Weapon => weapon;
+        public RevolverAmmo Ammo => weapon != null ? weapon.Ammo : GetComponent<RevolverAmmo>();
 
         PlayerControls controls;
         PlayerMount mount;
@@ -34,6 +35,8 @@ namespace ScammerNoScamming
             mount = GetComponent<PlayerMount>();
             weapon = GetComponent<HitscanWeapon>();
             if (weapon == null) weapon = gameObject.AddComponent<HitscanWeapon>();
+            // Older serialized player scenes also opt in without rebuilding the sandbox.
+            if (GetComponent<RevolverAmmo>() == null) gameObject.AddComponent<RevolverAmmo>();
             weapon.Ignore = IsOwnCollider;
         }
 
@@ -43,6 +46,16 @@ namespace ScammerNoScamming
             CreateTracer();
         }
 
+        void OnEnable() => SupplyCrate.Collected += OnSupplyCollected;
+
+        void OnDisable() => SupplyCrate.Collected -= OnSupplyCollected;
+
+        void OnSupplyCollected(SupplyCrate crate, GameObject user)
+        {
+            if (user != gameObject || crate == null || crate.isFake) return;
+            Ammo?.RefillReserve();
+        }
+
         void Update()
         {
             if (tracer != null && tracer.enabled && Time.time >= tracerHideTime)
@@ -50,6 +63,8 @@ namespace ScammerNoScamming
 
             if (aimCamera == null) return;
             if (requireLockedCursor && Cursor.lockState != CursorLockMode.Locked) return;
+
+            if (controls.Reload.WasPressedThisFrame()) Ammo?.TryReload();
 
             bool wantsToFire = automatic ? controls.Fire.IsPressed() : controls.Fire.WasPressedThisFrame();
             if (!wantsToFire) return;
