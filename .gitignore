@@ -51,3 +51,7 @@ crashlytics-build.properties
 # OS
 .DS_Store
 Thumbs.db
+
+# pitch build intermediates (regenerate with docs/pitch/export_pptx_data.py)
+docs/pitch/pptx_bg/
+docs/pitch/pptx_slides.json
