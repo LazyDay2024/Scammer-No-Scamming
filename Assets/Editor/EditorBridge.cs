@@ -65,6 +65,17 @@ public static class EditorBridge
                 case "sceneshot": Shot(SceneView.lastActiveSceneView?.camera, arg); break;
                 case "look": Look(arg); break;
                 case "tp": Teleport(arg); break;
+                case "raid": // raid <caseId>: skip the station and stand at that case's hideout door, raid running
+                    var flow = UnityEngine.Object.FindAnyObjectByType<ScammerNoScamming.CaseFlowDemo>() ?? throw new InvalidOperationException("enter play mode");
+                    foreach (var screen in UnityEngine.Object.FindObjectsByType<ScammerNoScamming.GameScreen>(FindObjectsSortMode.None)) screen.Close();
+                    Time.timeScale = 1f;
+                    var definition = ScammerNoScamming.CaseDatabase.LoadDefault().Find(string.IsNullOrEmpty(arg) ? "CASE_01_FAKE_SHOP" : arg)
+                        ?? throw new ArgumentException("no case " + arg);
+                    flow.DebugStartAction(definition);
+                    var hideout = ScammerNoScamming.Hideout.Find(definition.HideoutId) ?? throw new ArgumentException("no hideout");
+                    Vector3 door = hideout.transform.TransformPoint(new Vector3(0f, .2f, -4f));
+                    Teleport($"{door.x} {door.y} {door.z} {hideout.transform.eulerAngles.y} 0");
+                    break;
                 case "invoke": // invoke <ComponentType> <method>: calls a no-argument method on the first instance in the scene
                     var ip = arg.Split(' ');
                     var componentType = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.GetType("ScammerNoScamming." + ip[0]) ?? a.GetType(ip[0]))
