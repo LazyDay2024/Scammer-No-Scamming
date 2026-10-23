@@ -138,6 +138,22 @@ public static class WorldSceneArt
     {
         foreach (var renderer in horse.GetComponentsInChildren<Renderer>()) renderer.enabled = false;
         const string path = "Animals/Horse";
+        var realistic = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Resources/Scammer/HorseModel.prefab");
+        if (realistic != null)
+        {
+            var horseModel = (GameObject)PrefabUtility.InstantiatePrefab(realistic);
+            horseModel.transform.SetParent(horse.transform, false);
+            var parts = horseModel.GetComponentsInChildren<Renderer>();
+            if (parts.Length > 0)
+            {
+                Bounds hb = parts[0].bounds; foreach (var r in parts) hb.Encapsulate(r.bounds);
+                horseModel.transform.localScale *= 2.2f / Mathf.Max(.01f, hb.size.y);
+            }
+            var drive = horse.AddComponent<HorseVisual>();
+            drive.horse = horse.GetComponent<HorseController>();
+            drive.animator = horseModel.GetComponentInChildren<Animator>();
+            return;
+        }
         var model = Model(horse.transform, path, Vector3.zero, 2.15f);
         // The CC0 horse is nearly black brown and read as a silhouette at golden hour; repaint it chestnut.
         var coat = Paint("HorseCoat", new Color(.46f, .25f, .13f));

@@ -20,7 +20,7 @@ namespace ScammerNoScamming
         void OnEnable()
         {
             if (horse == null) horse = GetComponent<HorseController>();
-            if (animator == null || idle == null || walk == null || run == null) return;
+            if (animator == null || idle == null || walk == null || run == null || animator.runtimeAnimatorController != null) return;
             animator.applyRootMotion = false;
             graph = PlayableGraph.Create("Horse locomotion");
             mixer = AnimationMixerPlayable.Create(graph, 3);
@@ -39,6 +39,14 @@ namespace ScammerNoScamming
 
         void Update()
         {
+            // Nithis's realistic horse has its own controller (Speed parameter, Idle/Walk): play the walk faster at a gallop.
+            if (!graph.IsValid() && animator != null && animator.runtimeAnimatorController != null && horse != null)
+            {
+                float v = Mathf.Abs(horse.Speed);
+                animator.SetFloat("Speed", v);
+                animator.speed = v > .3f ? Mathf.Clamp(v / 2.5f, 1f, 3.2f) : 1f;
+                return;
+            }
             if (!graph.IsValid() || horse == null) return;
             float speed = Mathf.Abs(horse.Speed);
             float runBlend = Mathf.InverseLerp(horse.trotSpeed * .8f, horse.gallopSpeed, speed);

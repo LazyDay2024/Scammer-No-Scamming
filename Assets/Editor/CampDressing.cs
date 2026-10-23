@@ -448,7 +448,9 @@ public static class CampDressing
 
     static void Label(Transform parent, string text, Vector3 position, float size)
     {
-        var label = WorldSceneArt.Empty(parent, text, position, 180f).gameObject.AddComponent<TextMesh>();
+        // TextMesh reads from its -Z side, which is the side these signs face; depth-tested via WorldLabel.
+        var label = WorldSceneArt.Empty(parent, text, position, 0f).gameObject.AddComponent<TextMesh>();
+        label.gameObject.AddComponent<WorldLabel>().width = 0f;
         label.text = text;
         label.anchor = TextAnchor.MiddleCenter;
         label.alignment = TextAlignment.Center;
