@@ -13,7 +13,6 @@ namespace ScammerNoScamming
         public static event Action<PlayerCharacter> PlayerDied;
         // Raised just before the action phase is replayed after a death.
         public static event Action ActionReplaying;
-        public static event Action<Trap> TrapSprung;
         public static event Action<float, float> TroubleChanged;
         public static event Action TroubleFull;
 
@@ -21,7 +20,6 @@ namespace ScammerNoScamming
         public static void RaisePlayerFired(Vector3 noisePosition) => PlayerFired?.Invoke(noisePosition);
         public static void RaisePlayerDied(PlayerCharacter player) => PlayerDied?.Invoke(player);
         public static void RaiseActionReplaying() => ActionReplaying?.Invoke();
-        public static void RaiseTrapSprung(Trap trap) => TrapSprung?.Invoke(trap);
         public static void RaiseTroubleChanged(float current, float max) => TroubleChanged?.Invoke(current, max);
         public static void RaiseTroubleFull() => TroubleFull?.Invoke();
 
@@ -33,7 +31,6 @@ namespace ScammerNoScamming
             PlayerFired = null;
             PlayerDied = null;
             ActionReplaying = null;
-            TrapSprung = null;
             TroubleChanged = null;
             TroubleFull = null;
         }

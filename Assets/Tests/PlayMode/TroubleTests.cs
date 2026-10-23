@@ -109,19 +109,16 @@ namespace ScammerNoScamming.Tests
         }
 
         [UnityTest]
-        public IEnumerator A_sprung_trap_adds_its_trouble_cost()
+        public IEnumerator A_sprung_trap_adds_trap_trouble()
         {
             MakePlayer();
-            var spot = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            spot.transform.position = new Vector3(0f, 0.5f, 3f);
-            spawned.Add(spot);
-            var trap = spot.AddComponent<ProximityTrap>();
-            trap.triggers = TriggerKind.Enter;
-            trap.troubleCost = 7f;
+            var bait = new GameObject("Bait").AddComponent<AmbushBait>(); // the teammate's lure trap
+            bait.transform.position = player.transform.position;
+            spawned.Add(bait.gameObject);
             yield return new WaitForSeconds(0.2f);
 
-            Assert.IsTrue(trap.IsSprung);
-            Assert.AreEqual(7f, TroubleMeter.Action, 0.001f);
+            Assert.IsTrue(bait.HasSprung);
+            Assert.AreEqual(TroubleMeter.TrapCost, TroubleMeter.Action, 0.001f);
         }
 
         [UnityTest]

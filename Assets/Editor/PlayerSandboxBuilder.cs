@@ -18,7 +18,15 @@ public static class PlayerSandboxBuilder
         var world = PlayerSandbox.Create(MaterialFor);
         world.Player.GetComponent<PlayerWeaponController>().tracerMaterial = GetMaterial("Tracer", new Color(1f, 0.9f, 0.4f), "Universal Render Pipeline/Unlit");
 
-        PlayerSandbox.AddTrapCourse(MaterialFor);
+        // Corrupt police ride in when Trouble fills up.
+        var raid = new GameObject("Corrupt police raid");
+        var police = raid.AddComponent<AmbushGroup>();
+        police.kind = AmbushKind.Riders;
+        police.count = 4;
+        police.minRadius = 35f;
+        police.maxRadius = 45f;
+        police.material = MaterialFor(new Color(0.15f, 0.2f, 0.45f));
+        raid.AddComponent<CorruptPoliceRaid>();
         world.Spawner.enemyMaterial = MaterialFor(new Color(0.75f, 0.2f, 0.2f));
 
         EditorSceneManager.SaveScene(scene, ScenePath);

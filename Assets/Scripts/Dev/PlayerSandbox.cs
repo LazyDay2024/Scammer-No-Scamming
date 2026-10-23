@@ -121,12 +121,6 @@ namespace ScammerNoScamming
             return BuildFootBody("Scammer", position, new Color(0.75f, 0.2f, 0.2f), materialFor).AddComponent<ShooterScammer>();
         }
 
-        // Looks like a bystander (grey-blue) until the player makes eye contact.
-        public static DisguisedScammer CreateDisguised(Vector3 position, Func<Color, Material> materialFor = null)
-        {
-            return BuildFootBody("Passer-by", position, new Color(0.45f, 0.5f, 0.6f), materialFor).AddComponent<DisguisedScammer>();
-        }
-
         // People the player must not shoot: victims (yellow) and forced workers (green).
         public static Victim CreateVictim(Vector3 position, Func<Color, Material> materialFor = null)
         {
@@ -148,81 +142,6 @@ namespace ScammerNoScamming
             AddZone(body, health, "Body", HitZoneType.Body, new Vector3(0f, 0.7f, 0f), new Vector3(0.8f, 1.4f, 0.8f), skin, materialFor);
             AddZone(body, health, "Head", HitZoneType.Head, new Vector3(0f, 1.65f, 0f), new Vector3(0.45f, 0.45f, 0.45f), skin, materialFor);
             return body;
-        }
-
-        // A small course of supply boxes, traps and a disguised scammer ahead of the player start.
-        // The editor builder adds it to the saved scene; tests build their own pieces.
-        public static void AddTrapCourse(Func<Color, Material> materialFor = null)
-        {
-            Prop("Supply box", new Vector3(3f, 0.5f, 4f), Vector3.one, new Color(0.25f, 0.45f, 0.25f), materialFor).AddComponent<SupplyBox>();
-
-            var fake = Prop("Supply box (free!)", new Vector3(-6f, 0.5f, 8f), Vector3.one, new Color(0.3f, 0.5f, 0.2f), materialFor);
-            Ambush(fake, AmbushKind.OnFoot, 2, 8f, 12f, materialFor);
-            fake.AddComponent<FakeSupplyBox>();
-
-            var terminal = Prop("Terminal", new Vector3(8f, 0.75f, 10f), new Vector3(0.8f, 1.5f, 0.4f), new Color(0.2f, 0.4f, 0.8f), materialFor);
-            Ambush(terminal, AmbushKind.Riders, 3, 30f, 40f, materialFor);
-            terminal.AddComponent<LinkTrap>();
-
-            var hidden = new GameObject("Ambush");
-            hidden.transform.position = new Vector3(20f, 0f, 30f);
-            var spots = new Transform[3];
-            for (int i = 0; i < spots.Length; i++)
-            {
-                spots[i] = new GameObject("Hiding spot " + i).transform;
-                spots[i].SetParent(hidden.transform, false);
-                spots[i].localPosition = new Vector3((i - 1) * 6f, 0f, 4f);
-            }
-            Ambush(hidden, AmbushKind.OnFoot, 3, 0f, 0f, materialFor).points = spots;
-            hidden.AddComponent<ProximityTrap>();
-
-            var callCenter = Prop("Call center", new Vector3(-20f, 3f, 40f), new Vector3(10f, 6f, 6f), new Color(0.35f, 0.35f, 0.4f), materialFor);
-            var decoys = new Transform[3];
-            for (int i = 0; i < decoys.Length; i++)
-            {
-                var decoy = Prop("Decoy " + i, new Vector3(-23f + i * 3f, 0.9f, 35f), new Vector3(0.6f, 1.8f, 0.6f), new Color(0.45f, 0.5f, 0.6f), materialFor);
-                decoy.transform.SetParent(callCenter.transform, true);
-                decoys[i] = decoy.transform;
-            }
-            Ambush(callCenter, AmbushKind.OnFoot, 3, 0f, 0f, materialFor).points = decoys;
-            var trap = callCenter.AddComponent<CallCenterTrap>();
-            trap.triggers = TriggerKind.Enter;
-            trap.enterRadius = 14f;
-            trap.decoys = decoys;
-
-            var passerBy = CreateDisguised(new Vector3(6f, 0f, 45f), materialFor);
-            passerBy.patrolRadius = 3f;
-
-            // A victim hiding by the call center and workers held at the hidden ambush spot.
-            CreateVictim(new Vector3(-14f, 0f, 37.5f), materialFor);
-            CreateForcedWorker(new Vector3(24f, 0f, 36f), materialFor);
-            CreateForcedWorker(new Vector3(16f, 0f, 36f), materialFor);
-
-            var raid = new GameObject("Corrupt police raid");
-            var police = Ambush(raid, AmbushKind.Riders, 4, 35f, 45f, null);
-            if (materialFor != null) police.material = materialFor(new Color(0.15f, 0.2f, 0.45f));
-            raid.AddComponent<CorruptPoliceRaid>();
-        }
-
-        internal static GameObject Prop(string name, Vector3 position, Vector3 scale, Color color, Func<Color, Material> materialFor)
-        {
-            var prop = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            prop.name = name;
-            prop.transform.position = position;
-            prop.transform.localScale = scale;
-            Tint(prop, color, materialFor);
-            return prop;
-        }
-
-        static AmbushGroup Ambush(GameObject owner, AmbushKind kind, int count, float minRadius, float maxRadius, Func<Color, Material> materialFor)
-        {
-            var group = owner.AddComponent<AmbushGroup>();
-            group.kind = kind;
-            if (materialFor != null) group.material = materialFor(new Color(0.75f, 0.2f, 0.2f));
-            group.count = count;
-            group.minRadius = minRadius;
-            group.maxRadius = maxRadius;
-            return group;
         }
 
         // A scammer on a horse: the horse and the rider each carry their own Health and hit zones.

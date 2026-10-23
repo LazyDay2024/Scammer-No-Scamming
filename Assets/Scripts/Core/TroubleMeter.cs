@@ -23,6 +23,8 @@ namespace ScammerNoScamming
         public static float ExtraGeneCost = 10f;
         public static float WrongAnswerCost = 15f;
         public static float WrongTargetCost = 20f;
+        // Whether falling for a trap should cost Trouble is still open for the team (PLAN 7.2).
+        public static float TrapCost = 10f;
 
         public static float Carried { get; private set; }
         public static float Action { get; private set; }
@@ -60,7 +62,7 @@ namespace ScammerNoScamming
             Carried = 0f;
             Action = 0f;
             GameEvents.PlayerFired += _ => Add(TroubleSource.Gunshot, GunshotCost);
-            GameEvents.TrapSprung += trap => Add(TroubleSource.Trap, trap.troubleCost);
+            ScammerNoScamming.Trap.Sprung += _ => Add(TroubleSource.Trap, TrapCost);
             GameEvents.ActionReplaying += ResetAction;
         }
     }

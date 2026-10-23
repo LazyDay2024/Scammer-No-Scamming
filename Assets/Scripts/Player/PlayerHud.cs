@@ -91,7 +91,6 @@ namespace ScammerNoScamming
             string prompt = null;
             if (mount != null)
                 prompt = mount.IsMounted ? "[E] Dismount" : mount.Candidate != null ? "[E] Mount horse" : null;
-            if (prompt == null) prompt = Interaction.CurrentPrompt;
             if (prompt != null)
                 GUI.Label(new Rect(0f, cy + 60f, Screen.width, 40f), prompt, promptStyle);
 
@@ -101,7 +100,6 @@ namespace ScammerNoScamming
             if (gun != null)
                 GUI.Label(new Rect(Screen.width - 220f, Screen.height - 40f, 200f, 28f),
                     string.Format("AMMO {0}/{1}", gun.Ammo, gun.maxAmmo), popupStyle);
-            DrawObjective();
             DrawHealthAndLog();
             DrawTrouble();
             DrawPopups();
@@ -121,15 +119,6 @@ namespace ScammerNoScamming
             GUI.Label(new Rect(0f, cy - 40f, Screen.width, 40f), "YOU DIED", promptStyle);
             GUI.Label(new Rect(0f, cy, Screen.width, 40f), line, promptStyle);
             GUI.color = previous;
-        }
-
-        void DrawObjective()
-        {
-            var stage = CaseStage.Active;
-            if (stage == null || stage.Case == null || stage.Hideout == null) return;
-            bool known = GameManager.Current == null || GameManager.Current.HideoutRevealed;
-            string where = known ? "the " + stage.Hideout.label + " hideout" : "the hideout (location unknown)";
-            GUI.Label(new Rect(12f, Screen.height - 56f, 700f, 24f), "Case: " + stage.Case.title + " - raid " + where, hintStyle);
         }
 
         void DrawTrouble()

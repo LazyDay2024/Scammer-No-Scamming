@@ -88,41 +88,37 @@
 - scene และ prefab merge ยาก ให้มีเจ้าของคนเดียวต่อไฟล์
 - ติดตั้งแพ็กเกจหรือสกิลใหม่ต้องให้เจ้าของอนุมัติ
 
-## สถานะการพัฒนา (อัปเดต 2026-10-23)
+## สถานะการพัฒนา (อัปเดต 2026-10-23 ดึก หลังรวมงานกับ chanawee)
 
-ระบบ Player เบื้องต้น: เดิน + มองด้วยเมาส์, ขึ้น/ลงม้า (E), ควบม้า (W/S/A/D, Shift วิ่งเต็มสปีด, Space กระโดด), ยิง hitscan (คลิกซ้าย)
+**สถานะ git**: งานฝั่ง System (ข้อ 1-5, 8 บางส่วน) อยู่บน branch `feature/combat-enemies-trouble` ซึ่ง merge `origin/main` (งาน chanawee ข้อ 9-13, 15 + อาร์ต + pitch) เข้ามาแล้ว **ส่วนที่ซ้ำกันยึดของ chanawee** (`Trap` และกับดักทั้งหมด, `Hideout`, `CaseDefinition`/`CaseDatabase`, หน้าจอ, `WindowsBuild`) ส่วนของเราที่ซ้ำถูกลบออก: กับดัก 2b ชุดเดิม, `DisguisedScammer` แบบ Enemy, `GameManager`/`CaseStage`/`RaidSandbox`/ฉาก CaseBoard-Raid-Debrief ชั่วคราว และ `WindowsBuild` แบบ zip เทสต์หลัง merge: EditMode 25 ตัว (ของ chanawee) และ PlayMode 51 ตัว ผ่านทั้งหมด
 
-- โค้ดอยู่ใน `Assets/Scripts/` (asmdef `ScammerNoScamming.Runtime`): `Player/` (PlayerControls, PlayerController, PlayerMount, PlayerHud), `Horse/HorseController`, `Combat/` (Health, HitZone, IDamageable, DamageInfo, HitZoneType, Faction, Weapon, HitscanWeapon, ShotResult, PlayerWeaponController), `Dev/PlayerSandbox` (สร้างโลกทดสอบจากโค้ด) และมี `Assets/Scripts/City/` (CityBuilder, CityMaterials, CityMeshes) ที่ไม่ได้มาจาก session นี้ ผมยังไม่ได้อ่านเนื้อหา
-- ปุ่มถูกสร้างจากโค้ดใน `PlayerControls` ไม่ได้ใช้ `InputSystem_Actions.inputactions`
-- ฉากทดสอบ: `Assets/Scenes/PlayerSandbox.unity` สร้างใหม่ได้จากเมนู Tools > Scammer No Scamming > Build Player Sandbox Scene
-- ค่าเดินเครื่องของม้า (trotSpeed, gallopSpeed, turnRate ฯลฯ) เป็น public field เตรียมให้ระบบยีนปรับค่าได้
-- `PlayerWeaponController.Fired` (ตำแหน่งที่ยิง) และ `Weapon.Fired` (`ShotResult` ที่มีตำแหน่งเสียง) เตรียมต่อกับ Trouble Meter (ยิงเสียงดัง)
-- **ระบบต่อสู้แยกตามเอกสารแล้ว (2026-10-23)**: `Health` รับ `DamageInfo` และมี event `Damaged`, `HitZone` ปรับดาเมตตามจุด (หัว/ตัว/เท้า), `Weapon` (abstract) เก็บดาเมต ระยะ และคูลดาวน์, `HitscanWeapon` ยิงรังสี, `PlayerWeaponController` อ่านปุ่มและเล็งจากกล้อง ชื่อ `Gun` เดิมถูกเปลี่ยนเป็น `PlayerWeaponController` โดยเก็บ GUID เดิมไว้ (ฉากเก่ายังชี้ถูก แต่ค่าในคอมโพเนนต์ `Gun` เก่า เช่น damage/range กลับเป็นค่าเริ่มต้น)
-- **ศัตรูรอบ 1 (2026-10-23, ยังไม่ได้ลองเล่นจริง)**: สายคลาส `Character` (ถือ Health + Faction) → `PlayerCharacter` (เลือด 100 ยังไม่มีตาย/เล่นซ้ำ) และ `Npc` (Tick ขณะมีชีวิต, ตายแล้วล้ม-ค้าง-จมหาย) → `Enemy` (abstract: ลาดตระเวนด้วย `NavMeshAgent` สุ่มจุดในรัศมีแล้วเลือกจุดที่อยู่ข้างหน้าสุด, เห็นด้วยสายตา+ได้ยินเสียงปืนผ่าน `Weapon.Fired`, เรียก `Attack`) → `ShooterScammer` (ยิง hitscan มีสุ่มกระจาย) ถ้าใต้เท้าไม่มี NavMesh จะเดินเส้นตรงแทน
-- **NavMesh**: ใส่ `RuntimeNavMesh` ในฉากเพื่อเบกตอนเริ่มเล่น (ไม่ต้องเก็บ asset) ใช้แล้วใน `PlayerSandbox` ส่วนฉากเมือง (`CitySandbox`) ยังไม่มี ต้องให้เจ้าของฉากใส่ก่อนศัตรูจะเดินหลบตึกได้
-- **ผู้เล่นบนม้าโดนยิงได้**: `PlayerCharacter` มี `RiderHitbox` เปิดเฉพาะตอนขี่ ยิงต่ำจะโดนตัวม้า (ยังไม่มี Health) ยิงสูงข้ามหลังม้าจะโดนคน
-- **Dev**: `EnemySpawner` กด F สร้างสแกมเมอร์ข้างหน้าผู้เล่น 15 ม. (ต้องรันเมนู Tools > Scammer No Scamming > Build Player Sandbox Scene ใหม่เพื่อให้ฉากที่บันทึกมี spawner + NavMesh) `PlayerHud` แสดง HP, ล็อกดาเมตที่รับ (ดาเมต/จุด/ฝ่าย) และตัวเลขดาเมตลอยเหนือจุดที่ยิงโดน ผ่าน `Health.AnyDamaged`
-- **รอบ 2a (2026-10-23)**: `RiderScammer : ShooterScammer` ขี่ม้าไล่ผู้เล่นด้วย NavMeshAgent ยิงระหว่างทางและหยุดยิงเมื่อเข้าใกล้ 8 ม. ม้ากับคนมี `Health` แยกกัน (โครงลูกชื่อ `Horse` และ `Rider`) ยิงม้าเลือดเข้าม้า ตัวคูณดาเมตม้า 0.5 และเลือดม้า 6 (ค่าชั่วคราว) ม้าตาย = คนตกม้า สู้ต่อบนพื้นด้วยความเร็วเดิน ม้าถูกทิ้งแล้วล้ม-จมหาย คนตาย = ทั้งก้อนล้ม
-- **ม้าของผู้เล่นมี Health 10 (ค่าชั่วคราว)**: ม้าล้ม = ผู้เล่นถูกเหวี่ยงลง ขี่ม้าตัวนั้นไม่ได้อีก (ยังไม่ได้ตัดสินใจว่าม้าผู้เล่นตายแล้วเกิดอะไรต่อ เช่น เกิดม้าใหม่ที่สถานี)
-- `EnemySpawner`: F สร้างสแกมเมอร์เดินเท้า, G สร้างสแกมเมอร์ขี่ม้า
-- เทสต์ PlayMode รวม 30 ตัว (ศัตรู 11, ม้า/ขี่ 2 ในชุดผู้เล่น) ผ่าน 4 จาก 4 รอบล่าสุด ตัวเลขดาเมต/รัศมีเป็นค่าชั่วคราว ยังไม่ได้ลองเล่นจริง
-- **รอบ 2b กับดัก+กระสุน (2026-10-23, ตัดสินใจกับเจ้าของแล้ว)**: ระบบกระสุนจำกัด (`PlayerWeaponController.Ammo/maxAmmo` = 30 ไม่มีรีโหลด เติมจาก `SupplyBox` จริงที่ตั้งได้ทั้งนอกและในสน.) โครงกับดัก `Trap` (ทำงานครั้งเดียว มี event `Sprung` และ `troubleCost` ไว้ต่อ Trouble) → `InteractTrap` → `LinkTrap` (กดลิงก์ = ศัตรูขี่ม้า 3 ตัวเกิดเป็นวงรอบผู้เล่น 30-40 ม.) / `FakeSupplyBox` (กล่องปลอม = ปล้นกระสุนเหลือ 0 + สแกมเมอร์ไล่ยิง) และ `ProximityTrap` (พวกซุ่ม: เดิน/ขี่เข้ารัศมี หรือมองจ้อง) → `CallCenterTrap` (คนปลอมตัวหน้าอาคารหายไป สแกมเมอร์โผล่ตรงที่ยืน) `AmbushGroup` เป็นตัวสร้างศัตรู `DisguisedScammer` (คนปลอมตัว สบตา = มองตรง ใกล้ 8 ม. ไม่มีของบัง 0.5 วินาที แล้ววิ่งเข้ายิงดาเมต 3 เท่า) `Interaction` เป็นตัวกลางปุ่ม E บนพื้น (ขี่ม้าอยู่ใช้ไม่ได้) ตัวเลขทั้งหมดเป็นค่าชั่วคราว
-- `PlayerSandbox.AddTrapCourse` วางตัวอย่างครบทุกแบบ (เรียกจากเมนู Build เท่านั้น เทสต์ไม่ใช้) ต้องรันเมนูใหม่เพื่อให้ฉากมี กล่อง Supply จริงยังไม่ได้วางในสถานีของเมือง ต้องให้เจ้าของฉากเมืองวาง `SupplyBox` และ `RuntimeNavMesh`
-- สัญญาณเตือนตอนนี้อยู่ในข้อความ prompt (เช่น "FREE supplies - last box") และสีของวัตถุ ยังไม่มีป้ายในโลกจริง ข้อความ UI ยังเป็นอังกฤษ
-- ตอนนี้ PlayMode 39 ตัว ผ่านครบ 5 จาก 6 รอบ (รอบที่ล้มคือเทสต์ลาดตระเวนเกินรัศมี 0.07 ม. เพราะ agent เบรกไม่ทัน ผ่อนค่าเผื่อเป็น 1 ม.) ยังไม่ได้ลองเล่นจริง
-- ตัวคูณหัว/ตัว/เท้า ตอนนี้เป็นค่าชั่วคราวใน `HitZone.DefaultMultiplier` (หัว 2, ตัว 1, เท้า 0.5) ยังไม่ได้ตัดสินใจ ผู้เล่นยังไม่มีเลือดจริง (`PlayerCharacter` ยังไม่ได้ทำ)
-- เทสต์ PlayMode 15 ตัวใน `Assets/Tests/PlayMode/` (ผู้เล่น 4: เดิน, ขึ้น-ควบ-ลงม้า, ไกลม้ากด E ไม่ขึ้น, ยิงเป้า; ต่อสู้ 5; เมือง 6 จากโค้ดที่คนอื่นเพิ่ม) ผ่านครบ 12 จาก 12 รอบ รันแบบ batchmode ด้วย Unity 6000.3.6f1 บนสำเนาโปรเจกต์ (ผลนี้คือ "ไม่พบความไม่เสถียร" ไม่ใช่การพิสูจน์)
-- ข้อควรรู้เรื่องเทสต์: ตัวจำลองคลิกใน InputTestFixture ทำคลิกหลุดเป็นครั้งคราว เทสต์ที่คลิกจริงจึงลองได้ถึง 4 ครั้ง และเทสต์ตรรกะเรียก `Weapon.TryFire` ตรงๆ; ถ้าย้ายวัตถุที่มี collider ในเทสต์ ให้เรียก `Physics.SyncTransforms()` ก่อนยิง; ผู้เล่นในเทสต์ต้องมีพื้น ไม่งั้นตกลงจนยิงลอดใต้เป้า
-- ถ้า Unity Editor เปิดโปรเจกต์จริงอยู่ อย่ารัน batchmode บนโปรเจกต์เดียวกัน ให้คัดลอก `Assets`, `Packages`, `ProjectSettings` ไปโฟลเดอร์ชั่วคราวแล้วรันที่นั่น
-- **ยังไม่ได้ตรวจ**: ความรู้สึกการเดิน/ควบ/เล็งเมื่อมีคนเล่นจริง, การล็อกเมาส์และการทำงานใน WebGL build, การกระโดดข้าม hurdle ด้วยม้า, ค่าความไวเมาส์, การโหลดฉาก `PlayerSandbox.unity` และ `CitySandbox.unity` ที่บันทึกไว้หลังเปลี่ยนชื่อ `Gun` (เทสต์สร้างโลกจากโค้ด ไม่ได้โหลดฉากที่บันทึก)
-- **ผู้เล่นตาย/เล่นซ้ำ (2026-10-23)**: `PlayerCharacter` ตายแล้วถูกเหวี่ยงลงจากม้า (ถ้าขี่อยู่) ปิดการควบคุม/ยิง/ขึ้นม้า กล้องตกลงพื้นแล้วเอียง HUD แสดง "YOU DIED" และนับถอยหลัง `ActionReplay` (วางเป็นวัตถุแยกในฉาก) รอ 3 วินาทีแล้ว**โหลดฉากปัจจุบันใหม่** = เล่นขั้นลงมือซ้ำ (ศัตรู กับดัก ม้า กระสุน เลือด รีเซ็ตทั้งหมด) สิ่งที่ต้องคงไว้ตามกติกา (ยีน คำตอบวิเคราะห์ Trouble ก่อนขั้นลงมือ) ต้องเก็บนอกฉาก เช่น GameManager แบบ DontDestroyOnLoad (ข้อ 6 ยังไม่ทำ) บอสถ้าอยู่ฉากแยกจะสู้ใหม่เฉพาะบอสได้เองตามกติกา ศัตรูหยุดยิงเมื่อผู้เล่นตาย เทสต์ `PlayerDeathTests.cs` 4 ตัว (ใช้คลาสลูกนับแทนการโหลดฉากจริง) **ยังไม่ได้ตรวจ**: การโหลดฉากจริงทั้งใน Editor (`EditorSceneManager.LoadSceneInPlayMode`) และใน build
-- **GameEvents + Trouble Meter (2026-10-23)**: `Scripts/Core/GameEvents.cs` เป็นศูนย์กลาง event แบบ static (Damaged, PlayerFired, PlayerDied, ActionReplaying, TrapSprung, TroubleChanged, TroubleFull) ล้างตัวฟังทุกครั้งที่เริ่ม Play `Health.AnyDamaged` และ `Trap.Sprung` เดิมย้ายมาที่นี่แล้ว `TroubleMeter` (static อยู่รอดข้ามการโหลดฉากตอนเล่นซ้ำ) แยก 2 ก้อน: Carried (ตอบผิด `WrongAnswer`, ยีนเกิน `ExtraGene`) อยู่ต่อหลังตาย และ Action (ยิง `Gunshot`, กับดัก `Trap`, ยิงผิดคน `WrongTarget`) รีเซ็ตตอนเล่นซ้ำ ระบบอื่นเพิ่ม Trouble ด้วย `TroubleMeter.Add(TroubleSource.X, ค่า)` ค่าตั้งต้นเป็น static field ชั่วคราว (Max 100, ยิง 1/นัด, ตอบผิด 15, ยีนเกิน 10/ตัว, ยิงผิดคน 20, กับดักตาม `troubleCost` 10) เต็มแล้วเกิด `TroubleFull` ครั้งเดียวต่อการเต็ม → `CorruptPoliceRaid` เรียกตำรวจเทาขี่ม้า (ฝ่าย `CorruptPolice`) มาไล่ ไม่ใช่การแพ้ HUD มีแถบ Trouble มุมขวาบน `GameManager` (ข้อ 6) ต้องเรียก `TroubleMeter.ResetAll()` ตอนเริ่มคดีใหม่ ผู้ทำขั้นวิเคราะห์ (ข้อ 9) และยีน (ข้อ 11) เรียก `Add` ได้เลย
-- **Civilian (2026-10-23)**: `Civilian : Npc` (abstract) → `Victim` (ฝ่าย Victim หมอบกลัวตั้งแต่เริ่ม) และ `ForcedWorker` (ฝ่าย ForcedWorker ยืนประจำที่ หมอบเมื่อได้ยินเสียงปืนผู้เล่นในระยะ 25 ม.) ไม่สู้กลับและไม่เดิน หมอบ = ตัวเตี้ยลง (เป้าเล็กลง) ผู้เล่นทำให้บาดเจ็บ = Trouble `WrongTarget` **ครั้งเดียวต่อคน** (ค่าชั่วคราว 20) ดาเมตจากศัตรูไม่นับ สร้างด้วย `PlayerSandbox.CreateVictim` (เหลือง) / `CreateForcedWorker` (เขียว) สีเป็นค่าชั่วคราว หน้าตาที่แยกได้ด้วยสายตาเป็นงานอาร์ต วางตัวอย่างในสนามกับดักแล้ว เทสต์ `CivilianTests.cs` 5 ตัว PlayMode รวม 53 ตัว ผ่าน 4 จาก 4 รอบ
-- **Case flow / GameManager (2026-10-23, ตัดสินใจกับเจ้าของแล้ว)**: 1 รอบ = สุ่ม 1 คดีจากพูล แล้วต่อด้วยคดีบอส แล้วฉากจบ ฉากแยก 3 ฉาก: `CaseBoard` (วิเคราะห์+ยีน ตอนนี้เป็น `CaseBoardPlaceholder` IMGUI ให้เล่นต่อได้) → `Raid` (ลงมือ) → `Debrief` (บทเรียน แล้วฉากจบหลังบอส ผ่าน `DebriefPlaceholder`) `GameManager` อยู่ข้ามฉาก (DontDestroyOnLoad) เก็บ `CurrentCase`, `HideoutRevealed` (ขั้นวิเคราะห์ตั้งค่า) และเป็นที่เก็บสิ่งที่ต้องรอดหลังตาย (ยีน ฯลฯ ให้คนทำข้อ 9/11 เพิ่ม field ที่นี่) API: `EnsureRun/StartRun`, `BeginAction`, `CompleteCase` (ข้อ 7 จะเรียกตอนชนะ), `Continue`, `PlayAgain` เริ่มคดีใหม่ = `TroubleMeter.ResetAll()` ตายในฉาก Raid = โหลดเฉพาะ Raid ใหม่ `CaseDefinition` (ScriptableObject ใน `Assets/Resources/Cases/`) มีชื่อ ประเภทสแกม เรื่องเหยื่อ เบาะแส เลขรัง จำนวนสแกมเมอร์/ขี่ม้า/ลูกจ้าง/เหยื่อ บทเรียน และ `isBoss` คดีตัวอย่าง 4 อัน (ปลอมตำรวจ, งานออนไลน์, SMS ลิงก์, บอส) เป็น **[placeholder]** ให้ C เขียนเนื้อหาจริง (builder ไม่ทับไฟล์ที่มีอยู่แล้ว)
-- **แผนที่ชั่วคราว (`RaidSandbox`)**: เจ้าของบอกว่าแมพต้องทำใหม่ ตอนนี้ใช้ Plane มีสถานีกลาง (มีกล่อง Supply) และรัง 3 มุม (0 = North-West, 1 = North-East, 2 = South-East ห่าง ~100 ม.) `Hideout` มีจุดยืนและมุมให้เหยื่อซ่อน `CaseStage` เติมคนในรังของคดี (ใช้ `fallbackCase` เมื่อเปิดฉาก Raid ตรงๆ) HUD แสดงเป้าหมายคดีและรัง (ถ้ายังไม่ได้วิเคราะห์ขึ้น "location unknown") มีสนามกับดักตามทาง
-- เมนู **Tools > Scammer No Scamming > Build Case Flow Scenes** สร้าง 3 ฉาก + คดีตัวอย่าง และ**ตั้ง Build Settings เป็น CaseBoard, Raid, Debrief** (build จะเริ่มที่ CaseBoard) ยังไม่ได้รันในโปรเจกต์จริง ทดสอบบนสำเนา: เทสต์ PlayMode 58 ตัวผ่าน 3/3 รอบ (รวมโหลดฉาก Raid จริง) และ build Windows ทั้ง flow แล้วเปิด exe 15 วินาทีไม่มี error ยังไม่ได้: บอสตัวจริง (คดีบอสตอนนี้แค่ศัตรูเยอะขึ้น), เกณฑ์ฉากจบ 2 แบบ (ยังไม่ตัดสินใจ), เงื่อนไขชนะ (ข้อ 7)
-- **Windows build (2026-10-23)**: เมนู Tools > Scammer No Scamming > Build Windows (zip) หรือ CLI `Unity.exe -batchmode -quit -projectPath <p> -executeMethod WindowsBuild.Build [-scenes A.unity,B.unity]` ได้ `Builds/ScammerNoScamming-Windows-<version>.zip` (ทั้งโฟลเดอร์ ไม่มีโฟลเดอร์ Burst DoNotShip) ถ้าไม่ส่ง `-scenes` จะใช้ฉากใน Build Settings ยกเว้น SampleScene และถ้าไม่มีจะใช้ `PlayerSandbox.unity` ทดสอบแล้ว: build ผ่าน (~36 MB), แตก zip ในโฟลเดอร์ใหม่แล้วเปิด exe แบบ batchmode 15 วินาทีไม่มี error ยังไม่ได้: เปิดแบบมีหน้าจอบนเครื่องอื่น, อัป itch.io, ตั้ง productName (ยังเป็น "My project" ซึ่งเป็นชื่อหน้าต่างเกม) `Builds/` อยู่ใน `.gitignore` แล้ว
-- ข้อจำกัดที่ทราบ: HUD เป็น IMGUI ภาษาอังกฤษ (ฟอนต์ OnGUI ไม่มีอักษรไทย), ม้าและเป้าเป็นลูกบาศก์ placeholder
+### ใครเป็นเจ้าของอะไร (ตาม PLAN 7.1)
+- **System (เรา)**: ข้อ 1-7, 14, 16 → ผู้เล่น ศัตรู พลเรือน Trouble GameEvents GameManager บุกรัง+Seal UI ไทย เสียง
+- **chanawee**: ข้อ 9-13, 15 + อาร์ต → วิเคราะห์ (`AnalysisScreen`/`AnalysisSession`), รัง (`World/Hideout`, `CityLayoutPoints`), ยีน (`Genes/*`, `RunModifiers`), กับดัก (`Traps/*`), บทเรียน/เมนู/ฉากจบ (`Screens/*`, `EndingEvaluator`), ฟอนต์ไทย `ThaiGui`, เนื้อหาคดีใน `Resources/Content/game_content.json`
+- ฉากที่ใช้เล่นทั้ง flow ตอนนี้คือ `Assets/Scenes/CaseFlowDemo.unity` (อยู่ใน Build Settings) โดย `Dev/CaseFlowDemo.cs` เป็นตัวคุม flow **ชั่วคราว** ที่ chanawee เขียนรอให้ระบบของเรามาแทน `RunAction()` และตัวนับ Trouble ของมัน
+
+### ระบบของเราที่มีแล้ว (`Assets/Scripts/`)
+- **ผู้เล่น**: เดิน/มอง/ขึ้น-ควบม้า/ยิง hitscan (เดิม), `PlayerCharacter` เลือด 100 + `RiderHitbox` (ขี่ม้าอยู่ก็โดนยิงได้ ยิงต่ำโดนม้า), ตายแล้วตกม้า เสียการควบคุม กล้องตกพื้น HUD "YOU DIED", กระสุนจำกัด 30 นัด (`PlayerWeaponController.Ammo/Refill/Drain`)
+- **ศัตรู** (`Combat/`): `Character` → `Npc` (ตาย = ล้ม ค้าง จมหาย) → `Enemy` (NavMesh ลาดตระเวนสุ่มแบบเดินไปข้างหน้า, เห็น+ได้ยินเสียงปืน, `Alert`, `Chase`, `SetFaction`) → `ShooterScammer` → `RiderScammer` (ม้ากับคนเลือดแยก ม้าตายคนตกมาสู้ต่อ) ม้าผู้เล่นมี Health 10 ล้มแล้วผู้เล่นตกม้า
+- **พลเรือน**: `Civilian` → `Victim` (หมอบตั้งแต่ต้น), `ForcedWorker` (หมอบเมื่อได้ยินปืน) ผู้เล่นยิงโดน = Trouble ครั้งเดียวต่อคน
+- **Core**: `GameEvents` (Damaged, PlayerFired, PlayerDied, ActionReplaying, TroubleChanged, TroubleFull), `TroubleMeter` (Carried = ตอบผิด/ยีนเกิน อยู่ต่อหลังตาย, Action = ยิง/กับดัก/ยิงผิดคน รีเซ็ตตอนเล่นซ้ำ, เต็ม = `CorruptPoliceRaid` ตำรวจเทาขี่ม้ามาไล่), `TrapConsequences` (กล่องจริงของ chanawee เติมกระสุน, กล่องปลอมปล้นกระสุนหมด), `SceneLoader`
+- **AmbushGroup**: สร้างศัตรูเป็นวงรอบผู้เล่นหรือที่จุดกำหนด ผูกกับกับดักของ chanawee ได้ด้วย `trigger` (เช่น `PhishingSign` = กดลิงก์แล้วศัตรูขี่ม้าเกิดรอบตัว ตามที่เจ้าของตัดสินใจ) ใช้เป็นตัวสร้างตำรวจเทาด้วย
+- **ActionReplay**: ตายแล้วรอ 3 วินาทีแล้วโหลดฉากปัจจุบันใหม่ **ใช้ได้กับฉาก sandbox เท่านั้น** ใน `CaseFlowDemo` (flow ทั้งหมดอยู่ฉากเดียว) การโหลดฉากใหม่จะกลับไปเมนู ต้องเปลี่ยนเป็นรีเซ็ตขั้นลงมือในที่เดิม (ดูงานค้าง)
+- **Dev**: `PlayerSandbox` + เมนู Build Player Sandbox Scene (สนามทดสอบ + ตำรวจเทา), `EnemySpawner` (F เดินเท้า, G ขี่ม้า), `RuntimeNavMesh` (เบก NavMesh ตอนเริ่มเล่น)
+- HUD (`PlayerHud`, IMGUI อังกฤษ): HP, AMMO, แถบ Trouble, ล็อกดาเมตที่รับ, ตัวเลขดาเมตลอย ยังไม่ได้ย้ายไปใช้ `ThaiGui`
+
+### งานค้างฝั่ง System (เรียงตามความสำคัญ)
+1. **ต่อเข้ากับ `CaseFlowDemo`** (หรือเขียน GameManager ใหม่บนหน้าจอของ chanawee): ใช้ `TroubleMeter` แทนตัวนับ `trouble` ของมัน (ตอบผิดใช้ `AnalysisResult.TroublePenalty`, ยีนใช้ `GeneLoadout.OverBudgetTrouble`), `TroubleMeter.ResetAll()` + `TrapLog.Reset()` ตอนเริ่มคดี, `RunModifiers` → `PlayerMaxHealth`/`DamageTaken`/`EnemySightRange`/`TroubleGain`
+2. **ข้อ 7 บุกรัง + Seal**: เติมสแกมเมอร์/พลเรือนที่ `Hideout.Find(case.HideoutId)` (รังของ chanawee ไม่มีจุดเกิด ต้องเพิ่ม) ชนะ = สแกมเมอร์ในรังตายหมด **และ** Seal หลักฐานที่สถานี (chanawee เสนอ: กด E ค้างที่ประตูรังเก็บหลักฐาน แล้วกด E ค้างที่โต๊ะ Seal)
+3. **ตาย = เล่นขั้นลงมือซ้ำในฉากเดียว**: เทเลพอร์ตผู้เล่น/ม้ากลับสถานี เติมเลือดและกระสุน `ArmTraps(current)` เกิดศัตรูในรังใหม่ แล้ว `GameEvents.RaiseActionReplaying()`
+4. **InnocentsHit** ให้ `EndingEvaluator` (ฉากจบ 2 แบบของ chanawee ใช้ Trouble + จำนวนพลเรือนที่โดน) และ HUD ย้ายไปใช้ `ThaiGui`
+5. `RuntimeNavMesh` ยังไม่ได้ใส่ในฉาก `CaseFlowDemo` (ศัตรูจะเดินเส้นตรงทะลุตึก)
+
+### ข้อควรรู้
+- ตัวเลขทั้งหมด (ดาเมต เลือด รัศมี Trouble) เป็นค่าชั่วคราว ยังไม่ได้ลองเล่นจริงกับระบบของเรา
+- ถ้า Unity Editor เปิดโปรเจกต์จริงอยู่ อย่ารัน batchmode บนโปรเจกต์เดียวกัน ให้คัดลอก `Assets`, `Packages`, `ProjectSettings` ไปโฟลเดอร์ชั่วคราวแล้วรันที่นั่น ไฟล์ใหม่ต้องมี `.meta` ก่อน commit (คัดจากสำเนาที่ Unity import แล้ว)
+- เทสต์: ตัวจำลองคลิกใน InputTestFixture ทำคลิกหลุดเป็นครั้งคราว (เทสต์ที่คลิกจริงลองได้ถึง 4 ครั้ง), ย้าย collider ในเทสต์ต้อง `Physics.SyncTransforms()`, ผู้เล่นในเทสต์ต้องมีพื้น, `TroubleMeter` เป็น static ต้อง `ResetAll()` ในเทสต์ที่เช็ก Trouble
+- `Builds/` อยู่ใน `.gitignore` ชื่อหน้าต่างเกม (productName) ยังเป็น "My project"
 
 ## การตัดสินใจจากเจ้าของโปรเจกต์ (อัปเดต 2026-10-23) ใช้แทนข้อเสนอเดิมที่ขัดกัน
 
@@ -143,15 +139,17 @@
 - **เหยื่ออยู่ตามตึกเหมือนสแกมเมอร์** มักนั่งแอบมุมตึกเพราะกลัว
 - **ยังไม่ตัดสินใจ**: ตัวเลขทางการ 1 ตัว (ยังไม่ได้หา), ตัวคูณดาเมตหัว/ตัว/เท้า, ค่าเลือดของศัตรูและดาเมตที่ผู้เล่นรับ
 
-## กับดักระหว่างทางไปรังสแกมเมอร์ (เจ้าของโปรเจกต์ระบุ 2026-10-23)
+## กับดักระหว่างทางไปรังสแกมเมอร์ (เจ้าของระบุ 2026-10-23, โค้ดเป็นของ chanawee)
 
-- **กดลิงก์แล้วโดน Hack**: ผลของการโดน Hack ยังไม่ระบุ
-- **พวกซุ่ม**: ทำงานเมื่อผู้เล่น Trigger (เดินผ่าน มองผ่าน ขี่ผ่าน หรือทำอะไรก็ตามที่ไปกระตุ้น) อ้างอิงแบบเดียวกับการกดลิงก์แล้วโดน Hack ถ้าผู้เล่นไม่ทำอะไรก็ไม่โดนอะไร
-- **Call center gang**: ระบุชื่อเท่านั้น ยังไม่มีรายละเอียดกับดัก
-- **ปลอมตัวเป็นคนทั่วไประหว่างทาง**: ถ้าผู้เล่นเผลอสบตา จะเข้าจู่โจมด้วยดาเมตแรง
-- **หลอกขายของปลอม**: วางกล่อง Supply ให้ตายใจ เมื่อผู้เล่นกดเติมของ จะถูกปล้นของหมดตัว และสแกมเมอร์ไล่ทำร้าย
+| กับดัก | คลาส (chanawee) | ผลที่เจ้าของตัดสินใจ / สถานะ |
+|---|---|---|
+| กดลิงก์แล้วโดน Hack | `PhishingSign` | เจ้าของ: **ศัตรูขี่ม้าเกิดรอบตัวแล้วไล่ยิง** (จำนวนปรับได้) → ใส่ `AmbushGroup` ที่ `trigger` = ป้ายนั้น ส่วนของ chanawee ยังล็อกปืน 6 วินาที (ข้อเสนอเดิม) ต้องตกลงกันว่าเก็บไหม |
+| พวกซุ่ม | `AmbushBait` | เข้ารัศมีแล้วศัตรูที่ซ่อน (`activateOnSpring`) โผล่ ไม่ทำอะไรก็ไม่โดน |
+| Call center | `CallCenterBooth` | เจ้าของ: คนปลอมตัวหน้าอาคาร เข้าใกล้แล้วโผล่ ambush |
+| คนปลอมตัว (สบตา) | `DisguisedScammer : Trap` | เจ้าของ: สบตา = มองตรง ใกล้ ไม่มีของบัง แล้ว **ยิงระยะใกล้ ดาเมต 3 เท่า** ของ chanawee ตอนนี้พุ่งใส่ดาเมต 40 ครั้งเดียว (stare 1.5 วินาที) |
+| กล่องของปลอม | `SupplyCrate` (`isFake`) | เจ้าของ: **ปล้นกระสุนหมด** + สแกมเมอร์ไล่ (ต่อแล้วผ่าน `TrapConsequences`) กล่องจริงเติมกระสุน (อยู่ทั้งนอกและในสน.) |
 
-ข้อที่ยังไม่ชัดจากรายการนี้: (1) กับดักแต่ละอันผูกกับประเภทสแกม/คดีไหน และชุดประเภทนี้ต่างจากที่เคยเสนอ (ปลอมเป็นตำรวจ, หลอกลงทุน/งานออนไลน์, SMS ลิงก์ปลอม) ยังไม่ได้ตกลงว่าใช้ชุดไหน (2) "ปล้นของหมดตัว" ผู้เล่นมีของอะไรให้เสีย (กระสุน? หลักฐาน? ยังไม่มีระบบของ) (3) "สบตา" ตรวจจากอะไร (ทิศมอง? ระยะ?) (4) ดาเมตแรงเท่าไร (5) กับดัก Hack และพวกซุ่มต่างกันตรงไหน
+ยังไม่ได้ตกลงกับ chanawee: โดนกับดักแล้ว Trouble ขึ้นไหม (ตอนนี้โค้ดเราบวก `TroubleMeter.TrapCost` 10 ทุกครั้งที่กับดักทำงาน)
 
 ## แผนทีม
 

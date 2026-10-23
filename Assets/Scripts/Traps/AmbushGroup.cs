@@ -25,6 +25,24 @@ namespace ScammerNoScamming
         public float maxRadius = 40f;
         // When set, one enemy appears at each of these instead of in a ring.
         public Transform[] points;
+        // Optional: fire when this trap springs (e.g. a PhishingSign calling riders in).
+        public Trap trigger;
+
+        void OnEnable()
+        {
+            Trap.Sprung += OnTrapSprung;
+        }
+
+        void OnDisable()
+        {
+            Trap.Sprung -= OnTrapSprung;
+        }
+
+        void OnTrapSprung(Trap trap)
+        {
+            var player = Interaction.Player;
+            if (trap == trigger && trigger != null && player != null) Fire(player);
+        }
 
         public List<Enemy> Fire(PlayerCharacter target)
         {
