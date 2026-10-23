@@ -18,11 +18,39 @@ namespace ScammerNoScamming
             Open();
         }
 
+        public void ChooseGene(int index)
+        {
+            if (!IsOpen || catalog == null || index < 0 || index >= catalog.Genes.Count) return;
+            loadout.Toggle(catalog.Genes[index]);
+        }
+
+        public void Confirm()
+        {
+            if (!IsOpen) return;
+            var done = onDone;
+            var chosen = loadout;
+            onDone = null;
+            Close();
+            done?.Invoke(chosen);
+        }
+
+        public void Cancel()
+        {
+            onDone = null;
+            Close();
+        }
+
+        protected override void OnDisable()
+        {
+            onDone = null;
+            base.OnDisable();
+        }
+
         protected override void Draw(Rect canvas)
         {
             ThaiGui.Background(canvas, "bg_case_board", 0.7f);
             ThaiGui.Kicker(new Rect(110f, 70f, 0f, 0f), "วางแผน");
-            ThaiGui.Label(new Rect(110f, 130f, 1700f, 90f), "แต่งยีนม้า", ThaiGui.Text(72, ThaiGui.Bone, FontStyle.Bold));
+            ThaiGui.Label(new Rect(110f, 130f, 1700f, 90f), "เลือกยีนม้า", ThaiGui.Text(72, ThaiGui.Bone, FontStyle.Bold));
             ThaiGui.Label(new Rect(110f, 230f, 1700f, 60f),
                 $"เลือกได้ฟรี {loadout.FreeSlots} ยีน สูงสุด {loadout.MaxSlots} ยีน ยีนที่เกินจะทำให้ Trouble เพิ่ม และทุกยีนมีข้อเสีย",
                 ThaiGui.Text(32, ThaiGui.Gold));
@@ -43,7 +71,7 @@ namespace ScammerNoScamming
                 string label = chosen ? "เอาออก" : (loadout.IsFull ? "เต็มแล้ว" : "เลือก");
                 GUI.enabled = chosen || !loadout.IsFull;
                 if (GUI.Button(new Rect(r.x + 30f, r.yMax - 100f, r.width - 60f, 76f), label, ThaiGui.Button(32)))
-                    loadout.Toggle(gene);
+                    ChooseGene(i);
                 GUI.enabled = true;
             }
 
@@ -51,11 +79,7 @@ namespace ScammerNoScamming
             if (loadout.IsOverBudget) status += $"   ·   เกินโควตา {loadout.ExtraCount} ยีน: Trouble +{loadout.OverBudgetTrouble:0}";
             ThaiGui.Label(new Rect(110f, 880f, 1100f, 60f), status,
                 ThaiGui.Text(34, loadout.IsOverBudget ? ThaiGui.Orange : ThaiGui.Bone, FontStyle.Bold));
-            if (GUI.Button(new Rect(1330f, 860f, 480f, 100f), "ออกล่า!", ThaiGui.Button(42)))
-            {
-                Close();
-                onDone?.Invoke(loadout);
-            }
+            if (GUI.Button(new Rect(1330f, 860f, 480f, 100f), "ออกปฏิบัติการ", ThaiGui.Button(42))) Confirm();
         }
     }
 }

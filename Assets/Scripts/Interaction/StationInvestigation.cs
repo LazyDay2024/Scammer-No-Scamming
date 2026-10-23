@@ -4,8 +4,7 @@ using UnityEngine;
 
 namespace ScammerNoScamming
 {
-    // Physical presentation of the existing AnalysisSession, GeneLoadout and LessonPage rules.
-    // Reading never pauses movement: E advances testimony/files or selects the object under the crosshair.
+    // Physical investigation and lessons lead into the existing paused gene-selection screen.
     public class StationInvestigation : MonoBehaviour
     {
         public Transform stationAnchor;
@@ -17,31 +16,27 @@ namespace ScammerNoScamming
         public string StageName => phase.ToString();
         public WorldInteractable Victim => victim;
         public WorldInteractable AdvanceTarget => advance;
-        public WorldInteractable DispatchTarget => dispatch;
         public WorldInteractable CaseFileTarget => caseFile;
         public IReadOnlyList<WorldInteractable> AnswerTargets => answers;
         public IReadOnlyList<WorldInteractable> MapPins => pins;
-        public IReadOnlyList<WorldInteractable> GeneBottles => bottles;
         enum Phase { Closed, Testimony, Questions, Feedback, Genes, Lesson }
         Phase phase;
         AnalysisSession session;
         GeneLoadout loadout;
         GeneCatalog catalog;
+        GeneSelectionScreen geneScreen;
         Action<AnalysisResult> analysed;
         Action<GeneLoadout> dispatched;
         Action lessonDone;
         readonly List<string> pages = new List<string>();
         int pageIndex;
         Transform root, victimVisual;
-        WorldInteractable victim, advance, dispatch, caseFile;
-        WorldLabel heading, advanceLabel, quota, fileLabel;
+        WorldInteractable victim, advance, caseFile;
+        WorldLabel heading, advanceLabel, fileLabel;
         readonly List<WorldInteractable> clues = new List<WorldInteractable>();
         readonly List<WorldInteractable> answers = new List<WorldInteractable>();
         readonly List<WorldInteractable> pins = new List<WorldInteractable>();
-        readonly List<WorldInteractable> bottles = new List<WorldInteractable>();
-        readonly List<Renderer> bottleGlass = new List<Renderer>();
         readonly List<Material> materials = new List<Material>();
-        Light aura;
         string subtitleTitle, subtitle;
         Transform readingSource;
 
@@ -49,6 +44,7 @@ namespace ScammerNoScamming
 
         public void BeginCase(CaseDefinition definition, GeneLoadout chosen, Action<AnalysisResult> onAnalysed, Action<GeneLoadout> onDispatched)
         {
+            Close();
             EnsureBuilt();
             EnsureInteractor();
             session = new AnalysisSession(definition, TroublePerWrongAnswer);
@@ -78,6 +74,7 @@ namespace ScammerNoScamming
 
         public void ShowLesson(LessonPage page, Action done)
         {
+            Close();
             EnsureBuilt(); EnsureInteractor();
             phase = Phase.Lesson;
             lessonDone = done;
@@ -99,7 +96,9 @@ namespace ScammerNoScamming
 
         public void Close()
         {
+            if (phase == Phase.Genes && geneScreen != null) geneScreen.Cancel();
             phase = Phase.Closed; subtitle = null;
+            dispatched = null;
             if (root != null) Refresh();
         }
 
@@ -142,29 +141,38 @@ namespace ScammerNoScamming
             if (!session.IsComplete) { phase = Phase.Questions; subtitle = null; Refresh(); return; }
             phase = Phase.Genes;
             var result = session.Result;
-            heading.Text = "วิเคราะห์เสร็จ · ถูก " + result.CorrectCount + "/" + session.Case.Questions.Count + "\nเลือกยีนที่ชั้นขวดหน้าสถานี แล้วรับวิทยุออกปฏิบัติการ";
-            Say(dispatch.transform, "เตรียมม้าออกปฏิบัติการ", result.IsUnlocked(IntelKind.HideoutLocation)
-                ? "พบตำแหน่งรังแล้ว เลือกยีนที่ชั้นขวด ก่อนออกตามลำแสงสีทอง"
-                : "ยังไม่รู้ตำแหน่งรัง รู้เพียงว่าอยู่แถว " + session.Case.ZoneHint + " เลือกยีนก่อนออกตามหา");
+            heading.Text = "วิเคราะห์เสร็จ · ถูก " + result.CorrectCount + "/" + session.Case.Questions.Count + "\nเลือกยีนม้าก่อนออกปฏิบัติการ";
+            subtitle = null;
             Refresh();
-            analysed?.Invoke(result);
-        }
-
-        void ToggleGene(int index)
-        {
+            var onAnalysed = analysed;
+            analysed = null;
+            onAnalysed?.Invoke(result);
             if (phase != Phase.Genes) return;
-            var gene = catalog.Genes[index];
-            bool selected = loadout.Toggle(gene);
-            Say(bottles[index].transform, (selected ? "ฉีดยีน: " : "ถอดยีน: ") + gene.DisplayName, gene.Description);
-            UpdateGenes();
-        }
-
-        void Dispatch()
-        {
-            if (phase != Phase.Genes) return;
-            var chosen = loadout;
-            Close();
-            dispatched?.Invoke(chosen);
+            if (geneScreen == null) geneScreen = GetComponent<GeneSelectionScreen>();
+            if (geneScreen == null)
+            {
+                var flows = FindObjectsByType<CaseFlowDemo>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                foreach (var flow in flows)
+                {
+                    geneScreen = flow.GetComponent<GeneSelectionScreen>();
+                    if (geneScreen != null) break;
+                }
+                // Standalone fixtures have no CaseFlow owner; the shipped scene reuses its existing screen.
+                if (geneScreen == null && flows.Length == 0) geneScreen = gameObject.AddComponent<GeneSelectionScreen>();
+            }
+            if (geneScreen == null)
+            {
+                Debug.LogError("CaseFlow is missing its GeneSelectionScreen.", this);
+                Close();
+                return;
+            }
+            geneScreen.Show(catalog, loadout, chosen =>
+            {
+                if (phase != Phase.Genes) return;
+                var done = dispatched;
+                Close();
+                done?.Invoke(chosen);
+            });
         }
 
         void ReadFile()
@@ -205,11 +213,8 @@ namespace ScammerNoScamming
                 }
                 if (map) pins[i].transform.localPosition = MapPosition(q.Options[i].Text, i);
             }
-            foreach (var bottle in bottles) bottle.Available = phase == Phase.Genes;
-            dispatch.Available = phase == Phase.Genes;
             caseFile.Available = phase == Phase.Lesson;
             caseFile.gameObject.SetActive(phase == Phase.Lesson);
-            if (phase == Phase.Genes) UpdateGenes();
         }
 
         // A pin's placement is presentation only. AnalysisSession remains the only answer authority.
@@ -219,25 +224,6 @@ namespace ScammerNoScamming
             Vector3 direction = option.Contains("เหนือ") ? Vector3.forward : option.Contains("ใต้") ? Vector3.back
                 : option.Contains("ตะวันตก") ? Vector3.left : option.Contains("ตะวันออก") ? Vector3.right : new Vector3(fallback - 1, 0f, 0f);
             return new Vector3(5f, 1.48f, 0f) + direction * radius;
-        }
-
-        void UpdateGenes()
-        {
-            quota.Text = "ยีนม้า " + loadout.Count + "/" + loadout.MaxSlots + "\nฟรี " + loadout.FreeSlots + " ขวด · Trouble +" + loadout.OverBudgetTrouble.ToString("0");
-            Color mix = Color.black;
-            for (int i = 0; i < bottles.Count; i++)
-            {
-                bool selected = loadout.Contains(catalog.Genes[i]);
-                bottles[i].Prompt = (selected ? "ถอดยีน " : "ฉีดยีน ") + catalog.Genes[i].DisplayName;
-                bottleGlass[i].sharedMaterial.SetColor("_BaseColor", GeneColor(i) * (selected ? 1.6f : .7f));
-                if (selected) mix += GeneColor(i);
-            }
-            if (aura == null && HorseController.All.Count > 0)
-            {
-                var go = new GameObject("GeneAura"); go.transform.SetParent(HorseController.All[0].transform, false);
-                go.transform.localPosition = Vector3.up * 1.7f; aura = go.AddComponent<Light>(); aura.type = LightType.Point; aura.range = 5f;
-            }
-            if (aura != null) { aura.color = loadout.Count > 0 ? mix / loadout.Count : Color.white; aura.intensity = loadout.Count > 0 ? 4f : 0f; }
         }
 
         void SetPages(IEnumerable<string> source)
@@ -326,21 +312,8 @@ namespace ScammerNoScamming
             Table("CaseFileTable", new Vector3(-4f, 0f, -4f), new Vector3(3f, .18f, 1.5f), wood);
             caseFile = Interactive("SealedCaseFile", new Vector3(-4f, 1.38f, -4f), new Vector3(1.4f, .14f, .8f), paper, "เปิดแฟ้มคดี", ReadFile);
             fileLabel = Label(caseFile.transform, "แฟ้มคดี", new Vector3(0f, .45f, -.1f), new Vector2(2.6f, .7f), .07f, ThaiGui.Gold);
-            Box("GeneShelf", new Vector3(7f, 1.05f, -12f), new Vector3(4.7f, .15f, 1f), wood);
-            foreach (float x in new[] { 4.8f, 9.2f }) Box("ShelfLeg", new Vector3(x, .5f, -12f), new Vector3(.15f, 1f, .6f), wood);
-            quota = Label(root, "ยีนม้า · ฟรี 2 ขวด", new Vector3(7f, 2.6f, -11.7f), new Vector2(4.4f, .9f), .09f, ThaiGui.Gold);
-            for (int i = 0; i < catalog.Genes.Count; i++)
-            {
-                int index = i;
-                var bottle = Interactive("GeneBottle_" + catalog.Genes[i].GeneId, new Vector3(5.4f + i * 1.05f, 1.45f, -12f), new Vector3(.36f, .65f, .36f), Mat(GeneColor(i)), "ฉีดยีน " + catalog.Genes[i].DisplayName, () => ToggleGene(index), PrimitiveType.Cylinder);
-                Box("BottleStopper", bottle.transform.localPosition + Vector3.up * .4f, new Vector3(.16f, .16f, .16f), wood, false);
-                Label(bottle.transform, catalog.Genes[i].DisplayName, new Vector3(0f, -.55f, -.32f), new Vector2(.95f, .28f), .05f, ThaiGui.Bone);
-                bottle.ReadingTitle = catalog.Genes[i].DisplayName; bottle.ReadingBody = catalog.Genes[i].Description;
-                bottles.Add(bottle); bottleGlass.Add(bottle.transform.Find("Geometry").GetComponent<Renderer>());
-            }
             Table("DispatchTable", new Vector3(7f, 0f, -15f), new Vector3(2f, .18f, 1f), wood);
-            dispatch = Interactive("DispatchRadio", new Vector3(7f, 1.55f, -15f), new Vector3(.65f, .7f, .35f), metal, "รับวิทยุ แล้วออกปฏิบัติการ", Dispatch);
-            Label(dispatch.transform, "ออกปฏิบัติการ\nE · รับวิทยุ", new Vector3(0f, .75f, -.3f), new Vector2(2.4f, .8f), .09f, ThaiGui.Gold);
+            Box("DispatchRadio", new Vector3(7f, 1.55f, -15f), new Vector3(.65f, .7f, .35f), metal, false);
             Box("RadioAntenna", new Vector3(7.23f, 2.25f, -15f), new Vector3(.035f, .7f, .035f), metal, false);
             // The station roof blocks the low sun; warm lamps keep the boards readable (unless the scene is dressed).
             if (stationAnchor == null || stationAnchor.Find("StationDressing") == null)
@@ -446,8 +419,8 @@ namespace ScammerNoScamming
         static Color GeneColor(int i) => i == 0 ? ThaiGui.Orange : i == 1 ? new Color(.3f, .55f, 1f) : i == 2 ? ThaiGui.Gold : ThaiGui.Teal;
         void OnDestroy()
         {
+            if (phase == Phase.Genes && geneScreen != null) geneScreen.Cancel();
             if (root != null) Destroy(root.gameObject);
-            if (aura != null) Destroy(aura.gameObject);
             foreach (var material in materials) if (material != null) Destroy(material);
             if (catalog != null) { foreach (var gene in catalog.Genes) if (gene != null) Destroy(gene); Destroy(catalog); }
         }

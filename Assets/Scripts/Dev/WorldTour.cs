@@ -63,11 +63,18 @@ namespace ScammerNoScamming
                     yield return Focus(player, station.AdvanceTarget, "station_answer_feedback_" + guard);
                     station.AdvanceTarget.Interact();
                 }
-                if (station.StageName == "Genes" && station.GeneBottles.Count > 0)
+                var genes = flow != null ? flow.GetComponent<GeneSelectionScreen>() : station.GetComponent<GeneSelectionScreen>();
+                if (station.StageName == "Genes" && genes != null && genes.IsOpen)
                 {
-                    station.GeneBottles[0].Interact();
-                    yield return Focus(player, station.GeneBottles[0], "station_gene_selected");
-                    yield return Focus(player, station.DispatchTarget, "station_dispatch");
+                    yield return new WaitForSecondsRealtime(.5f);
+                    yield return new WaitForEndOfFrame();
+                    ScreenCapture.CaptureScreenshot(Path.Combine(folder, $"{++shot:00}_station_gene_screen.png"));
+                    genes.ChooseGene(0);
+                    yield return new WaitForSecondsRealtime(.4f);
+                    yield return new WaitForEndOfFrame();
+                    ScreenCapture.CaptureScreenshot(Path.Combine(folder, $"{++shot:00}_station_gene_selected.png"));
+                    genes.Confirm();
+                    yield return null;
                 }
             }
             var horse = HorseController.All.Count > 0 ? HorseController.All[0] : null;

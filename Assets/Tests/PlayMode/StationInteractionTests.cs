@@ -34,9 +34,14 @@ namespace ScammerNoScamming.Tests
         }
 
         [UnityTest]
-        public IEnumerator PhysicalStationCompletesCaseAndLessonWithoutOpeningScreens()
+        public IEnumerator PhysicalStationUsesExistingGeneScreenAndCompletesCaseAndLesson()
         {
             var player = Player();
+            var flowObject = new GameObject("CaseFlow");
+            objects.Add(flowObject);
+            flowObject.AddComponent<CaseFlowDemo>().enabled = false;
+            var screen = flowObject.GetComponent<GeneSelectionScreen>();
+            int screenCount = Object.FindObjectsByType<GeneSelectionScreen>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
             var go = new GameObject("StationIntegrationTest");
             objects.Add(go);
             var station = go.AddComponent<StationInvestigation>();
@@ -68,16 +73,31 @@ namespace ScammerNoScamming.Tests
             Assert.AreEqual(definition.Questions.Count, result.CorrectCount);
             Assert.AreEqual(0f, result.TroublePenalty);
             Assert.IsTrue(result.IsUnlocked(IntelKind.HideoutLocation));
+            Assert.IsTrue(screen.IsOpen, "the station must reuse the screen on CaseFlow");
+            Assert.AreEqual(screenCount, Object.FindObjectsByType<GeneSelectionScreen>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length);
+            Assert.IsFalse(player.GetComponent<PlayerControls>().enabled);
+            Assert.AreEqual(0f, Time.timeScale);
+            foreach (var child in go.GetComponentsInChildren<Transform>(true))
+            {
+                Assert.IsFalse(child.name.StartsWith("GeneBottle"));
+                Assert.AreNotEqual("GeneShelf", child.name);
+                Assert.AreNotEqual("ShelfLeg", child.name);
+                Assert.AreNotEqual("BottleStopper", child.name);
+            }
 
-            station.GeneBottles[0].Interact();
+            screen.ChooseGene(0);
             Assert.AreEqual(1, loadout.Count);
             var chosen = loadout.Selected[0];
-            station.DispatchTarget.Interact();
-            station.DispatchTarget.Interact();
-            Assert.AreEqual(1, dispatchCalls, "the physical dispatch prop must fire once");
+            screen.Confirm();
+            screen.Confirm();
+            Assert.AreEqual(1, dispatchCalls, "confirm must dispatch exactly once");
             Assert.AreSame(loadout, dispatched);
             Assert.AreSame(chosen, dispatched.Selected[0]);
             Assert.AreEqual("Closed", station.StageName);
+            yield return null;
+            Assert.IsFalse(screen.IsOpen);
+            Assert.IsTrue(player.GetComponent<PlayerControls>().enabled);
+            Assert.AreEqual(1f, Time.timeScale);
 
             station.ShowLesson(LessonPage.Build(definition, database.Text,
                 new[] { TrapKind.FakeSupply }, new[] { TrapKind.CallCenter }), () => nextCalls++);
@@ -89,6 +109,60 @@ namespace ScammerNoScamming.Tests
             Assert.IsFalse(GameScreen.AnyOpen);
             Assert.IsTrue(player.GetComponent<PlayerControls>().enabled);
             Assert.AreEqual(1f, Time.timeScale);
+        }
+
+        [UnityTest]
+        public IEnumerator ResetDuringGeneSelectionClosesScreenAndCannotDispatchOldCallback()
+        {
+            var player = Player();
+            var go = new GameObject("StationResetTest");
+            objects.Add(go);
+            var screen = go.AddComponent<GeneSelectionScreen>();
+            var station = go.AddComponent<StationInvestigation>();
+            database = CaseDatabase.LoadDefault();
+            var definition = database.Find("CASE_01_FAKE_SHOP");
+            int oldDispatches = 0, newDispatches = 0;
+            station.BeginCase(definition, new GeneLoadout(), _ => { }, _ => oldDispatches++);
+            yield return null;
+            CompleteAnalysis(station, definition);
+            Assert.IsTrue(screen.IsOpen);
+
+            station.Reset();
+            screen.ChooseGene(0);
+            screen.Confirm();
+            yield return null;
+            Assert.IsFalse(screen.IsOpen);
+            Assert.AreEqual("Closed", station.StageName);
+            Assert.AreEqual(0, oldDispatches);
+            Assert.IsTrue(player.GetComponent<PlayerControls>().enabled);
+            Assert.AreEqual(1f, Time.timeScale);
+
+            var nextLoadout = new GeneLoadout();
+            station.BeginCase(definition, nextLoadout, _ => { }, chosen =>
+            {
+                newDispatches++;
+                Assert.AreSame(nextLoadout, chosen);
+            });
+            CompleteAnalysis(station, definition);
+            screen.ChooseGene(0);
+            screen.Confirm();
+            screen.Confirm();
+            Assert.AreEqual(0, oldDispatches);
+            Assert.AreEqual(1, newDispatches);
+            yield return null;
+        }
+
+        static void CompleteAnalysis(StationInvestigation station, CaseDefinition definition)
+        {
+            for (int guard = 0; guard < 100 && station.StageName == "Testimony"; guard++) station.Victim.Interact();
+            Assert.AreEqual("Questions", station.StageName);
+            foreach (var question in definition.Questions)
+            {
+                var targets = question.Reward == IntelKind.HideoutLocation ? station.MapPins : station.AnswerTargets;
+                targets[question.CorrectIndex].Interact();
+                station.AdvanceTarget.Interact();
+            }
+            Assert.AreEqual("Genes", station.StageName);
         }
 
         [UnityTest]
