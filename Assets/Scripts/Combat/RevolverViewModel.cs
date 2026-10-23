@@ -11,6 +11,8 @@ namespace ScammerNoScamming
         public Material metalMaterial, handleMaterial;
         public Texture2D metalTexture, handleTexture;
         public Vector3 modelEuler = new Vector3(0f, 90f, 0f);
+        [Tooltip("Use modelEuler as the whole local rotation instead of adding it to the FBX root rotation.")]
+        public bool absoluteEuler;
         public Vector3 restPosition = new Vector3(0.22f, -0.2f, 0.42f);
         public Vector3 cylinderSpinAxis = Vector3.up;
         public Transform Muzzle { get; private set; }
@@ -85,7 +87,7 @@ namespace ScammerNoScamming
             {
                 var model = Instantiate(revolverPrefab, Rig);
                 model.transform.localPosition = Vector3.zero;
-                model.transform.localRotation = Quaternion.Euler(modelEuler) * revolverPrefab.transform.localRotation; // keep the FBX root rotation
+                model.transform.localRotation = absoluteEuler ? Quaternion.Euler(modelEuler) : Quaternion.Euler(modelEuler) * revolverPrefab.transform.localRotation; // keep the FBX root rotation
                 model.transform.localScale = Vector3.one;
                 foreach (var collider in model.GetComponentsInChildren<Collider>(true))
                 {

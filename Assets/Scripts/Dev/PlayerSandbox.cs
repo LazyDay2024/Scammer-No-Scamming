@@ -83,6 +83,9 @@ namespace ScammerNoScamming
             // Serialized asset references survive into the player; no AssetDatabase at runtime.
             viewModel.revolverPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/Art/Models/WesternRevolver/WesternRevolver.fbx");
+            // Checked live in the editor: barrel forward, wooden grip toward the camera.
+            viewModel.modelEuler = new Vector3(90f, 0f, 0f);
+            viewModel.absoluteEuler = true;
             viewModel.metalMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(
                 "Assets/Art/Models/WesternRevolver/gunMetal.mat");
             viewModel.handleMaterial = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(
