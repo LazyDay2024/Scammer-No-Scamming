@@ -37,6 +37,7 @@ namespace ScammerNoScamming
 
         void Mount(HorseController horse)
         {
+            GetComponent<RevolverAmmo>()?.NotifyMountTransition();
             CurrentHorse = horse;
             Candidate = null;
             horse.SetRider(controls);
@@ -46,6 +47,8 @@ namespace ScammerNoScamming
         public void Dismount()
         {
             var horse = CurrentHorse;
+            if (horse == null) return;
+            GetComponent<RevolverAmmo>()?.NotifyMountTransition();
             Vector3 exitPoint = horse.GetDismountPoint();
             float exitYaw = horse.transform.eulerAngles.y;
             horse.ClearRider();

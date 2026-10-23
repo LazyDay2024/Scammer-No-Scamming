@@ -10,12 +10,14 @@ namespace ScammerNoScamming
 
         PlayerMount mount;
         PlayerWeaponController gun;
+        RevolverAmmo ammo;
         float playSeconds;
 
         void Awake()
         {
             mount = GetComponent<PlayerMount>();
             gun = GetComponent<PlayerWeaponController>();
+            ammo = GetComponent<RevolverAmmo>();
         }
 
         void Update()
@@ -62,6 +64,9 @@ namespace ScammerNoScamming
                     MainMenuScreen.Controls(56f, canvas.height - 64f);
             }
             ThaiGui.EndCanvas();
+            // The controller can add the ammo component during its own Awake.
+            if (ammo == null) ammo = GetComponent<RevolverAmmo>();
+            if (ammo != null) GameHud.DrawAmmo(ammo.Loaded, ammo.Reserve, ammo.Reloading);
         }
     }
 }
