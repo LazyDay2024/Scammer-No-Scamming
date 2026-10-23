@@ -314,11 +314,15 @@ classDiagram
         ShowEnemyMarkers
     }
     class GeneLoadout {
-        +int Budget
+        +int FreeSlots
+        +int MaxSlots
+        +float TroublePerExtraGene
         +List~GeneDefinition~ Selected
+        +int ExtraCount
         +bool IsOverBudget
         +float OverBudgetTrouble
         +TryAdd(GeneDefinition gene) bool
+        +Toggle(GeneDefinition gene) bool
         +Remove(GeneDefinition gene)
         +BuildModifiers() RunModifiers
     }
@@ -342,7 +346,6 @@ classDiagram
     GeneLoadout "1" o-- "*" GeneDefinition
     GeneLoadout ..> RunModifiers : builds
 
-    style GeneLoadout fill:#fff8d6,stroke:#b8860b,stroke-dasharray:4 3,color:#000000
 ```
 
 ยีนทุกตัวอยู่ในรูป "รายการ `StatModifier`" ข้อดีข้อเสียจึงเป็นแค่ค่าบวก/ลบในรายการเดียวกัน ตัวอย่างจากคอนเซ็ปต์ (**ตัวเลขเป็นแค่ตัวอย่าง รอปรับตอนเล่นทดสอบ**):
@@ -354,7 +357,9 @@ classDiagram
 | ดมตามรอย | เห็นศัตรูไกล | Trouble เพิ่มเร็ว | `Special = ShowEnemyMarkers`, `TroubleGain ×1.5` |
 | ซ่อนตัว | ศัตรูเห็นยาก | ม้าเปราะ | `EnemySightRange ×0.5`, `DamageTaken ×1.5` |
 
-สิ่งที่ต้องยืนยัน: "ม้าเปราะ" ในเอกสารต้นฉบับ ที่นี่ตีความเป็นผู้เล่นรับดาเมตมากขึ้น (`DamageTaken`) เพราะม้ายังไม่มีเลือด; และกติกาจำนวนยีนที่เลือกได้ (`Budget`, `Cost`, ค่าปรับเมื่อเกินโควตา) ยังเป็นข้อเสนอ จึงทำเป็นพารามิเตอร์ ไม่ฝังตัวเลขในโค้ด
+**โค้ดจริง (2026-10-23, branch `feature/genes-traps-map`)**: กติกาที่ตัดสินใจแล้วคือ "ปกติ 2 ตัว สูงสุด 4 ตัว" จึงใช้จำนวนช่องแทน `Budget`/`Cost`: `GeneLoadout(freeSlots=2, maxSlots=4, troublePerExtraGene)` มี `ExtraCount`, `OverBudgetTrouble`, `Toggle()`; ยีน 4 ตัวสร้างได้จาก `GeneCatalog.CreateDefault()`; ม้าใช้คอมโพเนนต์ `HorseGenes.Apply(RunModifiers)` (ไม่แก้ `HorseController`) ซึ่งคูณจากค่าตั้งต้นเสมอ เล่นซ้ำแล้วไม่ทบ
+
+สิ่งที่ต้องยืนยัน: "ม้าเปราะ" ในเอกสารต้นฉบับ ที่นี่ตีความเป็นผู้เล่นรับดาเมตมากขึ้น (`DamageTaken`) เพราะม้ายังไม่มีเลือด; กติกาจำนวนยีนตัดสินใจแล้ว (ปกติ 2 สูงสุด 4) แต่ค่า Trouble ต่อยีนที่เกินยังไม่กำหนด จึงเป็นพารามิเตอร์ `TroublePerExtraGene` (ค่าเริ่ม 20 ชั่วคราว); `GeneDefinition.Cost` ไม่ได้ใช้
 
 ## 7. Player, Horse และ Combat
 
@@ -818,7 +823,7 @@ classDiagram
         +Prompt
         +Interact(PlayerCharacter who)
     }
-    class Hideout {
+    class HideoutContents {
         +List~Transform~ SpawnPoints
         +ServerRack Rack
         +Bounds Area
@@ -850,7 +855,7 @@ classDiagram
     CityGenerator ..> BuildingFactory : uses
     CityGenerator ..> PropFactory : uses
     StationHub "1" *-- "1" CaseBoard
-    Hideout "1" *-- "1" ServerRack
+    HideoutContents "1" *-- "1" ServerRack
     CaseBoard ..|> IInteractable
     ServerRack ..|> IInteractable
     CaseObjective <|-- EliminateArmedObjective
@@ -859,7 +864,7 @@ classDiagram
     SecureServerObjective ..> ServerRack
     EliminateArmedObjective ..> Enemy : counts
 
-    style Hideout fill:#fff8d6,stroke:#b8860b,stroke-dasharray:4 3,color:#000000
+    style HideoutContents fill:#fff8d6,stroke:#b8860b,stroke-dasharray:4 3,color:#000000
     style CaseObjective fill:#fff8d6,stroke:#b8860b,stroke-dasharray:4 3,color:#000000
     style EliminateArmedObjective fill:#fff8d6,stroke:#b8860b,stroke-dasharray:4 3,color:#000000
     style SecureServerObjective fill:#fff8d6,stroke:#b8860b,stroke-dasharray:4 3,color:#000000
@@ -870,13 +875,88 @@ classDiagram
 - Interior เข้าได้บางอาคาร (สถานีเป็นอย่างน้อย) ยังไม่ออกแบบคลาสเฉพาะ ใช้ prefab ห้องเดียวต่อ `StationHub`
 - **รอตัดสินใจ**: บทบาทของแผนที่ (ฮับอย่างเดียว หรือเมืองเดียวใช้ทุกคดี) และเงื่อนไขชนะของด่าน (ที่เสนอ: จัดการผู้ติดอาวุธ + กด E ค้างที่ตู้เซิร์ฟเวอร์) จึงโครง `Hideout` กับ `CaseObjective` ไว้ก่อน ถ้าเงื่อนไขชนะเปลี่ยน เพิ่มคลาสลูกของ `CaseObjective` ได้ โดยไม่แก้ส่วนอื่น
 
+## 11.1 กับดักระหว่างทาง (Traps) และหลายรัง
+
+```mermaid
+classDiagram
+    class Trap {
+        <<abstract>>
+        +float damage
+        +GameObject[] activateOnSpring
+        +TrapKind Kind
+        +bool HasSprung
+        +bool IsDefused
+        +static event Sprung
+        +static event Defused
+        +Spring(GameObject target)
+        +Defuse()
+    }
+    class TrapKind {
+        <<enumeration>>
+        FakeSupply
+        PhishingLink
+        Disguised
+        Ambush
+        CallCenter
+    }
+    class SupplyCrate {
+        +bool isFake
+        +static event Collected
+        +Use(GameObject user)
+    }
+    class PhishingSign {
+        +float hackDuration
+    }
+    class DisguisedScammer {
+        +float stareTime
+        +IsEyeContact(eye, forward) bool
+        +UpdateStare(bool contact, float dt) bool
+    }
+    class AmbushBait {
+        +float triggerRadius
+    }
+    class TrapLog {
+        <<static>>
+        +SprungKinds
+        +DefusedKinds
+        +Reset()
+    }
+    class Hideout {
+        +string hideoutId
+        +string zoneHint
+        +bool IsRevealed
+        +static Find(string id) Hideout
+        +Reveal()
+        +Hide()
+    }
+
+    Trap <|-- SupplyCrate
+    Trap <|-- PhishingSign
+    Trap <|-- DisguisedScammer
+    Trap <|-- AmbushBait
+    Trap --> TrapKind
+    Trap ..> TrapLog : records
+    Trap ..> IDamageable : damages player
+```
+
+- กับดักทุกอันต้องมีสัญญาณให้สังเกตก่อน (อาร์ตหรือพฤติกรรม) ดู PLAN.md หัวข้อ 4
+- กับดักไม่รู้จัก Trouble/UI/ศัตรู: ระบบอื่นฟัง `Trap.Sprung`/`Defused` เอง, ศัตรูที่ซุ่มอยู่วางไว้ในฉากแบบปิดแล้วใส่ใน `activateOnSpring`
+- `DisguisedScammer` มี `Health` ของตัวเอง (`RequireComponent`) ถ้าถูกยิงตายก่อน = Defuse; การสบตาต้องมองเห็นกันจริง (Linecast)
+- ปุ่ม E ใช้ร่วมกับ `PlayerMount`: กับดักอ่านปุ่มใน `LateUpdate` และไม่นับการกดที่ทำให้ขึ้น/ลงม้า (`Trap.IsOnFootInteract`)
+- `WeaponLock` (อยู่บนตัวผู้เล่น) ล็อกปืนตอนโดน Hack และปลดเฉพาะที่ตัวเองล็อก
+- `PlayerLocator` หา `PlayerController` ครั้งเดียวแล้วเก็บไว้; ค่า static ทั้งหมดรีเซ็ตตอนเริ่ม Play (`RuntimeInitializeOnLoadMethod`)
+- `PhishingSign` ล็อกปืนผู้เล่น `hackDuration` วินาที (ผลของการโดน Hack เป็นข้อเสนอ ยังไม่ยืนยัน)
+- Call center gang ยังไม่มีโค้ด (ตัดได้ตาม PLAN.md)
+- `Hideout` (โค้ดจริง) ดูแลตำแหน่งและการเปิดเผย ส่วนของภายในรัง (จุดเกิดศัตรู ตู้เซิร์ฟเวอร์) ในหัวข้อ 11 เปลี่ยนชื่อเป็น `HideoutContents` เพื่อไม่ให้ซ้ำ ยังไม่มีโค้ด และเงื่อนไขชนะเปลี่ยนเป็น Seal หลักฐานที่สถานีแล้ว (ดู CONTEXT.md); เมืองมีหลายรัง คดีอ้างด้วย `hideoutId`, ตอบถูกในขั้นวิเคราะห์ = `Reveal()` ขึ้นลำแสงเหนือรัง
+
 ## 12. โฟลเดอร์และการแบ่งงาน
 
 ```
 Assets/Scripts/
   Core/       GameManager, GameStateMachine, GamePhaseState*, RunState, CaseSession, CaseSelector, EndingEvaluator
   Data/       CaseDatabase, CaseDefinition, EnemyDefinition, TroubleRules, CityLayout, ...
-  Genes/      GeneCatalog, GeneDefinition, GeneLoadout, RunModifiers
+  Genes/      GeneTypes (StatType, StatModifier...), GeneCatalog, GeneDefinition, GeneLoadout, RunModifiers, HorseGenes
+  Traps/      Trap, TrapLog, SupplyCrate, PhishingSign, DisguisedScammer, AmbushBait, WeaponLock, PlayerLocator
   Player/     PlayerControls, PlayerController, PlayerMount, PlayerInteractor, PlayerCharacter
   Horse/      HorseController
   Combat/     Health, HitZone, DamageInfo, IDamageable, Weapon, HitscanWeapon, PlayerWeaponController
