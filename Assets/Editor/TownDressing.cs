@@ -16,7 +16,7 @@ using Random = System.Random;
 public static class TownDressing
 {
     const string Art = "Assets/Art/Town/";
-    const float Y0 = .42f;            // boardwalk / shop floor height above the ground
+    const float Y0 = .28f;            // boardwalk / shop floor height above the ground (<= the player's step offset, so it can be climbed anywhere)
     const float FrontX = 11.4f;       // facade line: |x| of the front wall
     const float WalkDepth = 3.7f;     // boardwalk, facade to street edge
     const float PorchDepth = 2.7f;    // covered part of the walkway (posts stand here)
@@ -182,7 +182,7 @@ public static class TownDressing
     }
 
     static Material mDeck, mSkirt, mRoofIron, mRoofRust, mRoofWood, mShutter, mDoor, mGlass, mInterior, mGlow, mIron, mBrass, mCanvasA, mCanvasB,
-        mCurtain, mPost, mRail, mGold, mWater, mStone, mHay, mSack, mLampGlass, mDark, mRope, mBarrel, mCrate, mLanternRed, mLeaf, mLeafB, mBloom, mRedPaint, mWhitePaint, mBluePaint, mSolar, mClock, mQr, mPaper, mInsulator, mWire, mInteriorGrad;
+        mCurtain, mPost, mRail, mGold, mWater, mStone, mHay, mSack, mLampGlass, mDark, mRope, mBarrel, mCrate, mLanternRed, mLeaf, mLeafB, mBloom, mRedPaint, mWhitePaint, mBluePaint, mSolar, mClock, mQr, mPaper, mInsulator, mWire, mInteriorGrad, mInteriorOld, mBulb, mRoofTile, mRoofMoss;
     static Dictionary<string, Material> walls;
 
     static void InitMaterials()
@@ -194,14 +194,16 @@ public static class TownDressing
             ["blue"] = Pbr("wall_blue", "blue_painted_planks", new Color(.78f, .86f, .85f), 1.2f, .55),
             ["grey"] = Pbr("wall_grey", "distressed_painted_planks", new Color(.82f, .85f, .76f), 1.3f, .5),
             ["red"] = Pbr("wall_red", "red_plaster_weathered", new Color(.78f, .66f, .62f), 2.4f, .35),
-            ["raw"] = Pbr("wall_raw", "raw_plank_wall", new Color(.8f, .66f, .52f), 1.4f, .4),
+            ["raw"] = Pbr("wall_raw", "raw_plank_wall", new Color(.7f, .62f, .55f), 1.4f, .4),
             ["log"] = Pbr("wall_log", "weathered_plank_siding", new Color(.85f, .75f, .65f), 1.3f, .5),
             ["weather"] = Pbr("wall_weather", "weathered_planks", new Color(.9f, .82f, .72f), 1.4f, .45),
         };
         mDeck = Pbr("deck", "wooden_planks", new Color(.66f, .55f, .45f), 1.2f, .45);
-        mSkirt = Pbr("skirt", "weathered_planks", new Color(.5f, .42f, .36f), 1.4f, .3);
-        mRoofIron = Pbr("roof_iron", "worn_corrugated_iron", new Color(.78f, .72f, .66f), 1.6f, .55, .75f);
-        mRoofRust = Pbr("roof_rust", "rusty_corrugated_iron", new Color(.9f, .78f, .7f), 1.6f, .45, .6f);
+        mSkirt = Pbr("skirt", "weathered_planks", new Color(.72f, .62f, .52f), 1.4f, .3);
+        mRoofIron = Pbr("roof_iron", "worn_corrugated_iron", new Color(.66f, .62f, .57f), 1.6f, .5, .3f);
+        mRoofTile = Pbr("roof_tile", "clay_roof_tiles_02", new Color(.95f, .8f, .72f), 1.6f, .3);
+        mRoofMoss = Pbr("roof_moss", "roof_tiles_14", new Color(1.1f, 1.05f, .95f), 1.5f, .3);
+        mRoofRust = Pbr("roof_rust", "rusty_corrugated_iron", new Color(.95f, .82f, .74f), 1.6f, .45, .2f);
         mRoofWood = Pbr("roof_wood", "roof_planks", new Color(.55f, .45f, .38f), 1.5f, .35);
         mShutter = Pbr("shutter", "wood_shutter", new Color(.55f, .6f, .52f), 1.0f, .4);
         mDoor = Pbr("door", "wooden_gate", new Color(.8f, .66f, .54f), 1.4f, .4);
@@ -214,15 +216,15 @@ public static class TownDressing
         mSack = Pbr("sack", "hessian_230", new Color(.8f, .72f, .55f), .6f, .1);
         mGlass = Glass();
         mInterior = Flat("interior", new Color(.05f, .035f, .025f), 0f, 0f, null, true);
-        mGlow = Flat("glow", new Color(1.9f, 1.05f, .45f), 0f, 0f, null, true);
         mIron = Flat("iron", new Color(.07f, .07f, .075f), .45f, .85f);
         mBrass = Flat("brass", new Color(.62f, .45f, .16f), .6f, .9f);
         mGold = Flat("gold", new Color(.85f, .62f, .2f), .55f, .8f);
         mWater = Flat("water", new Color(.1f, .15f, .15f), .95f, 0f);
-        mStone = Pbr("stone", "weathered_planks", new Color(.4f, .38f, .36f), 1.4f, .2);
+        mStone = Pbr("stone", "stonerock", new Color(.8f, .74f, .66f), 1.6f, .25);
         mLampGlass = Flat("lamp_glass", new Color(1f, .75f, .4f), .8f, 0f, new Color(3.2f, 1.7f, .6f));
         mDark = Flat("dark", new Color(.03f, .025f, .02f), .1f, 0f);
         mRope = Flat("rope", new Color(.45f, .36f, .22f), .1f, 0f);
+        mBulb = Flat("bulb", new Color(2.2f, 1.25f, .5f), 0f, 0f, null, true);
         mBarrel = Pbr("barrel", "weathered_brown_planks", new Color(.85f, .7f, .55f), .8f, .35);
         mCrate = Pbr("crate", "raw_plank_wall", new Color(.62f, .52f, .42f), 1f, .3);
         mLanternRed = Flat("lantern_red", new Color(.7f, .08f, .04f), .5f, 0f, new Color(2.6f, .4f, .14f));
@@ -235,7 +237,10 @@ public static class TownDressing
         mSolar = Flat("solar", new Color(.03f, .06f, .13f), .92f, .3f);
         mInsulator = Flat("insulator", new Color(.3f, .42f, .38f), .75f);
         mWire = Flat("wire", new Color(.015f, .015f, .015f), .3f, .5f);
-        mInteriorGrad = Painted("interior_grad", 4, 64, (x, y) =>
+        mInteriorGrad = Painted("interior_dim", 128, 128, (x, y) => InteriorPixel(x, y, false));
+        mGlow = Painted("interior_lit", 128, 128, (x, y) => InteriorPixel(x, y, true));
+        mGlow.SetColor("_BaseColor", new Color(1.7f, 1.55f, 1.4f, 1f));
+        mInteriorOld = Painted("interior_grad", 4, 64, (x, y) =>
         {
             float t = y / 63f, warm = Mathf.Exp(-Mathf.Pow((t - .45f) / .3f, 2f));
             return new Color(.05f + .24f * warm, .032f + .13f * warm, .02f + .07f * warm, 1f);
@@ -275,6 +280,28 @@ public static class TownDressing
         });
     }
 
+    // Shop interior seen through a window: back wall with shelves and jars, warm light falling off toward the top.
+    static Color InteriorPixel(int x, int y, bool lit)
+    {
+        float t = y / 127f, glow = lit ? Mathf.Exp(-Mathf.Pow((t - .45f) / .45f, 2f)) : .25f;
+        Color wall = lit ? new Color(.95f, .5f, .2f) * (.35f + .65f * glow) : new Color(.1f, .06f, .035f) * (.5f + glow);
+        int shelfY = y % 34;
+        bool shelf = shelfY < 3 && y > 12 && y < 122;
+        if (shelf) return (lit ? new Color(.35f, .18f, .08f) : new Color(.06f, .035f, .02f));
+        if (x % 40 < 2) return wall * .45f;
+        if (shelfY >= 3 && shelfY < 17 && y > 12 && y < 122)
+        {
+            int cell = x / 9, h = (cell * 73856093 + (y / 34) * 19349663) & 15;
+            if (h < 8 && x % 9 < 6 && shelfY < 4 + 6 + h % 7)
+            {
+                Color[] pal = { new Color(.7f, .15f, .1f), new Color(.2f, .45f, .2f), new Color(.2f, .3f, .6f), new Color(.75f, .55f, .15f), new Color(.5f, .4f, .3f) };
+                var c = pal[h % 5];
+                return lit ? c * .75f : c * .22f;
+            }
+        }
+        return wall;
+    }
+
     static Material Glass()
     {
         if (matCache.TryGetValue("glass_t", out var cached)) return cached;
@@ -308,6 +335,7 @@ public static class TownDressing
         readonly string name;
         readonly Dictionary<Material, Data> data = new Dictionary<Material, Data>();
         readonly List<(Vector3 c, Vector3 s)> boxes = new List<(Vector3, Vector3)>();
+        readonly List<(string id, Vector3 p, float yaw, float scale)> scans = new List<(string, Vector3, float, float)>();
         readonly List<(Vector3 p, Color c, float i, float r)> lights = new List<(Vector3, Color, float, float)>();
         readonly Stack<Matrix4x4> stack = new Stack<Matrix4x4>();
         Matrix4x4 m = Matrix4x4.identity;
@@ -458,6 +486,7 @@ public static class TownDressing
         }
 
         public void Col(Vector3 c, Vector3 s) => boxes.Add((c, s));
+        public void Scan(string id, Vector3 p, float yaw, float scale = 1f) => scans.Add((id, m.MultiplyPoint3x4(p), yaw, scale));
         public void Light(Vector3 p, Color c, float intensity, float range) => lights.Add((m.MultiplyPoint3x4(p), c, intensity, range));
 
         public Transform Build()
@@ -475,6 +504,7 @@ public static class TownDressing
                 go.AddComponent<MeshRenderer>().sharedMaterial = kv.Key;
                 GameObjectUtility.SetStaticEditorFlags(go, StaticEditorFlags.ContributeGI | StaticEditorFlags.OccludeeStatic | StaticEditorFlags.ReflectionProbeStatic);
             }
+            foreach (var (id, sp, yaw, sc) in scans) TownDressing.Scan(root, id, root.TransformPoint(sp), root.eulerAngles.y + yaw, sc);
             foreach (var (p, c, i, rg) in lights)
             {
                 var lg = new GameObject("Light").AddComponent<Light>();
@@ -518,11 +548,11 @@ public static class TownDressing
             L("ตัดผม ลุงชัย", "ตัดผม", 7.5f, "false", 1, "blue", "blue", white, C(0x20384A), white, "rust", false, "barber"),
             Alley(4f, "alley"),
             L("โรงแรมสยามภิรมย์", "โรงแรม", 17f, "false", 3, "grey", "grey", cream, C(0x3A1D1A), gold, "iron", true, "hotel"),
-            L("น้ำชา ขนมไทย ป้าจันทร์", "น้ำชา", 9f, "gable", 2, "blue", "weather", teal, C(0x2C5A52), white, "wood", true, "tea"),
+            L("น้ำชา ขนมไทย ป้าจันทร์", "น้ำชา", 9f, "gable", 2, "blue", "weather", teal, C(0x2C5A52), white, "tile", true, "tea"),
             Alley(3.2f),
-            L("ร้านขายยา หมอสมชาย", "ยา", 9.5f, "false", 2, "dark", "dark", paleblue, C(0x22354A), white, "iron", true, "pharmacy"),
+            L("ร้านขายยา หมอสมชาย", "ยา", 9.5f, "false", 2, "dark", "dark", paleblue, C(0x22354A), white, "moss", true, "pharmacy"),
             L("โรงช่างไม้ ตาเหลี่ยม", "ช่างไม้", 11f, "low", 1, "raw", "raw", brownT, C(0x4A3320), cream, "rust", false, "carpenter"),
-            L("ร้านทองเยาวราช", "ทอง", 8.5f, "gable", 2, "red", "red", ochre, C(0x5A1F1B), gold, "iron", true, "gold"),
+            L("ร้านทองเยาวราช", "ทอง", 8.5f, "gable", 2, "red", "red", ochre, C(0x5A1F1B), gold, "tile", true, "gold"),
             Alley(4f, "alley"),
             L("คอกม้าไทยสบาย", "คอกม้า", 15f, "low", 1, "log", "log", brownT, C(0x3B2A1C), cream, "wood", false, "stable"),
         };
@@ -532,13 +562,13 @@ public static class TownDressing
             L("ร้านเครื่องเหล็ก ตาสี", "เหล็ก", 9.5f, "false", 1, "log", "log", brownT, C(0x1D1D1F), cream, "rust", false, "hardware"),
             Alley(4f, "alley"),
             L("ไปรษณีย์โทรเลข", "โทรเลข", 8f, "gable", 2, "grey", "grey", white, C(0x233B52), white, "iron", true, "post"),
-            L("ก๋วยเตี๋ยวเรือ ป้าแดง", "ก๋วยเตี๋ยว", 8.5f, "gable", 2, "weather", "weather", oxblood, C(0x7A2A1E), gold, "wood", true, "noodle"),
+            L("ก๋วยเตี๋ยวเรือ ป้าแดง", "ก๋วยเตี๋ยว", 8.5f, "gable", 2, "weather", "weather", oxblood, C(0x7A2A1E), gold, "tile", true, "noodle"),
             Alley(3.4f),
             L("ร้านตัดเสื้อ นางแก้ว", "ตัดเสื้อ", 8.5f, "false", 2, "brown", "blue", teal, C(0x2F5A55), white, "iron", true, "tailor"),
             L("โรงรับจำนำ ทรัพย์สิน", "จำนำ", 9f, "false", 2, "red", "brown", ochre, C(0x2A2A2A), gold, "rust", true, "pawn"),
-            L("ห้างขายยาจีน ฮั่วเฮง", "ยาจีน", 10f, "gable", 2, "red", "red", oxblood, C(0x1C1C1C), gold, "iron", true, "chinese"),
+            L("ห้างขายยาจีน ฮั่วเฮง", "ยาจีน", 10f, "gable", 2, "red", "red", oxblood, C(0x1C1C1C), gold, "tile", true, "chinese"),
             Alley(4f, "alley"),
-            L("ธนาคารสยามภิรมย์", "ธนาคาร", 13f, "false", 2, "red", "red", cream, C(0x14261F), gold, "iron", false, "bank"),
+            L("ธนาคารสยามภิรมย์", "ธนาคาร", 13f, "false", 2, "red", "red", cream, C(0x14261F), gold, "moss", false, "bank"),
         };
         int seed = 100;
         foreach (int side in new[] { -1, 1 })
@@ -547,6 +577,7 @@ public static class TownDressing
             foreach (var lot in side < 0 ? west : east)
             {
                 lot.seed = seed++;
+                lot.d = 8.5f + ((lot.seed * 7) % 5) * .9f;
                 if (lot.alley) { BuildAlley(root, lot, side, z - lot.w / 2f, index); z -= lot.w; index++; continue; }
                 float zc = z - lot.w / 2f;
                 BuildShop(root, lot, side, zc, index++);
@@ -587,9 +618,8 @@ public static class TownDressing
 
         // ---- shell: side walls, back wall, skirt below the floor
         float wy0 = -.5f;
-        b.BoxAB(wallHi, -hw, -hw + .2f, wy0, Yt, -D, -.2f);
-        b.BoxAB(wallHi, hw - .2f, hw, wy0, Yt, -D, -.2f);
-        b.BoxAB(wallHi, -hw + .2f, hw - .2f, wy0, Yt, -D, -D + .2f);
+        SideWalls(b, s, wallLo, wallHi, trim, rng, W, D, Yt, wy0);
+        BackWall(b, s, wallLo, wallHi, trim, rng, W, D, Yt, wy0);
         b.Col(new Vector3(0f, (wy0 + Yt) / 2f, -D / 2f), new Vector3(W, Yt - wy0, D));
 
         // ---- facade, storey by storey
@@ -617,6 +647,7 @@ public static class TownDressing
         SignBoard(b, s, W, Y1, Yt, trim, rng);
         // ---- lived-in dressing
         Dress(b, s, W, D, Y1, rng, groundOps);
+        Backyard(b, s, W, D, Y1, rng);
         {
             var door = groundOps.First(o => o.door); float dxl = (door.x0 + door.x1) / 2f;
             float lt = s.balcony ? Y1 - .3f : Y1 + .05f;
@@ -626,6 +657,157 @@ public static class TownDressing
 
         b.Build();
         Texts(go, s, W, Y1, Yt, rng);
+    }
+
+    // Side walls as small facades so alleys show windows, shutters and a back door instead of blank boards.
+    static void SideWalls(Batch b, Lot s, Material wallLo, Material wallHi, Material trim, Random r, float W, float D, float Yt, float wy0)
+    {
+        float hw = W / 2f, L = D - .2f, Y1 = Y0 + H1;
+        foreach (float sx in new[] { -1f, 1f })
+        {
+            b.Push(new Vector3(sx * hw, 0f, -.2f - L / 2f), Quaternion.Euler(0f, sx * 90f, 0f));
+            int n = Mathf.Max(2, Mathf.RoundToInt(L / 3.3f));
+            float slot = L / n;
+            var ground = new List<Op>(); var upper = new List<List<Op>>();
+            for (int f = 1; f < s.floors; f++) upper.Add(new List<Op>());
+            for (int i = 0; i < n; i++)
+            {
+                float cx = -L / 2f + slot * (i + .5f);
+                bool backDoor = i == n - 1 && sx > 0f;
+                ground.Add(backDoor
+                    ? new Op { x0 = cx - .6f, x1 = cx + .6f, y0 = Y0 - .05f, y1 = Y0 + 2.45f, door = true }
+                    : new Op { x0 = cx - .55f, x1 = cx + .55f, y0 = Y0 + .95f, y1 = Y0 + 2.5f, glow = r.Next(4) == 0, variant = 2 });
+                for (int f = 1; f < s.floors; f++)
+                {
+                    float yf = Y1 + (f - 1) * H2;
+                    upper[f - 1].Add(new Op { x0 = cx - .5f, x1 = cx + .5f, y0 = yf + .7f, y1 = yf + 2.4f, glow = r.Next(4) == 0, variant = r.Next(3) });
+                }
+            }
+            FacadeBand(b, wallLo, wy0, Y1, ground, L);
+            foreach (var op in ground) Opening(b, op, trim, r, s);
+            for (int f = 1; f < s.floors; f++)
+            {
+                float yf = Y1 + (f - 1) * H2;
+                FacadeBand(b, wallHi, yf, yf + H2, upper[f - 1], L);
+                foreach (var op in upper[f - 1]) Opening(b, op, trim, r, s);
+            }
+            if (s.kind == "low") FacadeBand(b, wallHi, Y1, Yt + .9f, new List<Op>(), L);
+            // back door step and a lantern
+            if (sx > 0f) { b.Box(mDeck, new Vector3(L / 2f - slot / 2f, .2f, .45f), new Vector3(1.4f, .4f, .8f), null, true); }
+            b.Pop();
+        }
+    }
+
+    // Back wall with windows, a rear door (with an outside stair up to the first floor on two-storey shops) and a lean-to kitchen.
+    static void BackWall(Batch b, Lot s, Material wallLo, Material wallHi, Material trim, Random r, float W, float D, float Yt, float wy0)
+    {
+        float L = W - .4f, Y1 = Y0 + H1;
+        b.Push(new Vector3(0f, 0f, -D), Quaternion.Euler(0f, 180f, 0f));
+        int n = Mathf.Max(2, Mathf.RoundToInt(L / 3.4f));
+        float slot = L / n;
+        int doorSlot = n / 2;
+        var ground = new List<Op>(); var upper = new List<List<Op>>();
+        for (int f = 1; f < s.floors; f++) upper.Add(new List<Op>());
+        float doorX = 0f;
+        for (int i = 0; i < n; i++)
+        {
+            float cx = -L / 2f + slot * (i + .5f);
+            if (i == doorSlot) { doorX = cx; ground.Add(new Op { x0 = cx - .6f, x1 = cx + .6f, y0 = Y0 - .05f, y1 = Y0 + 2.45f, door = true }); }
+            else ground.Add(new Op { x0 = cx - .55f, x1 = cx + .55f, y0 = Y0 + .95f, y1 = Y0 + 2.5f, glow = r.Next(4) == 0, variant = 2 });
+            for (int f = 1; f < s.floors; f++)
+            {
+                float yf = Y1 + (f - 1) * H2;
+                bool bd = f == 1 && i == doorSlot;
+                upper[f - 1].Add(new Op { x0 = cx - (bd ? .6f : .5f), x1 = cx + (bd ? .6f : .5f), y0 = bd ? yf + .08f : yf + .7f, y1 = yf + (bd ? 2.3f : 2.4f), balconyDoor = bd, glow = r.Next(4) == 0, variant = r.Next(3) });
+            }
+        }
+        FacadeBand(b, wallLo, wy0, Y1, ground, L);
+        foreach (var op in ground) Opening(b, op, trim, r, s);
+        for (int f = 1; f < s.floors; f++)
+        {
+            float yf = Y1 + (f - 1) * H2;
+            FacadeBand(b, wallHi, yf, yf + H2, upper[f - 1], L);
+            foreach (var op in upper[f - 1]) Opening(b, op, trim, r, s);
+        }
+        if (s.kind == "low") FacadeBand(b, wallHi, Y1, Yt + .9f, new List<Op>(), L);
+        if (s.floors > 1)
+        {
+            // landing at the upper door and a straight stair down to the yard (runs away from the wall)
+            float top = Y1, run = 3.8f; int steps = 14; float rise = top / steps, tread = run / steps;
+            float sx = doorX;
+            b.Box(mDeck, new Vector3(sx, top - .05f, .65f), new Vector3(1.7f, .1f, 1.3f), null, true);
+            foreach (float dx in new[] { -.8f, .8f }) b.Box(mPost, new Vector3(sx + dx, top / 2f, 1.25f), new Vector3(.14f, top, .14f), null, true, 0, 1f);
+            for (int i = 0; i < steps; i++)
+                b.Box(mDeck, new Vector3(sx, rise * (steps - 1 - i) + rise * .5f, 1.3f + i * tread + tread / 2f), new Vector3(1.1f, .06f, tread), null, true);
+            foreach (float dx in new[] { -.58f, .58f })
+            {
+                b.Between(mPost, new Vector3(sx + dx, top - .1f, 1.3f), new Vector3(sx + dx, 0f, 1.3f + run), .08f, 1f, .22f);
+                b.Between(mPost, new Vector3(sx + dx, top + .9f, 1.3f), new Vector3(sx + dx, .9f, 1.3f + run), .06f, 1f);
+                b.Box(mPost, new Vector3(sx + dx, top + .45f, 1.3f), new Vector3(.08f, .95f, .08f), null, true, 0, 1f);
+                b.Box(mPost, new Vector3(sx + dx, .45f, 1.3f + run), new Vector3(.08f, .95f, .08f), null, true, 0, 1f);
+            }
+            b.Col(new Vector3(sx, top / 2f, 1.3f + run / 2f), new Vector3(1.2f, top * .6f, run));
+        }
+        b.Pop();
+    }
+
+    static void Backyard(Batch b, Lot s, float W, float D, float Y1, Random r)
+    {
+        float hw = W / 2f, wallTop = Y0 + H1;
+        // lean-to kitchen on the back wall with a stove pipe
+        float kw = Mathf.Min(W * .4f, 4.2f), kx = (r.Next(2) == 0 ? -1f : 1f) * (hw - kw / 2f - .9f), kd = 2.8f, kh = 2.7f;
+        if (s.floors == 1 || r.Next(2) == 0)
+        {
+            kx = (kx > 0 ? -1f : 1f) * (hw - kw / 2f - .9f);   // keep clear of the stair side
+            var wall = walls["weather"];
+            b.BoxAB(wall, kx - kw / 2f, kx + kw / 2f, -.4f, kh, -D - kd, -D - kd + .15f);
+            b.BoxAB(wall, kx - kw / 2f, kx - kw / 2f + .15f, -.4f, kh, -D - kd, -D);
+            b.BoxAB(wall, kx + kw / 2f - .15f, kx + kw / 2f, -.4f, kh, -D - kd, -D);
+            b.Box(RoofMat(s), new Vector3(kx, kh + .35f, -D - kd / 2f + .2f), new Vector3(kw + .5f, .1f, kd + .9f), Quaternion.Euler(-12f, 0f, 0f));
+            b.Between(mIron, new Vector3(kx + kw * .25f, kh + .2f, -D - kd * .55f), new Vector3(kx + kw * .25f, kh + 1.9f, -D - kd * .55f), .16f);
+            b.Lathe(mIron, new Vector3(kx + kw * .25f, kh + 1.9f, -D - kd * .55f), new[] { (.2f, 0f), (.2f, .06f), (.12f, .14f) }, 8, 1f);
+            b.Quad(mInteriorGrad, new Vector3(kx, 1.6f, -D - kd + .17f), Vector3.forward, Vector3.up, .9f, .9f);
+            b.Col(new Vector3(kx, kh / 2f, -D - kd / 2f), new Vector3(kw, kh, kd));
+        }
+        // fence across the back with a gap, woodpile, rain barrel, hay, clothes line
+        float fz = -D - 6.2f;
+        int posts = Mathf.CeilToInt((W + 2f) / 1.9f);
+        for (int i = 0; i <= posts; i++)
+        {
+            float x = -hw - 1f + i * (W + 2f) / posts;
+            b.Box(mPost, new Vector3(x, .6f, fz), new Vector3(.12f, 1.2f, .12f), null, true, 0, 1f);
+        }
+        b.Box(mPost, new Vector3(0f, 1.0f, fz), new Vector3(W + 2.1f, .09f, .06f), null, true, 0, 1f);
+        b.Box(mPost, new Vector3(0f, .55f, fz), new Vector3(W + 2.1f, .09f, .06f), null, true, 0, 1f);
+        b.Col(new Vector3(0f, .6f, fz), new Vector3(W + 2.1f, 1.2f, .12f));
+        float wx = (r.Next(2) == 0 ? -1f : 1f) * (hw - 1.6f);
+        for (int row = 0; row < 3; row++)
+            for (int i = 0; i < 5 - row; i++)
+                b.Lathe(mPost, new Vector3(wx - 1f + row * .2f + i * .21f, .1f + row * .19f, -D - 3.7f), new[] { (.1f, -.5f), (.1f, .5f) }, 8, .5f, Quaternion.Euler(90f, 0f, 0f));
+        Barrel(b, new Vector3(-wx, 0f, -D - .9f), .92f, .31f);
+        if (r.Next(2) == 0) Hay(b, new Vector3(wx * -.4f, 0f, -D - 3.6f), r);
+        // clothes line
+        float lx0 = -hw + 1.2f, lx1 = lx0 + Mathf.Min(W - 2.4f, 6f), lz = -D - 4.6f;
+        b.Box(mPost, new Vector3(lx0, 1.3f, lz), new Vector3(.08f, 2.6f, .08f), null, true, 0, 1f);
+        b.Box(mPost, new Vector3(lx1, 1.3f, lz), new Vector3(.08f, 2.6f, .08f), null, true, 0, 1f);
+        b.Between(mRope, new Vector3(lx0, 2.4f, lz), new Vector3(lx1, 2.3f, lz), .012f);
+        int cloths = Mathf.RoundToInt((lx1 - lx0) / .75f);
+        for (int i = 0; i < cloths; i++)
+        {
+            float t = (i + .5f) / cloths;
+            var mat = i % 3 == 0 ? mCanvasB : i % 3 == 1 ? mCanvasA : mCurtain;
+            b.Box(mat, new Vector3(Mathf.Lerp(lx0, lx1, t), 1.95f - (i % 2) * .15f, lz), new Vector3(.5f, .8f - (i % 2) * .3f, .02f), Quaternion.Euler(0f, (i % 2) * 8f, 0f));
+        }
+        // gable-end vent on the back for two-storey front gables
+        // outhouse for some
+        if (s.seed % 3 == 0)
+        {
+            float ox = (hw - .9f) * (wx > 0 ? -1f : 1f) * .5f - 2.5f, oz = -D - 5f;
+            b.BoxAB(walls["raw"], ox - .55f, ox + .55f, -.1f, 2.1f, oz - .55f, oz + .55f);
+            b.Box(RoofMat(s), new Vector3(ox, 2.3f, oz), new Vector3(1.4f, .08f, 1.5f), Quaternion.Euler(-10f, 0f, 0f));
+            b.BoxAB(mDoor, ox - .35f, ox + .35f, 0f, 1.8f, oz + .55f, oz + .6f);
+            b.Col(new Vector3(ox, 1f, oz), new Vector3(1.1f, 2.2f, 1.1f));
+        }
     }
 
     sealed class Op { public float x0, x1, y0, y1; public bool door, balconyDoor, glow; public int variant; }
@@ -805,7 +987,7 @@ public static class TownDressing
         }
     }
 
-    static Material RoofMat(Lot s) => s.roof == "wood" ? mRoofWood : s.roof == "rust" ? mRoofRust : mRoofIron;
+    static Material RoofMat(Lot s) => s.roof == "wood" ? mRoofWood : s.roof == "rust" ? mRoofRust : s.roof == "tile" ? mRoofTile : s.roof == "moss" ? mRoofMoss : mRoofIron;
 
     static void Balustrade(Batch b, Vector3 a, Vector3 c, Material trim)
     {
@@ -966,6 +1148,75 @@ public static class TownDressing
         return go;
     }
 
+    // ================================================================ photo-scanned props (Poly Haven, CC0)
+
+    static readonly Dictionary<string, Material> scanMats = new Dictionary<string, Material>();
+    static readonly HashSet<string> scanLogged = new HashSet<string>();
+
+    static Material ScanMaterial(string id)
+    {
+        if (scanMats.TryGetValue(id, out var cached) && cached != null) return cached;
+        string dir = $"Assets/ThirdParty/PolyHaven/{id}/textures/";
+        string diff = dir + id + "_diff_1k.jpg", nor = dir + id + "_nor_gl_1k.png", rough = dir + id + "_rough_1k.jpg";
+        string cut = dir + id + "_diffalpha_1k.png";
+        bool foliage = File.Exists(cut);
+        if (foliage) diff = cut;
+        Import(diff, false); Import(nor, true);
+        if (foliage && AssetImporter.GetAtPath(diff) is TextureImporter ti && !ti.alphaIsTransparency) { ti.alphaIsTransparency = true; ti.SaveAndReimport(); }
+        var m = NewMaterial("scan_" + id, "Universal Render Pipeline/Lit");
+        m.SetTexture("_BaseMap", Load<Texture2D>(diff));
+        m.SetColor("_BaseColor", new Color(1.15f, 1.15f, 1.15f, 1f));
+        m.SetTexture("_BumpMap", Load<Texture2D>(nor)); m.EnableKeyword("_NORMALMAP");
+        string maskPath = $"{Art}gen/scan_{id}_ms.png";
+        var mask = Load<Texture2D>(maskPath);
+        if (mask == null && File.Exists(rough))
+        {
+            WorldSceneArt.EnsureFolder(Art + "gen");
+            var src = new Texture2D(2, 2, TextureFormat.RGBA32, false); src.LoadImage(File.ReadAllBytes(rough));
+            var px = src.GetPixels32();
+            for (int i = 0; i < px.Length; i++) px[i] = new Color32((byte)(id.Contains("brass") ? 220 : 0), 255, 0, (byte)((255 - px[i].r) * .8f));
+            var dst = new Texture2D(src.width, src.height, TextureFormat.RGBA32, false); dst.SetPixels32(px);
+            File.WriteAllBytes(maskPath, dst.EncodeToPNG());
+            Object.DestroyImmediate(src); Object.DestroyImmediate(dst);
+            AssetDatabase.ImportAsset(maskPath); Import(maskPath, false, true);
+            mask = Load<Texture2D>(maskPath);
+        }
+        if (mask != null) { m.SetTexture("_MetallicGlossMap", mask); m.EnableKeyword("_METALLICSPECGLOSSMAP"); m.SetFloat("_Smoothness", 1f); }
+        else m.SetFloat("_Smoothness", .25f);
+        if (foliage)
+        {
+            m.SetColor("_BaseColor", new Color(.9f, .95f, .85f, 1f));
+            m.SetFloat("_AlphaClip", 1f); m.SetFloat("_Cutoff", .45f); m.EnableKeyword("_ALPHATEST_ON");
+            m.SetFloat("_Cull", 0f); m.doubleSidedGI = true;
+            m.SetOverrideTag("RenderType", "TransparentCutout"); m.renderQueue = 2450;
+        }
+        EditorUtility.SetDirty(m);
+        scanMats[id] = m;
+        return m;
+    }
+
+    static GameObject Scan(Transform parent, string id, Vector3 worldPos, float worldYaw, float scale)
+    {
+        var prefab = Load<GameObject>($"Assets/ThirdParty/PolyHaven/{id}/{id}_1k.fbx");
+        if (prefab == null) { Debug.LogWarning("Missing scan " + id); return null; }
+        var go = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+        PrefabUtility.UnpackPrefabInstance(go, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
+        go.name = id;
+        go.transform.SetParent(parent, false);
+        go.transform.localScale = prefab.transform.localScale * scale;
+        go.transform.rotation = Quaternion.Euler(0f, worldYaw, 0f) * prefab.transform.localRotation;
+        go.transform.position = worldPos;
+        var mat = ScanMaterial(id);
+        var rends = go.GetComponentsInChildren<Renderer>();
+        if (rends.Length == 0) return go;
+        var bounds = rends[0].bounds;
+        foreach (var r in rends) { r.sharedMaterials = Enumerable.Repeat(mat, r.sharedMaterials.Length).ToArray(); bounds.Encapsulate(r.bounds); }
+        go.transform.position += Vector3.up * (worldPos.y - bounds.min.y);
+        go.transform.position += new Vector3(worldPos.x - bounds.center.x, 0f, worldPos.z - bounds.center.z);
+        if (scanLogged.Add(id)) Debug.Log($"scan {id} bounds size {bounds.size:F2}");
+        return go;
+    }
+
     // ================================================================ props (building-local coordinates, y = 0 at the ground)
 
     static float BarrelR(float y, float h, float R) { float t = y / h; return R * (.84f + .16f * (1f - Mathf.Pow(2f * t - 1f, 2f))); }
@@ -1029,27 +1280,13 @@ public static class TownDressing
 
     static void Bench(Batch b, Vector3 p, float len, float yaw)
     {
-        b.Push(p, Quaternion.Euler(0f, yaw, 0f));
-        b.Box(mPost, new Vector3(0f, .46f, 0f), new Vector3(len, .05f, .42f), null, false, 0, 1f);
-        b.Box(mPost, new Vector3(0f, .86f, -.2f), new Vector3(len, .3f, .035f), Quaternion.Euler(-8f, 0f, 0f), false, 0, 1f);
-        foreach (float sx in new[] { -1f, 1f })
-        {
-            b.Box(mPost, new Vector3(sx * (len / 2f - .15f), .22f, 0f), new Vector3(.06f, .44f, .36f), null, true, 0, 1f);
-            b.Box(mPost, new Vector3(sx * (len / 2f - .15f), .66f, -.19f), new Vector3(.06f, .6f, .05f), null, true, 0, 1f);
-        }
-        b.Pop();
-        b.Col(p + Vector3.up * .4f, new Vector3(len, .8f, .45f));
+        b.Scan("painted_wooden_bench", p, yaw + BenchYaw, Mathf.Min(len / 1.09f, 1.25f));
+        b.Col(p + Vector3.up * .4f, new Vector3(len, .8f, .5f));
     }
 
-    static void Stool(Batch b, Vector3 p)
-    {
-        b.Lathe(mPost, p, new[] { (0f, .46f), (.19f, .46f), (.19f, .5f), (0f, .5f) }, 10, 1f);
-        foreach (float a in new[] { 0f, 120f, 240f })
-        {
-            var d = Quaternion.Euler(0f, a, 0f) * new Vector3(.11f, 0f, 0f);
-            b.Between(mPost, p + d + Vector3.up * .02f, p + d * 1.3f + Vector3.up * .46f, .04f, 1f);
-        }
-    }
+    const float BenchYaw = 0f, StoolYaw = 0f;
+
+    static void Stool(Batch b, Vector3 p) => b.Scan("painted_wooden_stool", p, StoolYaw, 1f);
 
     static void Table(Batch b, Vector3 p, float lx, float lz)
     {
@@ -1080,7 +1317,6 @@ public static class TownDressing
         b.Lathe(mLanternRed, top - Vector3.up * (.16f + .42f) * s, prof, 10, 1f);
         b.Box(mGold, top - Vector3.up * .165f * s, new Vector3(.12f * s, .025f, .12f * s));
         b.Box(mGold, top - Vector3.up * (.16f + .42f) * s, new Vector3(.12f * s, .025f, .12f * s));
-        b.Light(top - Vector3.up * .38f * s, new Color(1f, .35f, .15f), 1.2f, 4.2f);
     }
 
     static void HangLantern(Batch b, Vector3 top, bool light)
@@ -1218,6 +1454,18 @@ public static class TownDressing
         float side = doorLeft ? 1f : -1f;
         // QR payment placard beside every door (2035 Thailand)
         QrPlacard(b, new Vector3(door.x1 + .4f, Y0 + 1.35f, .03f), Vector3.forward, .3f);
+        if (s.kind != "low")
+        {
+            b.Scan("ceramic_pot", new Vector3(door.x0 - .5f, Y0, 1.05f), 20f, .85f);
+            b.Scan(s.seed % 2 == 0 ? "calathea_orbifolia_01" : "fern_02", new Vector3(door.x0 - .5f, Y0 + .26f, 1.05f), 0f, s.seed % 2 == 0 ? .5f : .55f);
+            if (s.seed % 3 == 0)
+            {
+                b.Scan("planter_box_01", new Vector3(nearX, Y0, 2.2f), 90f, 1f);
+                b.Scan("fern_02", new Vector3(nearX, Y0 + .3f, 2.2f), 0f, .55f);
+            }
+            if (s.seed % 2 == 0) b.Scan("potted_plant_04", new Vector3(door.x1 + .55f, Y0, 1.0f), 0f, 1.1f);
+            else b.Scan("jug_01", new Vector3(door.x1 + .5f, Y0, .8f), 40f, 1.1f);
+        }
         // generic: barrel pair and crates at the far corner
         switch (s.extra)
         {
@@ -1227,18 +1475,18 @@ public static class TownDressing
                 Crate(b, new Vector3(edgeX - side * 1.1f, Y0 + .55f, 1.3f), new Vector3(.6f, .45f, .5f), -12f);
                 for (int i = 0; i < 4; i++) Sack(b, new Vector3(edgeX - side * (2.0f + i * .38f), Y0, 1.0f), r.Next(360), 0f);
                 Sack(b, new Vector3(edgeX - side * 2.2f, Y0 + .5f, 1.0f), r.Next(360), 12f);
-                Bench(b, new Vector3(nearX + side * 1.4f, Y0, 1.0f), 1.6f, 180f);
+                Bench(b, new Vector3(nearX + side * 1.4f, Y0, 1.0f), 1.6f, 0f);
                 // tools and pans hung on the front
                 for (int i = 0; i < 5; i++) b.Box(mIron, new Vector3(nearX + side * (.2f + i * .28f), Y0 + 2.3f, .06f), new Vector3(.2f, .2f, .03f), Quaternion.Euler(0f, 0f, i * 20f));
                 break;
             case "barber":
                 Barber(b, new Vector3(dx + (doorLeft ? 1.55f : -1.55f), Y0, 2.0f));
-                Bench(b, new Vector3(edgeX - side * .3f, Y0, 1.0f), 1.5f, 180f);
+                Bench(b, new Vector3(edgeX - side * .3f, Y0, 1.0f), 1.5f, 0f);
                 break;
             case "hotel":
                 Planter(b, new Vector3(-hw + 1.3f, Y0 + .0f, 2.45f), 1.6f, r);
                 Planter(b, new Vector3(hw - 1.3f, Y0 + .0f, 2.45f), 1.6f, r);
-                Bench(b, new Vector3(dx - 3.2f, Y0, 1.0f), 1.7f, 180f); Bench(b, new Vector3(dx + 3.2f, Y0, 1.0f), 1.7f, 180f);
+                Bench(b, new Vector3(dx - 3.2f, Y0, 1.0f), 1.7f, 0f); Bench(b, new Vector3(dx + 3.2f, Y0, 1.0f), 1.7f, 0f);
                 Clock(b, new Vector3(0f, Y1 + 2f * H2 + 2.6f + .22f + 1.2f, .1f), .85f);
                 break;
             case "tea":
@@ -1268,8 +1516,8 @@ public static class TownDressing
                     b.Pop();
                 }
                 Barrel(b, new Vector3(edgeX, Y0, 1.1f)); Barrel(b, new Vector3(edgeX - side * .75f, Y0, 1.15f), .92f, .31f);
-                Bench(b, new Vector3(nearX + side * 1.2f, Y0, 1.0f), 1.8f, 180f);
-                Bench(b, new Vector3(nearX + side * 4f, Y0, 1.0f), 1.8f, 180f);
+                Bench(b, new Vector3(nearX + side * 1.2f, Y0, 1.0f), 1.8f, 0f);
+                Bench(b, new Vector3(nearX + side * 4f, Y0, 1.0f), 1.8f, 0f);
                 Poster(b, new Vector3(door.x1 + .9f, Y0 + 1.7f, .035f), Vector3.forward, .42f, .6f, 3f);
                 break;
             case "hardware":
@@ -1296,7 +1544,7 @@ public static class TownDressing
             case "chinese":
             case "bank":
                 Planter(b, new Vector3(edgeX - side * .5f, Y0, 2.2f), 1.2f, r);
-                Bench(b, new Vector3(nearX + side * 1.4f, Y0, 1.0f), 1.6f, 180f);
+                Bench(b, new Vector3(nearX + side * 1.4f, Y0, 1.0f), 1.6f, 0f);
                 if (s.extra == "chinese") for (int i = 0; i < 4; i++) PaperLantern(b, new Vector3(-hw + 1.2f + i * ((W - 2.4f) / 3f), Y1 - .2f - .45f, PorchDepth - .35f), 1f);
                 if (s.extra == "pawn") for (int i = 0; i < 3; i++) b.Lathe(mGold, new Vector3(-hw + .8f + i * .3f, Y1 - .5f, PorchDepth + .1f), new[] { (0f, 0f), (.08f, .03f), (.11f, .11f), (.08f, .19f), (0f, .22f) }, 10, 1f);
                 if (s.extra == "pharmacy") Barrel(b, new Vector3(edgeX, Y0, 1.1f), .6f, .26f);
@@ -1328,6 +1576,9 @@ public static class TownDressing
         Crate(b, new Vector3(-w / 2f + .7f, 0f, -2.2f), new Vector3(.8f, .6f, .6f), 14f);
         Crate(b, new Vector3(-w / 2f + .75f, .6f, -2.25f), new Vector3(.6f, .5f, .5f), -9f);
         Sack(b, new Vector3(w / 2f - .6f, 0f, -2.6f), 30f, 0f); Sack(b, new Vector3(w / 2f - .9f, 0f, -2.9f), 90f, 8f);
+        b.Scan("planter_pot_clay", new Vector3(w / 2f - .5f, 0f, -1.2f), 0f, 1.2f);
+        b.Scan("fern_02", new Vector3(w / 2f - .5f, .24f, -1.2f), 0f, .6f);
+        b.Scan("fern_02", new Vector3(-w / 2f + .5f, 0f, -1.6f), 30f, .7f);
         if (w >= 3.9f) Wagon(b, new Vector3(0f, 0f, -10.5f), 0f, r, index % 2 == 0);
         else Hay(b, new Vector3(0f, 0f, -6.5f), r);
         // laundry / bunting line across the alley
@@ -1423,7 +1674,7 @@ public static class TownDressing
         {
             float t = i / (float)bulbs;
             Vector3 p = Vector3.Lerp(a, c, t) + Vector3.down * sag * 4f * t * (1f - t);
-            b.Lathe(i % 4 == 0 ? mLanternRed : mGlow, p + Vector3.down * .18f, new[] { (0f, -.06f), (.045f, -.03f), (.06f, .03f), (.035f, .08f), (0f, .1f) }, 6, 1f);
+            b.Lathe(i % 4 == 0 ? mLanternRed : mBulb, p + Vector3.down * .18f, new[] { (0f, -.06f), (.045f, -.03f), (.06f, .03f), (.035f, .08f), (0f, .1f) }, 6, 1f);
             b.Between(mWire, p, p + Vector3.down * .13f, .012f);
         }
         b.Light(Vector3.Lerp(a, c, .5f) + Vector3.down * (sag + .3f), new Color(1f, .6f, .3f), 2.2f, 9f);
@@ -1470,12 +1721,12 @@ public static class TownDressing
             foreach (float lane in new[] { -2.1f, 1.45f })
             {
                 float x = lane + ((float)r.NextDouble() - .5f) * .5f;
-                b.Quad(mRut, new Vector3(x, GroundY(x, zc) + .035f, zc), Vector3.up, Vector3.forward, .7f, step + .4f);
-                if (r.Next(2) == 0) b.Quad(mRut, new Vector3(x + 1.25f, GroundY(x, zc) + .04f, zc + 1f), Vector3.up, Vector3.forward, .62f, step + .4f);
+                b.Quad(mRut, new Vector3(x, GroundY(x, zc) + .075f, zc), Vector3.up, Vector3.forward, .7f, step + .4f);
+                if (r.Next(2) == 0) b.Quad(mRut, new Vector3(x + 1.25f, GroundY(x, zc) + .085f, zc + 1f), Vector3.up, Vector3.forward, .62f, step + .4f);
             }
-            b.Quad(mTrample, new Vector3(0f, GroundY(0f, zc) + .03f, zc), Vector3.up, Vector3.forward, 3.4f, step + .4f);
+            b.Quad(mTrample, new Vector3(0f, GroundY(0f, zc) + .06f, zc), Vector3.up, Vector3.forward, 3.4f, step + .4f);
             foreach (int side in new[] { -1, 1 })
-                b.Quad(mTrample, new Vector3(side * 6.4f, GroundY(side * 6.4f, zc) + .045f, zc), Vector3.up, Vector3.forward, 2.2f, step + .4f);
+                b.Quad(mTrample, new Vector3(side * 6.4f, GroundY(side * 6.4f, zc) + .065f, zc), Vector3.up, Vector3.forward, 2.2f, step + .4f);
         }
         b.Build();
     }
@@ -1500,6 +1751,18 @@ public static class TownDressing
         b.Quad(mFlag, new Vector3(x0 - 1.3f, y0 + 8.7f, z0), Vector3.forward, Vector3.up, 2.4f, 1.6f, 0f, true);
         b.Between(mIron, new Vector3(x0, y0 + 9.4f, z0), new Vector3(x0 - 2.5f, y0 + 9.4f, z0), .03f);
         b.Col(new Vector3(x0, y0 + 2f, z0), new Vector3(.4f, 4f, .4f));
+        // stone well with a little roof, west of the station steps
+        {
+            float wx = -10f, wz = 60.5f, wy = GroundY(wx, wz);
+            b.Lathe(mStone, new Vector3(wx, wy, wz), new[] { (.0f, 0f), (1.0f, 0f), (1.0f, .85f), (.78f, .9f), (.78f, .3f), (.0f, .3f) }, 16, 1.6f);
+            b.Lathe(mWater, new Vector3(wx, wy + .35f, wz), new[] { (0f, 0f), (.77f, 0f) }, 16, 1f);
+            foreach (float dx in new[] { -.9f, .9f }) b.Box(mPost, new Vector3(wx + dx, wy + 1.6f, wz), new Vector3(.14f, 1.5f, .14f), null, true, 0, 1f);
+            b.Box(mPost, new Vector3(wx, wy + 2.2f, wz), new Vector3(2.1f, .12f, .14f), null, true, 0, 1f);
+            b.Box(mRoofWood, new Vector3(wx - .5f, wy + 2.45f, wz), new Vector3(1.4f, .08f, 1.6f), Quaternion.Euler(0f, 0f, 24f));
+            b.Box(mRoofWood, new Vector3(wx + .5f, wy + 2.45f, wz), new Vector3(1.4f, .08f, 1.6f), Quaternion.Euler(0f, 0f, -24f));
+            b.Lathe(mBarrel, new Vector3(wx + .6f, wy + .9f, wz + .85f), new[] { (0f, 0f), (.16f, 0f), (.19f, .1f), (.19f, .3f), (.16f, .34f), (0f, .34f) }, 10, .5f);
+            b.Col(new Vector3(wx, wy + .5f, wz), new Vector3(2f, 1f, 2f));
+        }
         // hitching rails and a trough in front of the station porch
         foreach (float x in new[] { -9f, 9f })
         {
@@ -1525,9 +1788,42 @@ public static class TownDressing
         b.Build();
     }
 
+    static Mesh Smoothed(Mesh source)
+    {
+        if (source == null) return null;
+        var mesh = Object.Instantiate(source);
+        mesh.name = source.name + "_smooth";
+        var v = mesh.vertices; var n = mesh.normals;
+        var sum = new Dictionary<Vector3Int, Vector3>();
+        Vector3Int Key(Vector3 p) => new Vector3Int(Mathf.RoundToInt(p.x * 400f), Mathf.RoundToInt(p.y * 400f), Mathf.RoundToInt(p.z * 400f));
+        for (int i = 0; i < v.Length; i++) { var k = Key(v[i]); sum[k] = sum.TryGetValue(k, out var a) ? a + n[i] : n[i]; }
+        for (int i = 0; i < v.Length; i++) n[i] = sum[Key(v[i])].normalized;
+        mesh.normals = n;
+        return mesh;
+    }
+
+    public static void DebugStats()
+    {
+        var root = GameObject.Find("TownArt");
+        if (root == null) return;
+        int rend = 0, tris = 0, lights = 0, cols = 0;
+        foreach (var mf in root.GetComponentsInChildren<MeshFilter>()) { rend++; if (mf.sharedMesh != null) tris += mf.sharedMesh.triangles.Length / 3; }
+        foreach (var l in root.GetComponentsInChildren<Light>()) lights++;
+        foreach (var c in root.GetComponentsInChildren<Collider>()) cols++;
+        var byName = new Dictionary<string, (int n, int t)>();
+        foreach (var mf in root.GetComponentsInChildren<MeshFilter>())
+        {
+            if (mf.sharedMesh == null) continue;
+            string key = mf.transform.parent != null && mf.transform.parent.name.StartsWith("Shop_") ? "(batched)" : mf.sharedMesh.name;
+            byName.TryGetValue(key, out var e); byName[key] = (e.n + 1, e.t + mf.sharedMesh.triangles.Length / 3);
+        }
+        foreach (var kv in byName.OrderByDescending(k => k.Value.t).Take(12)) Debug.Log($"  {kv.Key}: {kv.Value.n} objects, {kv.Value.t} tris");
+        Debug.Log($"TownArt stats: {rend} mesh objects, {tris} triangles, {lights} lights, {cols} colliders, {root.GetComponentsInChildren<Transform>().Length} transforms");
+    }
+
     static void Horses(Transform root)
     {
-        var coats = new[] { new Color(.34f, .17f, .08f), new Color(.08f, .07f, .065f), new Color(.52f, .42f, .32f) };
+        var coats = new[] { new Color(.5f, .27f, .12f), new Color(.38f, .2f, .1f), new Color(.6f, .55f, .5f) };
         var spots = new (float x, float z, float yaw, int coat)[] { (-6.2f, 44.5f, 90f, 0), (-6.2f, 47.2f, 80f, 1), (6.2f, 38.8f, -95f, 2), (6.2f, -4.8f, -88f, 0), (-6.2f, -31f, 85f, 1) };
         int k = 0;
         foreach (var h in spots)
@@ -1546,6 +1842,9 @@ public static class TownDressing
             }
             var animator = horse.GetComponentInChildren<Animator>();
             if (animator != null) Object.DestroyImmediate(animator);
+            // the CC0 horse is flat-shaded low poly; weld normals so it reads as a smooth animal
+            foreach (var smr in horse.GetComponentsInChildren<SkinnedMeshRenderer>()) smr.sharedMesh = Smoothed(smr.sharedMesh);
+            foreach (var mf in horse.GetComponentsInChildren<MeshFilter>()) mf.sharedMesh = Smoothed(mf.sharedMesh);
         }
     }
 

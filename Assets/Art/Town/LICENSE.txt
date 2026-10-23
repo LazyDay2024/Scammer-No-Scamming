@@ -7,3 +7,4 @@ wooden_gate, dark_wooden_planks, weathered_brown_planks, thatch_roof_angled, woo
 paintbase_* is a brightness-normalised copy of distressed_painted_planks (used to tint painted trim and signboards).
 gen/ holds generated PNGs (packed metallic/smoothness maps, clock face, QR placard, poster paper, flag, ground wear) made by
 Assets/Editor/TownDressing.cs. Materials/ holds the generated URP materials.
+roof tiles: clay_roof_tiles_02, roof_tiles_14, (clay_roof_tiles_03 unused/removed) - Poly Haven CC0.
