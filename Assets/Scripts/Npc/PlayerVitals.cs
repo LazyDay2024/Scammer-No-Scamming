@@ -23,6 +23,7 @@ namespace ScammerNoScamming
         Health health;
         PlayerControls controls;
         Camera view;
+        PlayerCameraFeel cameraFeel;
         CapsuleCollider hurtbox;
         HorseController ignoredHorse;
         bool deathReported;
@@ -33,6 +34,7 @@ namespace ScammerNoScamming
             health = GetComponent<Health>();
             controls = GetComponent<PlayerControls>();
             view = GetComponentInChildren<Camera>();
+            if (view != null) cameraFeel = view.GetComponent<PlayerCameraFeel>();
             health.deactivateOnDeath = false;
             if (!health.IsDead) health.SetMax(Mathf.Max(1f, maxHealth));
             if (createMountedHurtbox) CreateHurtbox();
@@ -147,10 +149,12 @@ namespace ScammerNoScamming
 
         void OnGUI()
         {
+            if (GameScreen.AnyOpen) return;
             float elapsed = Time.time - LastDamageTime;
             Color oldColor = GUI.color;
             Matrix4x4 oldMatrix = GUI.matrix;
-            if (flashDuration > 0f && elapsed < flashDuration)
+            // New rigs draw an edge vignette; keep the legacy flash for older rigs.
+            if ((cameraFeel == null || !cameraFeel.isActiveAndEnabled) && flashDuration > 0f && elapsed < flashDuration)
             {
                 GUI.color = new Color(1f, 0f, 0f, flashOpacity * (1f - elapsed / flashDuration));
                 GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), Texture2D.whiteTexture);

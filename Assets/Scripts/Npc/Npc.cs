@@ -38,6 +38,8 @@ namespace ScammerNoScamming
         {
             Health = GetComponent<Health>();
             Health.deactivateOnDeath = false;
+            if (Application.isPlaying && GetComponent<NpcImpactReaction>() == null)
+                gameObject.AddComponent<NpcImpactReaction>();
             CaptureResetState();
             FindAnimation();
 
@@ -89,6 +91,8 @@ namespace ScammerNoScamming
             transform.SetLocalPositionAndRotation(spawnLocalPosition, spawnLocalRotation);
             Health.deactivateOnDeath = false;
             Health.RestoreFull(Health.max);
+            var reaction = GetComponent<NpcImpactReaction>();
+            if (reaction != null) reaction.ResetPose();
             for (int i = 0; i < resetColliders.Length; i++)
                 if (resetColliders[i] != null) resetColliders[i].enabled = colliderEnabled[i];
             for (int i = 0; i < resetAgents.Length; i++)

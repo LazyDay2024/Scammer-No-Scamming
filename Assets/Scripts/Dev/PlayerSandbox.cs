@@ -76,6 +76,17 @@ namespace ScammerNoScamming
             player.AddComponent<PlayerMount>();
             player.AddComponent<PlayerWeaponController>();
             player.AddComponent<PlayerHud>();
+            var viewModel = player.AddComponent<RevolverViewModel>();
+            var feel = player.AddComponent<WeaponFeel>();
+#if UNITY_EDITOR
+            // Serialized asset references survive into the player; no AssetDatabase at runtime.
+            viewModel.revolverPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/ThirdParty/Quaternius/Props/Revolver_1.fbx");
+            feel.particleShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/FeelParticle.shader");
+#endif
+            cameraObject.AddComponent<PlayerCameraFeel>();
+            player.AddComponent<PlayerFeelAudio>();
+            player.AddComponent<KillHitStop>();
             return player;
         }
 
@@ -99,6 +110,7 @@ namespace ScammerNoScamming
             AddPart(horse, "Head", new Vector3(0f, 1.95f, 1.45f), new Vector3(0.35f, 0.4f, 0.8f), coat, materialFor);
 
             horse.AddComponent<HorseController>().SetSeat(seat.transform);
+            horse.AddComponent<HorseFeelAudio>();
             return horse;
         }
 

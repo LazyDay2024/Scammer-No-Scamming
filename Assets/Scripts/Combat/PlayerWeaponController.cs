@@ -58,7 +58,10 @@ namespace ScammerNoScamming
             if (!weapon.TryFire(cam.position, cam.forward, Faction.Player, out ShotResult shot)) return;
 
             if (shot.HitDamageable) LastHitTime = Time.time;
-            ShowTracer(cam.TransformPoint(muzzleOffset), shot.EndPoint);
+            var viewModel = GetComponent<RevolverViewModel>();
+            Vector3 muzzlePosition = viewModel != null && viewModel.Muzzle != null
+                ? viewModel.Muzzle.position : cam.TransformPoint(muzzleOffset);
+            ShowTracer(muzzlePosition, shot.EndPoint);
             Fired?.Invoke(shot.NoisePosition);
         }
 

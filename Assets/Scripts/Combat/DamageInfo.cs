@@ -8,6 +8,8 @@ namespace ScammerNoScamming
         public HitZoneType Zone;
         public Faction SourceFaction;
         public Vector3 Point;
+        // Travel direction, kept optional for existing damage callers.
+        public Vector3 Direction;
 
         public DamageInfo(float amount, HitZoneType zone, Faction sourceFaction, Vector3 point)
         {
@@ -15,6 +17,7 @@ namespace ScammerNoScamming
             Zone = zone;
             SourceFaction = sourceFaction;
             Point = point;
+            Direction = Vector3.zero;
         }
     }
 }

@@ -30,11 +30,17 @@ namespace ScammerNoScamming
             if (!found) return result;
 
             result.EndPoint = best.point;
+            result.Hit = true;
+            result.Normal = best.normal;
             var target = best.collider.GetComponentInParent<IDamageable>();
             if (target != null)
             {
-                target.TakeDamage(new DamageInfo(Damage, HitZoneType.Body, owner, best.point));
+                var zone = target as HitZone;
+                var health = zone != null && zone.Owner != null ? zone.Owner : best.collider.GetComponentInParent<Health>();
+                bool wasAlive = health != null && !health.IsDead;
+                target.TakeDamage(new DamageInfo(Damage, HitZoneType.Body, owner, best.point) { Direction = direction.normalized });
                 result.HitDamageable = true;
+                result.Killed = wasAlive && health != null && health.IsDead;
             }
             return result;
         }
