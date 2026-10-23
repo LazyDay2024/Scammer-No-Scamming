@@ -65,6 +65,13 @@ public static class EditorBridge
                 case "sceneshot": Shot(SceneView.lastActiveSceneView?.camera, arg); break;
                 case "look": Look(arg); break;
                 case "tp": Teleport(arg); break;
+                case "cam": // cam x y z pitch yaw [fov] : place Camera.main (edit mode views)
+                    var cv = arg.Split(' ').Select(float.Parse).ToArray();
+                    var mainCam = Camera.main ?? throw new InvalidOperationException("no main camera");
+                    mainCam.transform.SetPositionAndRotation(new Vector3(cv[0], cv[1], cv[2]), Quaternion.Euler(cv[3], cv[4], 0f));
+                    if (cv.Length > 5) mainCam.fieldOfView = cv[5];
+                    mainCam.farClipPlane = 2000f;
+                    break;
                 case "setrot": // setrot <name> x y z : local euler angles of a live object
                     var rp = arg.Split(' ');
                     var target = GameObject.Find(string.Join(" ", rp.Take(rp.Length - 3))) ?? throw new ArgumentException("not found");

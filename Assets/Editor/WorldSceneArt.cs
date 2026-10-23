@@ -224,6 +224,7 @@ public static class WorldSceneArt
 
     public static void ClearBuildings(CityResult city, Vector3 centre)
     {
+        if (city == null || city.Root == null) return; // hand-built levels have no generated city
         var groups = new[] { city.Root.transform.Find("Towers"), city.Root.transform.Find("MidRise"), city.Root.transform.Find("Houses"), city.Root.transform.Find("Props") };
         foreach (var group in groups)
         {
@@ -366,10 +367,10 @@ public static class WorldSceneArt
         AssetDatabase.CreateAsset(surface.navMeshData, path);
     }
 
-    public static void Lighting(Camera camera)
+    public static void Lighting(Camera camera, float sunYaw = -125f, float sunPitch = 30f)
     {
         var sun = Empty(null, "GoldenHourSun", Vector3.zero).gameObject.AddComponent<Light>();
-        sun.transform.rotation = Quaternion.Euler(30f, -125f, 0f); // low enough for long shadows, high enough to light the streets
+        sun.transform.rotation = Quaternion.Euler(sunPitch, sunYaw, 0f); // low enough for long shadows, high enough to light the streets
         sun.type = LightType.Directional;
         sun.color = new Color(1f, .8f, .58f);
         sun.intensity = 2f;

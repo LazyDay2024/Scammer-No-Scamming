@@ -1,0 +1,71 @@
+newmtl Old_Dried_Wood
+Kd 1.0000 1.0000 1.0000
+map_Kd Textures/Planks023A_512x512_Color.png
+map_Bump Textures/Planks023A_512x512_NormalGL.png
+
+newmtl Fabric_White
+Kd 1.0000 1.0000 1.0000
+map_Kd Textures/Fabric019_512x512_Color.png
+map_Bump Textures/Fabric019_512x512_NormalGL.png
+
+newmtl Cobble_Stone
+Kd 1.0000 1.0000 1.0000
+map_Kd Textures/PavingStones115B_512x512_Color.png
+map_Bump Textures/PavingStones115B_512x512_NormalGL.png
+
+newmtl Rusted_Metal
+Kd 1.0000 1.0000 1.0000
+map_Kd Textures/Metal041C_512x512_Color.png
+map_Bump Textures/Metal041C_512x512_NormalGL.png
+
+newmtl Cactus
+Kd 1.0000 1.0000 1.0000
+map_Kd Textures/Cactus_512x512_Color.png
+map_Bump Textures/Cactus_512x512_NormalGL.png
+
+newmtl Old_Dried_Wood_2
+Kd 1.0000 1.0000 1.0000
+map_Kd Textures/Planks012_512x512_Color.png
+map_Bump Textures/Planks012_512x512_NormalGL.png
+
+newmtl Stone_Bricks
+Kd 1.0000 1.0000 1.0000
+map_Kd Textures/Bricks096_512x512_Color.png
+map_Bump Textures/Bricks096_512x512_NormalGL.png
+
+newmtl Desert_Floor
+Kd 1.0000 1.0000 1.0000
+map_Kd Textures/Ground076L_512x512_Color_Orange.png
+map_Bump Textures/Ground076L_512x512_NormalGL.png
+
+newmtl Red_Planks
+Kd 1.0000 1.0000 1.0000
+map_Kd Textures/Planks019_512x512_Color_Red.png
+map_Bump Textures/Planks019_512x512_NormalGL.png
+
+newmtl Material
+Kd 1.0000 1.0000 1.0000
+
+newmtl Red_Wallpaper
+Kd 1.0000 1.0000 1.0000
+map_Kd Textures/Wallpaper001A-PNG_Color_Red.png
+map_Bump Textures/Wallpaper001A-PNG_NormalGL.png
+
+newmtl Old_Dried_Wood_Black
+Kd 1.0000 1.0000 1.0000
+map_Kd Textures/Planks023A_512x512_Color_Black.png
+map_Bump Textures/Planks023A_512x512_NormalGL.png
+
+newmtl Old_Dried_Wood_2_Blue
+Kd 1.0000 1.0000 1.0000
+map_Kd Textures/Planks012_512x512_Color_Blue.png
+map_Bump Textures/Planks012_512x512_NormalGL.png
+
+newmtl Old_Dried_Wood_Furniture_1
+Kd 1.0000 1.0000 1.0000
+map_Kd Textures/Wood026_1K-JPG_Color.jpg
+map_Bump Textures/Wood026_1K-JPG_NormalGL.jpg
+
+newmtl Mirror
+Kd 0.2912 0.2912 0.2912
+

@@ -1,0 +1,2 @@
+Old West Town asset pack by NaiveGoblin (https://naivegoblin.itch.io/old-west-asset-pack)
+License: CC0 1.0 Universal (public domain). Converted from Main File V1_1.glb by Tools/glb_to_obj.py.

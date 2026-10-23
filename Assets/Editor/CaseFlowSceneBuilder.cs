@@ -177,7 +177,7 @@ public static class CaseFlowSceneBuilder
         booth.transform.SetParent(parent, true);
     }
 
-    static GameObject HiddenScammer(Transform parent, Vector3 position)
+    public static GameObject HiddenScammer(Transform parent, Vector3 position)
     {
         var scammer = WorldSceneArt.Character(parent, "Casual3_Male", position + Vector3.up * .12f, true, Faction.Scammer);
         scammer.name = "HiddenScammer";
@@ -186,7 +186,7 @@ public static class CaseFlowSceneBuilder
         return scammer;
     }
 
-    static GameObject RoadSign(Transform parent, string name, Vector3 position, Vector2 size, float yaw, string texture)
+    public static GameObject RoadSign(Transform parent, string name, Vector3 position, Vector2 size, float yaw, string texture)
     {
         var sign = WorldSceneArt.Empty(parent, name, position, yaw).gameObject;
         var wood = WorldSceneArt.Paint("RoadSignWood", new Color(.27f, .17f, .1f));
@@ -196,7 +196,7 @@ public static class CaseFlowSceneBuilder
         return sign;
     }
 
-    static GameObject Prop(string name, Vector3 position, Vector3 scale, float yaw, Material material)
+    public static GameObject Prop(string name, Vector3 position, Vector3 scale, float yaw, Material material)
     {
         var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
         go.name = name;
@@ -208,7 +208,7 @@ public static class CaseFlowSceneBuilder
     }
 
     // A URP Lit material asset per texture, created once under Assets/Materials/Traps.
-    static Material Textured(string texture, Color fallback)
+    public static Material Textured(string texture, Color fallback)
     {
         string path = $"{TrapMaterialFolder}/Mat_{texture}.mat";
         var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -231,7 +231,7 @@ public static class CaseFlowSceneBuilder
         return mat;
     }
 
-    static Material Flat(Color color)
+    public static Material Flat(Color color)
     {
         string hex = ColorUtility.ToHtmlStringRGB(color);
         var shared = AssetDatabase.LoadAssetAtPath<Material>($"{CityMaterialFolder}/Flat_{hex}.mat");
@@ -247,7 +247,7 @@ public static class CaseFlowSceneBuilder
     }
 
     // The jam build should open on this flow, so put the scene first in Build Settings (others kept).
-    static void RegisterFirst(string path)
+    public static void RegisterFirst(string path)
     {
         var scenes = new System.Collections.Generic.List<EditorBuildSettingsScene> { new EditorBuildSettingsScene(path, true) };
         foreach (var s in EditorBuildSettings.scenes)
@@ -255,7 +255,7 @@ public static class CaseFlowSceneBuilder
         EditorBuildSettings.scenes = scenes.ToArray();
     }
 
-    static Material LoadCity(string name) => AssetDatabase.LoadAssetAtPath<Material>($"{CityMaterialFolder}/{name}.mat");
+    public static Material LoadCity(string name) => AssetDatabase.LoadAssetAtPath<Material>($"{CityMaterialFolder}/{name}.mat");
 
     static void Lighting()
     {
