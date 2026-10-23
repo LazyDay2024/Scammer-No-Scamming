@@ -34,6 +34,31 @@ public class QuaterniusImport : AssetPostprocessor
         importer.clipAnimations = clips;
     }
 
+    // The FBX colours are already linear but Unity treats them as sRGB and converts again, so every model came in
+    // far too dark (skin 0.013 = black faces). Undo that conversion; give near-black skin a warm tone.
+    void OnPostprocessMaterial(Material material)
+    {
+        if (!assetPath.StartsWith(Root)) return;
+        string property = material.HasProperty("_BaseColor") ? "_BaseColor" : "_Color";
+        if (!material.HasProperty(property)) return;
+        Color c = material.GetColor(property);
+        var lifted = new Color(Mathf.Pow(c.r, 1f / 2.2f), Mathf.Pow(c.g, 1f / 2.2f), Mathf.Pow(c.b, 1f / 2.2f), c.a);
+        if (material.name.IndexOf("Skin", System.StringComparison.OrdinalIgnoreCase) >= 0 && lifted.maxColorComponent < .3f)
+        {
+            var tones = new[] { new Color(.87f, .68f, .55f), new Color(.72f, .52f, .38f), new Color(.55f, .38f, .27f) };
+            lifted = tones[Mathf.Abs(assetPath.GetHashCode()) % tones.Length];
+        }
+        material.SetColor(property, lifted);
+        if (property == "_BaseColor" && material.HasProperty("_Color")) material.SetColor("_Color", lifted);
+    }
+
+    [MenuItem("Tools/Scammer No Scamming/Reimport Quaternius Models")]
+    public static void Reimport()
+    {
+        foreach (var path in Directory.GetFiles(Root, "*.fbx", SearchOption.AllDirectories))
+            AssetDatabase.ImportAsset(path.Replace('\\', '/'), ImportAssetOptions.ForceUpdate);
+    }
+
     [MenuItem("Tools/Scammer No Scamming/Dump Quaternius Clips")]
     public static void Dump()
     {

@@ -146,8 +146,10 @@ public static class EditorBridge
         if (cc != null) cc.enabled = false;
         player.transform.SetPositionAndRotation(new Vector3(v[0], v[1], v[2]), Quaternion.Euler(0f, v[3], 0f));
         if (cc != null) cc.enabled = true;
-        var cam = player.GetComponentInChildren<Camera>();
-        if (cam != null && v.Length > 4) cam.transform.localRotation = Quaternion.Euler(v[4], 0f, 0f);
+        // PlayerController keeps its own yaw/pitch and re-applies them every frame.
+        var flags = BindingFlags.NonPublic | BindingFlags.Instance;
+        typeof(ScammerNoScamming.PlayerController).GetField("yaw", flags)?.SetValue(player, v[3]);
+        if (v.Length > 4) typeof(ScammerNoScamming.PlayerController).GetField("pitch", flags)?.SetValue(player, v[4]);
     }
 
     // Renders the camera itself, so it works even when the editor window is not focused (no IMGUI overlay).

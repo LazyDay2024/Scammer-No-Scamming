@@ -84,7 +84,7 @@ public static class WorldSceneArt
         return go;
     }
 
-    public static GameObject Model(Transform parent, string relativePath, Vector3 position, float height, float yaw = 0f)
+    public static GameObject Model(Transform parent, string relativePath, Vector3 position, float height, float yaw = 0f, bool byWidth = false)
     {
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(ModelRoot + relativePath + ".fbx");
         if (prefab == null) throw new InvalidOperationException("Required CC0 model missing: " + relativePath);
@@ -93,7 +93,8 @@ public static class WorldSceneArt
         PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
         instance.transform.SetParent(parent, false);
         instance.transform.localPosition = position;
-        instance.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
+        // Keep the FBX root rotation (some Blender exports lie flat without it) and add our yaw on top.
+        instance.transform.localRotation = Quaternion.Euler(0f, yaw, 0f) * prefab.transform.localRotation;
         var renderers = instance.GetComponentsInChildren<Renderer>();
         if (renderers.Length == 0) return instance;
         Bounds bounds = renderers[0].bounds;
@@ -116,7 +117,8 @@ public static class WorldSceneArt
             renderer.sharedMaterials = materials;
             renderer.shadowCastingMode = ShadowCastingMode.On;
         }
-        float factor = height / Mathf.Max(.001f, bounds.size.y);
+        // byWidth: "height" is the largest horizontal size instead (rugs, flat props).
+        float factor = height / Mathf.Max(.001f, byWidth ? Mathf.Max(bounds.size.x, bounds.size.z) : bounds.size.y);
         instance.transform.localScale *= factor;
         // Plant its feet on the intended floor even when the FBX pivot lies in its centre.
         instance.transform.position += Vector3.up * ((parent.TransformPoint(position).y - bounds.min.y) * factor);

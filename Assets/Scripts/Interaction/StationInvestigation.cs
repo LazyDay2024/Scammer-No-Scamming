@@ -290,9 +290,9 @@ namespace ScammerNoScamming
                 if (station != null) stationAnchor = station.transform;
             }
             root.SetParent(stationAnchor != null ? stationAnchor : transform, false);
-            var wood = Mat(new Color(.2f, .12f, .065f));
+            var wood = Mat(new Color(.4f, .25f, .14f));
             var paper = Mat(new Color(.78f, .7f, .51f));
-            var metal = Mat(new Color(.07f, .13f, .14f));
+            var metal = Mat(new Color(.16f, .24f, .25f));
             Box("ClueBoard", new Vector3(-5f, 2.1f, 5.85f), new Vector3(6.4f, 3.3f, .18f), wood);
             Box("AnswerBoard", new Vector3(3f, 2.1f, 5.85f), new Vector3(8.5f, 3.3f, .18f), wood);
             heading = Label(root, "สถานีตำรวจ · รับคดี", new Vector3(0f, 4.3f, 5.6f), new Vector2(11f, 1.2f), .1f, ThaiGui.Gold);
@@ -342,7 +342,8 @@ namespace ScammerNoScamming
             dispatch = Interactive("DispatchRadio", new Vector3(7f, 1.55f, -15f), new Vector3(.65f, .7f, .35f), metal, "รับวิทยุ แล้วออกปฏิบัติการ", Dispatch);
             Label(dispatch.transform, "ออกปฏิบัติการ\nE · รับวิทยุ", new Vector3(0f, .75f, -.3f), new Vector2(2.4f, .8f), .09f, ThaiGui.Gold);
             Box("RadioAntenna", new Vector3(7.23f, 2.25f, -15f), new Vector3(.035f, .7f, .035f), metal, false);
-            // The station roof blocks the low sun; warm lamps keep the boards readable.
+            // The station roof blocks the low sun; warm lamps keep the boards readable (unless the scene is dressed).
+            if (stationAnchor == null || stationAnchor.Find("StationDressing") == null)
             foreach (var lamp in new[] { new Vector3(-4f, 3.9f, 2.5f), new Vector3(3.5f, 3.9f, 2.5f), new Vector3(-1f, 3.9f, -3f) })
             {
                 var light = new GameObject("StationLamp").AddComponent<Light>();

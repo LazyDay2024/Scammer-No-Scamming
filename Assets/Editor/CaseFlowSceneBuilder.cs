@@ -75,11 +75,9 @@ public static class CaseFlowSceneBuilder
             AssetDatabase.LoadAssetAtPath<GameObject>("Assets/ThirdParty/Quaternius/Characters/OldClassy_Male.fbx"),
             AssetDatabase.LoadAssetAtPath<GameObject>("Assets/ThirdParty/Quaternius/Characters/Suit_Female.fbx")
         };
-        station.interiorPrefabs = new[] {
-            AssetDatabase.LoadAssetAtPath<GameObject>("Assets/ThirdParty/Quaternius/Interior/Bookshelf.fbx"),
-            AssetDatabase.LoadAssetAtPath<GameObject>("Assets/ThirdParty/Quaternius/Interior/Chair_1.fbx"),
-            AssetDatabase.LoadAssetAtPath<GameObject>("Assets/ThirdParty/Quaternius/Interior/Light_Desk.fbx")
-        };
+        // The hall is furnished by StationDressing (editable in the scene), not by runtime prefabs.
+        station.interiorPrefabs = new GameObject[0];
+        StationDressing.Build(city.Station.transform);
 
         MarkStatic(city.Root);
         EditorSceneManager.SaveScene(scene, ScenePath);
