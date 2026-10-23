@@ -73,6 +73,29 @@ namespace ScammerNoScamming
                 if (go != null) go.SetActive(false);
         }
 
+        // A retry is a fresh action, including traps defeated during the failed attempt.
+        public virtual void ResetForAction()
+        {
+            IsDefused = false;
+            HasSprung = false;
+            ResetTrap();
+            ResetActors(gameObject);
+            // Trap ambushers are commonly siblings rather than children of the trigger.
+            foreach (var go in activateOnSpring) if (go != null) ResetActors(go);
+        }
+
+        static void ResetActors(GameObject root)
+        {
+            foreach (var npc in root.GetComponentsInChildren<Npc>(true))
+            {
+                npc.ResetForAction();
+                // A corpse may have hidden its own child object inside an ambush group.
+                // Keep the group root hidden until Spring, but restore each contained actor.
+                if (npc.gameObject != root) npc.gameObject.SetActive(true);
+            }
+            foreach (var health in root.GetComponentsInChildren<Health>(true)) health.RestoreFull(health.max);
+        }
+
         // Small "press E" hint near interactable traps; the lure text itself is part of the trap.
         protected void DrawPrompt(string text)
         {

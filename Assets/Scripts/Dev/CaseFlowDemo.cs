@@ -1,14 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace ScammerNoScamming
 {
-    // Plays chanawee's part end to end so it can be tested before the core systems land:
-    // menu -> opening -> per case: analysis -> genes -> ride/raid -> lesson -> ... -> ending.
-    // The raid here is a stand-in: hold E at the hideout door to take the evidence, then hold E at the
-    // station's evidence counter to Seal it. When the friend's GameManager / CaseSession / Trouble / enemies
-    // (items 1-7) arrive, they replace RunAction() and the Trouble tally below; the screens are reused as is.
+    // Case data and analysis remain the source of truth; the action now happens in the city.
     public class CaseFlowDemo : MonoBehaviour
     {
         public Transform sealPoint;
@@ -18,9 +13,13 @@ namespace ScammerNoScamming
         public int regularCases = 3;
         public float troublePerWrongAnswer = 10f;
         public float troublePerExtraGene = 20f;
+        public float troublePerShot = 1.5f;
+        public float troublePerTrap = 12f;
+        public float troublePerInnocent = 20f;
+        public float policeThreshold = 100f;
+        public StationInvestigation station;
 
-        enum Step { Idle, ToHideout, ToStation, Done }
-
+        enum Step { Idle, ToHideout, ToStation, Dead, Done }
         CaseDatabase db;
         GeneCatalog catalog;
         MainMenuScreen menu;
@@ -29,19 +28,29 @@ namespace ScammerNoScamming
         GeneSelectionScreen genes;
         LessonScreen lesson;
         PauseScreen pause;
-
         List<CaseDefinition> run;
-        int caseIndex;
+        int caseIndex, innocentsHit, innocentsBeforeAction;
         CaseDefinition current;
         GeneLoadout loadout;
+        RunModifiers modifiers = RunModifiers.None;
         Step step;
-        float hold;
-        float trouble;
-        int tutorialLine;
-        float tutorialTimer;
+        float trouble, troubleBeforeAction;
+        Vector3 playerStart, horseStart;
+        Quaternion playerStartRot, horseStartRot;
+        HorseController horse;
+        PlayerVitals vitals;
+        PlayerWeaponController playerWeapon;
+        RaidEncounter raid;
+        WorldInteractable sealInteraction;
+        readonly HashSet<Npc> hurtInnocents = new HashSet<Npc>();
 
         public float Trouble => trouble;
         public CaseDefinition Current => current;
+        public bool HasEvidence => raid != null && raid.EvidenceCollected;
+        public bool ActionActive => step == Step.ToHideout || step == Step.ToStation;
+        public int InnocentsHit => innocentsHit;
+        public GeneLoadout Loadout => loadout;
+        public AnalysisResult CurrentAnalysis { get; private set; }
 
         void Awake()
         {
@@ -56,10 +65,6 @@ namespace ScammerNoScamming
             pause.OnQuitToMenu = ReturnToMenu;
         }
 
-        Vector3 playerStart, horseStart;
-        Quaternion playerStartRot, horseStartRot;
-        HorseController horse;
-
         void Start()
         {
             MainMenuScreen.LoadSensitivity();
@@ -68,6 +73,13 @@ namespace ScammerNoScamming
             {
                 playerStart = player.transform.position;
                 playerStartRot = player.transform.rotation;
+                vitals = player.GetComponent<PlayerVitals>();
+                if (vitals == null) vitals = player.gameObject.AddComponent<PlayerVitals>();
+                if (player.GetComponent<HitFeedback>() == null) player.gameObject.AddComponent<HitFeedback>();
+                if (player.GetComponent<WorldInteractor>() == null) player.gameObject.AddComponent<WorldInteractor>();
+                vitals.Died += OnPlayerDied;
+                playerWeapon = player.GetComponent<PlayerWeaponController>();
+                if (playerWeapon != null) playerWeapon.Fired += OnPlayerFired;
             }
             horse = HorseController.All.Count > 0 ? HorseController.All[0] : null;
             if (horse != null)
@@ -75,26 +87,67 @@ namespace ScammerNoScamming
                 horseStart = horse.transform.position;
                 horseStartRot = horse.transform.rotation;
             }
+            if (station == null) station = FindAnyObjectByType<StationInvestigation>();
+            if (sealPoint != null)
+            {
+                sealInteraction = sealPoint.GetComponent<WorldInteractable>();
+                if (sealInteraction == null) sealInteraction = sealPoint.gameObject.AddComponent<WorldInteractable>();
+                sealInteraction.Prompt = "Seal หลักฐานคดี";
+                sealInteraction.Range = sealRange;
+                sealInteraction.OnInteract = () => CompleteSeal();
+                sealInteraction.Available = false;
+            }
+            Npc.Shot += OnNpcShot;
+            Trap.Sprung += OnTrapSprung;
             ShowMenu();
+        }
+
+        void OnDestroy()
+        {
+            if (vitals != null) vitals.Died -= OnPlayerDied;
+            if (playerWeapon != null) playerWeapon.Fired -= OnPlayerFired;
+            Npc.Shot -= OnNpcShot;
+            Trap.Sprung -= OnTrapSprung;
+        }
+
+        void ResetEncounters()
+        {
+            foreach (var encounter in FindObjectsByType<RaidEncounter>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                encounter.ResetRaid();
+            raid = null;
         }
 
         void ShowMenu()
         {
             step = Step.Idle;
+            ResetEncounters();
             Hideout.HideAll();
-            ArmTraps(null);
+            DisableTraps();
+            if (station != null) station.Close();
             menu.Show(() => story.Show("bg_opening", "2035 · สยามภิรมย์", "ม้าเหล็กหมดน้ำมัน", db.Text.Opening, null,
                 "รับคดีแรก", BeginRun));
         }
 
-        // Back to the menu without reloading the scene (the scene does not need to be in Build Settings).
         void ReturnToMenu()
         {
             loadout = null;
-            if (horse != null) Teleport(horse.gameObject, horseStart, horseStartRot);
-            var player = PlayerLocator.Player;
-            if (player != null && !player.IsMounted) Teleport(player.gameObject, playerStart, playerStartRot);
+            ResetPlayerPosition();
+            if (vitals != null) vitals.ResetForAction(RunModifiers.None);
+            if (station != null) station.Reset();
             ShowMenu();
+        }
+
+        void ResetPlayerPosition()
+        {
+            var player = PlayerLocator.Player;
+            if (player != null)
+            {
+                var mount = player.GetComponent<PlayerMount>();
+                if (mount != null && mount.IsMounted) mount.Dismount();
+                if (horse != null) horse.ClearRider();
+                Teleport(player.gameObject, playerStart, player.transform.rotation);
+            }
+            if (horse != null) Teleport(horse.gameObject, horseStart, horseStartRot);
         }
 
         static void Teleport(GameObject go, Vector3 position, Quaternion rotation)
@@ -105,14 +158,22 @@ namespace ScammerNoScamming
             if (cc != null) cc.enabled = true;
         }
 
-        // Re-arms every road trap and keeps only the ones this case uses (all of them when case is null).
-        void ArmTraps(CaseDefinition caseDefinition)
+        void ArmTraps(CaseDefinition definition)
         {
             foreach (var trap in FindObjectsByType<Trap>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
-                trap.ResetTrap();
-                bool wanted = caseDefinition == null || caseDefinition.Traps.Count == 0 || caseDefinition.Traps.Contains(trap.Kind);
+                trap.ResetForAction();
+                bool wanted = definition == null || definition.Traps.Count == 0 || definition.Traps.Contains(trap.Kind);
                 if (!trap.IsDefused) trap.gameObject.SetActive(wanted);
+            }
+        }
+
+        void DisableTraps()
+        {
+            foreach (var trap in FindObjectsByType<Trap>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                trap.ResetForAction();
+                trap.gameObject.SetActive(false);
             }
         }
 
@@ -121,6 +182,7 @@ namespace ScammerNoScamming
             run = db.PickRun(regularCases, System.Environment.TickCount);
             caseIndex = 0;
             trouble = 0f;
+            innocentsHit = 0;
             StartCase();
         }
 
@@ -128,94 +190,134 @@ namespace ScammerNoScamming
         {
             current = run[caseIndex];
             TrapLog.Reset();
+            ResetEncounters();
             Hideout.HideAll();
-            ArmTraps(current);
+            DisableTraps();
             step = Step.Idle;
-            analysis.Show(current, troublePerWrongAnswer, OnAnalysed);
+            CurrentAnalysis = null;
+            if (station != null)
+            {
+                station.TroublePerWrongAnswer = troublePerWrongAnswer;
+                station.BeginCase(current, loadout ?? new GeneLoadout(GeneLoadout.DefaultFreeSlots,
+                    GeneLoadout.DefaultMaxSlots, troublePerExtraGene), OnAnalysed, OnGenes);
+            }
+            else analysis.Show(current, troublePerWrongAnswer, OnAnalysed);
         }
 
-        void OnAnalysed(AnalysisResult result)
+        public void OnAnalysed(AnalysisResult result)
         {
+            CurrentAnalysis = result;
             trouble += result.TroublePenalty;
             var hideout = Hideout.Find(current.HideoutId);
             if (hideout != null && result.IsUnlocked(IntelKind.HideoutLocation)) hideout.Reveal();
-            genes.Show(catalog, loadout ?? new GeneLoadout(GeneLoadout.DefaultFreeSlots, GeneLoadout.DefaultMaxSlots, troublePerExtraGene), OnGenes);
+            if (station == null)
+                genes.Show(catalog, loadout ?? new GeneLoadout(GeneLoadout.DefaultFreeSlots,
+                    GeneLoadout.DefaultMaxSlots, troublePerExtraGene), OnGenes);
         }
 
-        void OnGenes(GeneLoadout chosen)
+        public void OnGenes(GeneLoadout chosen)
         {
             loadout = chosen;
             trouble += chosen.OverBudgetTrouble;
-            var modifiers = chosen.BuildModifiers();
-            foreach (var horse in HorseController.All)
+            modifiers = chosen.BuildModifiers();
+            foreach (var mount in HorseController.All)
             {
-                var horseGenes = horse.GetComponent<HorseGenes>();
-                if (horseGenes == null) horseGenes = horse.gameObject.AddComponent<HorseGenes>();
+                var horseGenes = mount.GetComponent<HorseGenes>();
+                if (horseGenes == null) horseGenes = mount.gameObject.AddComponent<HorseGenes>();
                 horseGenes.Apply(modifiers);
             }
+            troubleBeforeAction = trouble;
+            innocentsBeforeAction = innocentsHit;
+            BeginAction();
+        }
+
+        void BeginAction()
+        {
+            ResetEncounters();
+            TrapLog.Reset();
+            ArmTraps(current);
+            hurtInnocents.Clear();
+            if (vitals != null) vitals.ResetForAction(modifiers);
+            ArmedEnemy.SightMultiplier = Mathf.Max(0f, modifiers.EnemySightRange);
+            var hideout = Hideout.Find(current.HideoutId);
+            raid = hideout != null ? hideout.GetComponent<RaidEncounter>() : null;
+            if (raid != null) raid.BeginRaid();
             step = Step.ToHideout;
-            hold = 0f;
-            tutorialLine = 0;
-            tutorialTimer = 0f;
+            CheckPolice();
         }
 
         void Update()
         {
-            if (step == Step.Idle || step == Step.Done || GameScreen.AnyOpen) return;
-            var player = PlayerLocator.Player;
-            if (player == null) return;
-
-            if (caseIndex == 0 && db.Text.Tutorial.Count > 0)
-            {
-                tutorialTimer += Time.deltaTime;
-                if (tutorialTimer > 7f && tutorialLine < db.Text.Tutorial.Count - 1)
-                {
-                    tutorialLine++;
-                    tutorialTimer = 0f;
-                }
-            }
-
-            Vector3 target = step == Step.ToHideout ? HideoutPosition() : SealPosition();
-            float range = step == Step.ToHideout ? doorRange : sealRange;
-            bool inRange = Flat(player.transform.position - target) <= range;
-            bool holding = inRange && !player.IsMounted && Keyboard.current != null && Keyboard.current.eKey.isPressed;
-            hold = holding ? hold + Time.deltaTime : 0f;
-            if (hold < holdSeconds) return;
-
-            hold = 0f;
-            if (step == Step.ToHideout)
-            {
-                step = Step.ToStation;
-            }
-            else
-            {
-                step = Step.Done;
-                lesson.Show(LessonPage.Build(current, db.Text, TrapLog.SprungKinds, TrapLog.DefusedKinds), NextCase);
-            }
+            if (step == Step.ToHideout && HasEvidence) step = Step.ToStation;
+            if (sealInteraction != null) sealInteraction.Available = step == Step.ToStation && HasEvidence;
         }
 
-        // ScreenTour hook: jump straight into the ride for a case.
-        public void DebugStartAction(CaseDefinition caseDefinition)
+        void OnPlayerFired(Vector3 position) { if (ActionActive) AddActionTrouble(troublePerShot); }
+        void OnTrapSprung(Trap trap) { if (ActionActive) AddActionTrouble(troublePerTrap); }
+        void OnNpcShot(Npc npc, DamageInfo info)
         {
-            current = caseDefinition;
-            run = new List<CaseDefinition> { caseDefinition };
+            if (!ActionActive || npc == null || (npc.Faction != Faction.ForcedWorker && npc.Faction != Faction.Victim)) return;
+            if (hurtInnocents.Add(npc)) innocentsHit++;
+            AddActionTrouble(troublePerInnocent);
+        }
+        public void AddActionTrouble(float amount)
+        {
+            if (!ActionActive) return;
+            trouble += Mathf.Max(0f, amount) * Mathf.Max(0f, modifiers.TroubleGain);
+            CheckPolice();
+        }
+        void CheckPolice() { if (raid != null && trouble >= policeThreshold) raid.SpawnCorruptPolice(); }
+
+        void OnPlayerDied()
+        {
+            if (!ActionActive) return;
+            step = Step.Dead;
+            story.Show("bg_ending_messy", "ล่าถอยจากพื้นที่", "ยังมีโอกาสกลับไปช่วยพวกเขา",
+                "คุณบาดเจ็บจนบุกต่อไม่ไหว กลับมาที่สถานีแล้วเตรียมลงมือใหม่ คำตอบวิเคราะห์และยีนที่เลือกยังอยู่ครบ",
+                null, "บุกอีกครั้ง", RetryAction);
+        }
+
+        public void RetryAction()
+        {
+            if (step != Step.Dead) return;
+            story.Close();
+            trouble = troubleBeforeAction;
+            innocentsHit = innocentsBeforeAction;
+            ResetPlayerPosition();
+            BeginAction();
+        }
+
+        public bool CompleteSeal()
+        {
+            if (!ActionActive || !HasEvidence) return false;
+            step = Step.Done;
+            if (sealInteraction != null) sealInteraction.Available = false;
+            var page = LessonPage.Build(current, db.Text, TrapLog.SprungKinds, TrapLog.DefusedKinds);
+            if (raid != null) raid.ResetRaid();
+            if (station != null) station.ShowLesson(page, NextCase);
+            else lesson.Show(page, NextCase);
+            return true;
+        }
+
+        // Tour hook: keep the same runtime combat contract as a real action.
+        public void DebugStartAction(CaseDefinition definition)
+        {
+            current = definition;
+            run = new List<CaseDefinition> { definition };
             caseIndex = 0;
-            ArmTraps(current);
+            modifiers = RunModifiers.None;
+            troubleBeforeAction = trouble;
+            innocentsBeforeAction = innocentsHit;
             var hideout = Hideout.Find(current.HideoutId);
             if (hideout != null) hideout.Reveal();
-            step = Step.ToHideout;
+            BeginAction();
         }
 
         void NextCase()
         {
             caseIndex++;
-            if (caseIndex < run.Count)
-            {
-                StartCase();
-                return;
-            }
-            // Innocents hit come from the friend's NPC system (item 3); until then only Trouble decides.
-            var ending = EndingEvaluator.Evaluate(0, trouble);
+            if (caseIndex < run.Count) { StartCase(); return; }
+            var ending = EndingEvaluator.Evaluate(innocentsHit, trouble);
             bool clean = ending == EndingType.Clean;
             string stat = db.Text.Stat != null ? db.Text.Stat.Description + "\n(" + db.Text.Stat.SourceName + ")" : null;
             story.Show(clean ? "bg_ending_clean" : "bg_ending_messy", clean ? "ฉากจบ: สะอาด" : "ฉากจบ: เละ",
@@ -223,51 +325,21 @@ namespace ScammerNoScamming
                 stat, "กลับเมนูหลัก", ReturnToMenu);
         }
 
-        Vector3 HideoutPosition()
-        {
-            var hideout = Hideout.Find(current.HideoutId);
-            return hideout != null ? hideout.transform.position : Vector3.zero;
-        }
-
-        Vector3 SealPosition() => sealPoint != null ? sealPoint.position : Vector3.zero;
-
-        static float Flat(Vector3 v)
-        {
-            v.y = 0f;
-            return v.magnitude;
-        }
-
         void OnGUI()
         {
-            if (step == Step.Idle || step == Step.Done || GameScreen.AnyOpen || current == null) return;
-            var canvas = ThaiGui.BeginCanvas();
-            var hud = new Rect(40f, 70f, 760f, 200f);
-            GUI.DrawTexture(hud, ThaiGui.Solid(new Color(0.04f, 0.07f, 0.08f, 0.7f)));
-            GUI.DrawTexture(new Rect(hud.x, hud.y, 6f, hud.height), ThaiGui.Solid(ThaiGui.Orange));
-            GUI.Label(new Rect(hud.x + 26f, hud.y + 14f, 720f, 50f), current.Title, ThaiGui.Text(34, ThaiGui.Gold, FontStyle.Bold));
-            var hideout = Hideout.Find(current.HideoutId);
-            string objective = step == Step.ToHideout
-                ? (hideout != null && hideout.IsRevealed ? "ขี่ม้าไปที่ลำแสงสีทอง แล้วกด E ค้างที่ประตูรังเพื่อเก็บหลักฐาน"
-                                                         : "รังอยู่แถว " + current.ZoneHint + " ออกตามหา แล้วกด E ค้างที่ประตูรัง")
-                : "นำหลักฐานกลับสถานีตำรวจกลางเมือง แล้วกด E ค้างที่โต๊ะ Seal หลักฐาน";
-            GUI.Label(new Rect(hud.x + 26f, hud.y + 66f, 720f, 90f), objective, ThaiGui.Text(28, ThaiGui.Bone));
-            GUI.Label(new Rect(hud.x + 26f, hud.y + 152f, 720f, 40f), $"Trouble {trouble:0}", ThaiGui.Text(26, ThaiGui.Orange, FontStyle.Bold));
-
-            if (hold > 0f)
-            {
-                var bar = new Rect(canvas.width * 0.5f - 250f, canvas.height * 0.62f, 500f, 24f);
-                GUI.DrawTexture(bar, ThaiGui.Solid(new Color(0f, 0f, 0f, 0.6f)));
-                GUI.DrawTexture(new Rect(bar.x, bar.y, bar.width * Mathf.Clamp01(hold / holdSeconds), bar.height), ThaiGui.Solid(ThaiGui.Gold));
-            }
-
-            if (caseIndex == 0 && tutorialLine < db.Text.Tutorial.Count)
-            {
-                var tip = new Rect(canvas.width - 820f, canvas.height - 170f, 780f, 120f);
-                GUI.DrawTexture(tip, ThaiGui.Solid(new Color(0.04f, 0.07f, 0.08f, 0.78f)));
-                GUI.Label(new Rect(tip.x + 24f, tip.y + 12f, tip.width - 48f, tip.height - 24f),
-                    $"สอนเล่น {tutorialLine + 1}/{db.Text.Tutorial.Count}: {db.Text.Tutorial[tutorialLine]}",
-                    ThaiGui.Text(28, ThaiGui.Bone, FontStyle.Normal, TextAnchor.MiddleLeft));
-            }
+            if (!ActionActive || GameScreen.AnyOpen || current == null) return;
+            ThaiGui.BeginCanvas();
+            var hud = new Rect(30f, 65f, 570f, 132f);
+            GUI.DrawTexture(hud, ThaiGui.Solid(new Color(0.04f, 0.06f, 0.055f, 0.78f)));
+            GUI.Label(new Rect(48f, 74f, 530f, 38f), current.Title, ThaiGui.Text(25, ThaiGui.Gold, FontStyle.Bold));
+            string objective = HasEvidence ? "นำหลักฐานกลับสถานี แล้ว Seal ที่โต๊ะเก็บหลักฐาน"
+                : raid != null && raid.Cleared ? "ปลอดภัยแล้ว เล็งที่หลักฐานแล้วกด E เพื่อเก็บ"
+                : $"บุก {current.ZoneHint} · ศัตรูเหลือ {(raid != null ? raid.RemainingEnemies : 0)} คน";
+            GUI.Label(new Rect(48f, 111f, 530f, 36f), objective, ThaiGui.Text(21, ThaiGui.Bone));
+            float hp = vitals != null ? vitals.Health.Current : 100f;
+            GUI.Label(new Rect(48f, 151f, 180f, 30f), $"เลือด {hp:0}", ThaiGui.Text(22, ThaiGui.Bone, FontStyle.Bold));
+            GUI.Label(new Rect(240f, 151f, 320f, 30f), $"Trouble {trouble:0} / {policeThreshold:0}" +
+                (raid != null && raid.PoliceSpawned ? " · ตำรวจเทากำลังมา" : ""), ThaiGui.Text(20, ThaiGui.Orange));
             ThaiGui.EndCanvas();
         }
     }

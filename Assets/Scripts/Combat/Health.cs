@@ -26,6 +26,20 @@ namespace ScammerNoScamming
             Current = value;
         }
 
+        // Explicit action reset: SetMax deliberately retains its original refill-only behavior.
+        public void RestoreFull(float maximum)
+        {
+            max = Mathf.Max(1f, maximum);
+            Current = max;
+            IsDead = false;
+        }
+
+        // For damage modifiers inside Damaged and regeneration; never revives a dead character.
+        public void SetCurrent(float value)
+        {
+            if (!IsDead) Current = Mathf.Clamp(value, 0f, max);
+        }
+
         public void TakeDamage(DamageInfo info)
         {
             if (IsDead) return;

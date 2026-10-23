@@ -95,10 +95,18 @@ namespace ScammerNoScamming
 
         void SetCurrent(float value)
         {
-            // SetMax is Health's only setter; restoring max avoids a second damage event.
-            float maximum = health.max;
-            health.SetMax(value);
-            health.max = maximum;
+            health.SetCurrent(value);
+        }
+
+        public void ResetForAction(RunModifiers modifiers)
+        {
+            modifiers = modifiers ?? RunModifiers.None;
+            maxHealth = 100f * Mathf.Max(0.01f, modifiers.PlayerMaxHealth);
+            damageMultiplier = Mathf.Max(0f, modifiers.DamageTaken);
+            health.RestoreFull(maxHealth);
+            LastDamageTime = float.NegativeInfinity;
+            deathReported = false;
+            if (controls != null) controls.enabled = true;
         }
 
         void OnDied(Health sender)

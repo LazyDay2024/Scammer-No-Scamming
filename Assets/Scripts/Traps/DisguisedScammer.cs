@@ -40,6 +40,12 @@ namespace ScammerNoScamming
 
         void OnDied(Health _) => Defuse();
 
+        public override void ResetForAction()
+        {
+            base.ResetForAction();
+            Stare = 0f;
+        }
+
         void Update()
         {
             var player = FindPlayer();

@@ -26,18 +26,20 @@ namespace ScammerNoScamming
         MonoBehaviour animationComponent;
         INpcAnimation animation = NullNpcAnimation.Instance;
         bool deathHandled;
+        bool resetStateCaptured;
+        Vector3 spawnLocalPosition;
+        Quaternion spawnLocalRotation;
+        Collider[] resetColliders;
+        bool[] colliderEnabled;
+        NavMeshAgent[] resetAgents;
+        bool[] agentEnabled;
 
         protected virtual void Awake()
         {
             Health = GetComponent<Health>();
             Health.deactivateOnDeath = false;
-            foreach (var component in GetComponentsInChildren<MonoBehaviour>(true))
-            {
-                if (!(component is INpcAnimation candidate)) continue;
-                animationComponent = component;
-                animation = candidate;
-                break;
-            }
+            CaptureResetState();
+            FindAnimation();
 
             if (bodyCollider == null)
             {
@@ -50,8 +52,63 @@ namespace ScammerNoScamming
             }
         }
 
+        void FindAnimation()
+        {
+            foreach (var component in GetComponentsInChildren<MonoBehaviour>(true))
+            {
+                if (!(component is INpcAnimation candidate)) continue;
+                animationComponent = component;
+                animation = candidate;
+                break;
+            }
+
+        }
+
+        void CaptureResetState()
+        {
+            if (resetStateCaptured) return;
+            resetStateCaptured = true;
+            spawnLocalPosition = transform.localPosition;
+            spawnLocalRotation = transform.localRotation;
+            resetColliders = GetComponentsInChildren<Collider>(true);
+            colliderEnabled = new bool[resetColliders.Length];
+            for (int i = 0; i < resetColliders.Length; i++) colliderEnabled[i] = resetColliders[i].enabled;
+            resetAgents = GetComponentsInChildren<NavMeshAgent>(true);
+            agentEnabled = new bool[resetAgents.Length];
+            for (int i = 0; i < resetAgents.Length; i++) agentEnabled[i] = resetAgents[i].enabled;
+        }
+
+        public virtual void ResetForAction()
+        {
+            // Hidden trap NPCs may not have received Awake yet on their first attempt.
+            if (Health == null) Health = GetComponent<Health>();
+            CaptureResetState();
+            StopAllCoroutines();
+            deathHandled = false;
+            foreach (var agent in resetAgents) if (agent != null) agent.enabled = false;
+            transform.SetLocalPositionAndRotation(spawnLocalPosition, spawnLocalRotation);
+            Health.deactivateOnDeath = false;
+            Health.RestoreFull(Health.max);
+            for (int i = 0; i < resetColliders.Length; i++)
+                if (resetColliders[i] != null) resetColliders[i].enabled = colliderEnabled[i];
+            for (int i = 0; i < resetAgents.Length; i++)
+            {
+                var agent = resetAgents[i];
+                if (agent == null) continue;
+                agent.enabled = agentEnabled[i];
+                if (agent.enabled && agent.isOnNavMesh) agent.ResetPath();
+            }
+            FindAnimation();
+            if (animationComponent is NpcAnimator playback) playback.ResetForAction();
+            Animation.SetSpeed(0f);
+            Animation.Aim(false);
+            Animation.HandsUp(false);
+            Animation.Cower(false);
+        }
+
         protected virtual void OnEnable()
         {
+            FindAnimation();
             if (!All.Contains(this)) All.Add(this);
             Health.Damaged += OnDamaged;
             Health.Died += HandleDeath;
@@ -89,7 +146,7 @@ namespace ScammerNoScamming
             Animation.Die();
             foreach (var agent in GetComponentsInChildren<NavMeshAgent>(true)) agent.enabled = false;
             foreach (var collider in GetComponentsInChildren<Collider>(true))
-                collider.enabled = collider == bodyCollider;
+                collider.enabled = false;
         }
 
         IEnumerator SinkCorpse()

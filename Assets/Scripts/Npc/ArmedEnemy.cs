@@ -100,6 +100,17 @@ namespace ScammerNoScamming
 
         void Start() => CreateEffects();
 
+        public override void ResetForAction()
+        {
+            base.ResetForAction();
+            State = ArmedEnemyState.Idle;
+            LastKnownPosition = transform.position;
+            VisibleDuration = alertTimeLeft = searchTimeLeft = 0f;
+            nextShotTime = 0f;
+            waypointIndex = 0;
+            HideEffects();
+        }
+
         void Update()
         {
             if (muzzleLight != null && Time.time >= flashHideTime) muzzleLight.enabled = false;

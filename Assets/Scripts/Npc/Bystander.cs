@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using UnityEngine.AI;
-using UnityEngine.InputSystem;
 
 namespace ScammerNoScamming
 {
@@ -29,8 +28,7 @@ namespace ScammerNoScamming
         CharacterController characterController;
         Collider body;
         Vector3 escapeDestination;
-        bool wasMounted;
-        static int consumedInteractFrame = -1;
+        WorldInteractable interaction;
 
         protected override void Awake()
         {
@@ -40,14 +38,18 @@ namespace ScammerNoScamming
             agent = GetComponent<NavMeshAgent>();
             characterController = GetComponent<CharacterController>();
             body = GetComponentInChildren<Collider>();
+            interaction = GetComponent<WorldInteractable>();
+            if (interaction == null) interaction = gameObject.AddComponent<WorldInteractable>();
+            interaction.Prompt = "ปล่อยตัวลูกจ้าง";
+            interaction.Range = freeRange;
+            interaction.OnInteract = () => TryFree(PlayerLocator.Player);
         }
 
         protected override void OnEnable()
         {
             base.OnEnable();
             NpcGunfire.Heard += HearShot;
-            var player = PlayerLocator.Player;
-            wasMounted = player != null && player.IsMounted;
+
         }
 
         protected override void OnDisable()
@@ -58,6 +60,7 @@ namespace ScammerNoScamming
 
         void Update()
         {
+            if (interaction != null) interaction.Available = CanFree(PlayerLocator.Player);
             if (IsDead) return;
             if (IsFreed)
             {
@@ -94,21 +97,6 @@ namespace ScammerNoScamming
                 StopMoving();
                 if (IsFrightened) Animation.Cower(true);
             }
-        }
-
-        void LateUpdate()
-        {
-            var player = PlayerLocator.Player;
-            if (player == null) return;
-            bool mounted = player.IsMounted;
-            bool pressed = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
-            // PlayerMount consumes the same key in Update; dismounting must not also free someone.
-            if (pressed && !mounted && !wasMounted && consumedInteractFrame != Time.frameCount &&
-                CanFree(player) && IsNearestWorker(player))
-            {
-                if (TryFree(player)) consumedInteractFrame = Time.frameCount;
-            }
-            wasMounted = mounted;
         }
 
         public void HearShot(Vector3 position)
@@ -149,6 +137,14 @@ namespace ScammerNoScamming
             return true;
         }
 
+        public override void ResetForAction()
+        {
+            base.ResetForAction();
+            IsFreed = false;
+            IsFrightened = false;
+            escapeDestination = transform.position;
+        }
+
         public Vector3 CalculateEscapeDestination(Vector3 threat)
         {
             Transform nearest = null;
@@ -175,19 +171,6 @@ namespace ScammerNoScamming
             away.y = 0f;
             if (away.sqrMagnitude < 0.0001f) away = Vector3.forward;
             return transform.position + away.normalized * Mathf.Max(0f, fleeDistance);
-        }
-
-        bool IsNearestWorker(PlayerController player)
-        {
-            float myDistance = Vector3.Distance(transform.position, player.transform.position);
-            foreach (var npc in All)
-            {
-                if (npc == null || npc == this || !(npc is Bystander other) || !other.CanFree(player)) continue;
-                float distance = Vector3.Distance(other.transform.position, player.transform.position);
-                if (distance < myDistance || (distance == myDistance && other.GetInstanceID() < GetInstanceID()))
-                    return false;
-            }
-            return true;
         }
 
         void MoveTo(Vector3 destination)
@@ -266,7 +249,6 @@ namespace ScammerNoScamming
         static void ResetStatics()
         {
             Freed = null;
-            consumedInteractFrame = -1;
         }
     }
 }
