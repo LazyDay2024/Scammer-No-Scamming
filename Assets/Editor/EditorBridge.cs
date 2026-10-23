@@ -67,6 +67,11 @@ public static class EditorBridge
                 case "sceneshot": Shot(SceneView.lastActiveSceneView?.camera, arg); break;
                 case "look": Look(arg); break;
                 case "tp": Teleport(arg); break;
+                case "tpg": // tpg x z yaw [pitch]: teleport onto the ground below (x, z)
+                    var gp = arg.Split(' ').Select(float.Parse).ToArray();
+                    float gy = Physics.Raycast(new Vector3(gp[0], 500f, gp[1]), Vector3.down, out var hitGround, 1000f, ~0, QueryTriggerInteraction.Ignore) ? hitGround.point.y + .1f : 0f;
+                    Teleport($"{gp[0]} {gy} {gp[1]} {gp[2]} {(gp.Length > 3 ? gp[3] : 0f)}");
+                    break;
                 case "cam": // cam x y z pitch yaw [fov] : place Camera.main (edit mode views)
                     var cv = arg.Split(' ').Select(float.Parse).ToArray();
                     var mainCam = Camera.main ?? throw new InvalidOperationException("no main camera");
