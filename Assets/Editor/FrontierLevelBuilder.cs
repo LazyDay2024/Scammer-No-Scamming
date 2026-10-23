@@ -19,21 +19,21 @@ public static class FrontierLevelBuilder
     static readonly Vector3 Origin = new Vector3(-300f, 0f, -330f);
 
     // Main road: x, z, height. From the station plaza down the street, out of the gate, up the canyon to the camp.
-    static readonly Vector3[] Road = {
+    public static readonly Vector3[] Road = {
         new Vector3(0f, Ground, 70f), new Vector3(0f, Ground, -45f), new Vector3(2f, Ground + 1f, -95f),
         new Vector3(22f, Ground + 5f, -135f), new Vector3(58f, Ground + 10f, -162f), new Vector3(96f, Ground + 15f, -178f),
         new Vector3(118f, Ground + 16f, -184f) };
     // Side path up to the overlook on the canyon's north rim.
-    static readonly Vector3[] OverlookPath = {
+    public static readonly Vector3[] OverlookPath = {
         new Vector3(24f, Ground + 5.5f, -132f), new Vector3(40f, Ground + 14f, -122f), new Vector3(62f, Ground + 24f, -128f),
         new Vector3(78f, Ground + 28f, -140f) };
     // Back route along the ridge behind the camp (flank).
-    static readonly Vector3[] FlankPath = {
+    public static readonly Vector3[] FlankPath = {
         new Vector3(96f, Ground + 15f, -178f), new Vector3(108f, Ground + 22f, -206f), new Vector3(134f, Ground + 26f, -214f),
         new Vector3(150f, Ground + 24f, -200f) };
-    static readonly Vector3 Camp = new Vector3(132f, Ground + 16f, -190f);
-    static readonly Vector3 TempleHill = new Vector3(62f, 0f, 28f);
-    static readonly Vector3 Mast = new Vector3(150f, 0f, -228f);
+    public static readonly Vector3 Camp = new Vector3(132f, Ground + 16f, -190f);
+    public static readonly Vector3 TempleHill = new Vector3(62f, 0f, 28f);
+    public static readonly Vector3 Mast = new Vector3(150f, 0f, -228f);
     static Terrain land;
 
     [MenuItem("Tools/Scammer No Scamming/Build Frontier Level (Case 01)")]
@@ -60,8 +60,10 @@ public static class FrontierLevelBuilder
 
         var station = BuildStation(level, terrain);
         BuildTown(level, terrain);
+        TownDressing.Build(level);   // claude2: town art pass
         BuildTemple(level, terrain);
         var hideout = BuildCamp(level, terrain);
+        CampDressing.Build(level, hideout);   // Codex: camp encounter dressing
         BuildTraps(level, terrain);
         Scatter(level, terrain);
         MenuCameras(level);
@@ -259,7 +261,7 @@ public static class FrontierLevelBuilder
     static float Soft(float d, float inner, float outer) => 1f - Smooth(Mathf.Clamp01((d - inner) / (outer - inner)));
     static float Smooth(float t) => t * t * (3f - 2f * t);
 
-    static float PathDistance(Vector3[] path, float x, float z, out float height)
+    public static float PathDistance(Vector3[] path, float x, float z, out float height)
     {
         float best = float.MaxValue; height = path[0].y;
         var p = new Vector2(x, z);
@@ -274,7 +276,7 @@ public static class FrontierLevelBuilder
         return best;
     }
 
-    static void Place(Transform t, Vector3 xz, float yaw, float lift = 0f)
+    public static void Place(Transform t, Vector3 xz, float yaw, float lift = 0f)
     {
         var terrain = land;
         float y = terrain != null ? terrain.SampleHeight(new Vector3(xz.x, 0f, xz.z)) + terrain.transform.position.y : Ground;
@@ -284,7 +286,7 @@ public static class FrontierLevelBuilder
     static GameObject Load(string path) => AssetDatabase.LoadAssetAtPath<GameObject>(path);
 
     // Instance of an imported model, planted on the terrain, colliders added for blocking.
-    static GameObject Model(Transform parent, string path, Vector3 xz, float yaw, float scale = 1f, bool collide = true)
+    public static GameObject Model(Transform parent, string path, Vector3 xz, float yaw, float scale = 1f, bool collide = true)
     {
         var prefab = Load(path);
         if (prefab == null) { Debug.LogWarning("Missing model " + path); return null; }
@@ -377,7 +379,7 @@ public static class FrontierLevelBuilder
         return root;
     }
 
-    static Material Tex(string name, string texture, Vector2 tiling)
+    public static Material Tex(string name, string texture, Vector2 tiling)
     {
         var material = WorldSceneArt.Paint(name, Color.white);
         material.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(texture));
