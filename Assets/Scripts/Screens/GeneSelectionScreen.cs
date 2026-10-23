@@ -10,8 +10,6 @@ namespace ScammerNoScamming
         GeneLoadout loadout;
         Action<GeneLoadout> onDone;
 
-        static readonly string[] Icons = { "icon_gene_fast", "icon_gene_armored", "icon_gene_tracker", "icon_gene_stealth" };
-
         public void Show(GeneCatalog geneCatalog, GeneLoadout current, Action<GeneLoadout> done)
         {
             catalog = geneCatalog;
@@ -35,12 +33,11 @@ namespace ScammerNoScamming
                 var gene = catalog.Genes[i];
                 bool chosen = loadout.Contains(gene);
                 var r = new Rect(x + i * (cardW + gap), y, cardW, 520f);
-                GUI.DrawTexture(r, ThaiGui.Solid(chosen ? new Color(0.85f, 0.47f, 0.26f, 0.35f) : new Color(0.07f, 0.1f, 0.11f, 0.88f)));
-                GUI.DrawTexture(new Rect(r.x, r.y, r.width, 8f), ThaiGui.Solid(chosen ? ThaiGui.Orange : ThaiGui.Teal));
-                var icon = ThaiGui.Art(i < Icons.Length ? Icons[i] : null);
-                if (icon != null) GUI.DrawTexture(new Rect(r.center.x - 90f, r.y + 40f, 180f, 180f), icon, ScaleMode.ScaleToFit);
+                ThaiGui.Surfaced(r, chosen ? new Color(ThaiGui.Gold.r, ThaiGui.Gold.g, ThaiGui.Gold.b, 0.14f) : new Color(ThaiGui.Surface.r, ThaiGui.Surface.g, ThaiGui.Surface.b, 0.88f),
+                    chosen ? ThaiGui.Gold : new Color(ThaiGui.Bone.r, ThaiGui.Bone.g, ThaiGui.Bone.b, 0.16f));
+                ThaiGui.Tracked(r.center.x - 20f, r.y + 90f, (i + 1).ToString("00"), 80, chosen ? ThaiGui.Gold : ThaiGui.Muted, 0f, FontStyle.Normal);
                 ThaiGui.Label(new Rect(r.x + 30f, r.y + 240f, r.width - 60f, 70f), gene.DisplayName,
-                    ThaiGui.Text(48, ThaiGui.Gold, FontStyle.Bold, TextAnchor.UpperCenter));
+                    ThaiGui.Text(44, ThaiGui.Gold, FontStyle.Bold, TextAnchor.UpperCenter));
                 ThaiGui.Label(new Rect(r.x + 30f, r.y + 310f, r.width - 60f, 120f), gene.Description,
                     ThaiGui.Text(30, ThaiGui.Bone, FontStyle.Normal, TextAnchor.UpperCenter));
                 string label = chosen ? "เอาออก" : (loadout.IsFull ? "เต็มแล้ว" : "เลือก");

@@ -17,20 +17,24 @@ namespace ScammerNoScamming
         }
 
         protected override bool FillsScreen => false;
+        protected override float FadeIn => 0.25f;
 
         public void DebugOpen() => Open();
 
         protected override void Draw(Rect canvas)
         {
-            GUI.matrix = Matrix4x4.identity;
-            GUI.DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), ThaiGui.Solid(new Color(0.04f, 0.07f, 0.08f, 0.75f)));
-            ThaiGui.BeginCanvas();
-            var r = new Rect(660f, 260f, 600f, 560f);
-            ThaiGui.Panel(r);
-            ThaiGui.Label(new Rect(r.x + 50f, r.y + 40f, 500f, 80f), "พักเกม", ThaiGui.Text(64, ThaiGui.Gold, FontStyle.Bold));
-            if (GUI.Button(new Rect(r.x + 50f, r.y + 160f, 500f, 90f), "เล่นต่อ", ThaiGui.Button(38))) Close();
-            MainMenuScreen.SensitivitySlider(new Rect(r.x + 50f, r.y + 280f, 500f, 90f));
-            if (GUI.Button(new Rect(r.x + 50f, r.y + 420f, 500f, 80f), "กลับเมนูหลัก", ThaiGui.Button(30)))
+            // The frozen game stays visible behind a dark veil.
+            ThaiGui.Dim(0.62f);
+            ThaiGui.VignetteOverlay(0.6f);
+            var r = new Rect(canvas.center.x - 330f, 230f, 660f, 620f);
+            ThaiGui.Panel(r, 0.9f);
+            const float pad = 60f;
+            ThaiGui.Kicker(new Rect(r.x + pad, r.y + 52f, 0f, 0f), "PAUSED");
+            GUI.Label(new Rect(r.x + pad, r.y + 100f, r.width - pad * 2f, 90f), "พักเกม", ThaiGui.Headline(ThaiGui.H1, ThaiGui.Bone, FontStyle.Bold));
+            ThaiGui.HRule(r.x + pad, r.y + 215f, r.width - pad * 2f, new Color(ThaiGui.Bone.r, ThaiGui.Bone.g, ThaiGui.Bone.b, 0.18f));
+            if (ThaiGui.Btn(new Rect(r.x + pad, r.y + 250f, r.width - pad * 2f, 76f), "เล่นต่อ", 32, true)) Close();
+            MainMenuScreen.SensitivitySlider(new Rect(r.x + pad, r.y + 366f, r.width - pad * 2f, 70f));
+            if (ThaiGui.Btn(new Rect(r.x + pad, r.y + 480f, r.width - pad * 2f, 70f), "กลับเมนูหลัก", 28))
             {
                 Close();
                 OnQuitToMenu?.Invoke();
