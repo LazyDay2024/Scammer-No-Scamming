@@ -44,7 +44,7 @@ namespace ScammerNoScamming
             {
                 var model = Instantiate(revolverPrefab, Rig);
                 model.transform.localPosition = Vector3.zero;
-                model.transform.localRotation = Quaternion.Euler(modelEuler);
+                model.transform.localRotation = Quaternion.Euler(modelEuler) * revolverPrefab.transform.localRotation; // keep the FBX root rotation
                 model.transform.localScale = Vector3.one;
                 foreach (var collider in model.GetComponentsInChildren<Collider>(true))
                 {

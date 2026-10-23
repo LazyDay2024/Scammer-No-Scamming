@@ -65,6 +65,11 @@ public static class EditorBridge
                 case "sceneshot": Shot(SceneView.lastActiveSceneView?.camera, arg); break;
                 case "look": Look(arg); break;
                 case "tp": Teleport(arg); break;
+                case "setrot": // setrot <name> x y z : local euler angles of a live object
+                    var rp = arg.Split(' ');
+                    var target = GameObject.Find(string.Join(" ", rp.Take(rp.Length - 3))) ?? throw new ArgumentException("not found");
+                    target.transform.localRotation = Quaternion.Euler(float.Parse(rp[rp.Length - 3]), float.Parse(rp[rp.Length - 2]), float.Parse(rp[rp.Length - 1]));
+                    break;
                 case "raid": // raid <caseId>: skip the station and stand at that case's hideout door, raid running
                     var flow = UnityEngine.Object.FindAnyObjectByType<ScammerNoScamming.CaseFlowDemo>() ?? throw new InvalidOperationException("enter play mode");
                     foreach (var screen in UnityEngine.Object.FindObjectsByType<ScammerNoScamming.GameScreen>(FindObjectsSortMode.None)) screen.Close();
