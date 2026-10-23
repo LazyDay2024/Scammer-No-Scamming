@@ -1,8 +1,8 @@
 {
-    "name": "WeRInTrouble.PlayModeTests",
-    "rootNamespace": "WeRInTrouble.Tests",
+    "name": "ScammerNoScamming.PlayModeTests",
+    "rootNamespace": "ScammerNoScamming.Tests",
     "references": [
-        "WeRInTrouble.Runtime",
+        "ScammerNoScamming.Runtime",
         "Unity.InputSystem",
         "Unity.InputSystem.TestFramework",
         "UnityEngine.TestRunner",

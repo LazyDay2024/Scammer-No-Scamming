@@ -1,6 +1,6 @@
 {
-    "name": "WeRInTrouble.Runtime",
-    "rootNamespace": "WeRInTrouble",
+    "name": "ScammerNoScamming.Runtime",
+    "rootNamespace": "ScammerNoScamming",
     "references": [
         "Unity.InputSystem"
     ],

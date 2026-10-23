@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace WeRInTrouble
+namespace ScammerNoScamming
 {
     // Builds the player test world from code. The editor menu saves it as a scene and
     // the PlayMode tests build it fresh, so both exercise the same setup.
@@ -49,7 +49,7 @@ namespace WeRInTrouble
             return result;
         }
 
-        static GameObject CreatePlayer()
+        public static GameObject CreatePlayer()
         {
             var player = new GameObject("Player");
             player.transform.position = new Vector3(0f, 0.05f, 0f);
@@ -74,12 +74,12 @@ namespace WeRInTrouble
 
             player.AddComponent<PlayerController>();
             player.AddComponent<PlayerMount>();
-            player.AddComponent<Gun>();
+            player.AddComponent<PlayerWeaponController>();
             player.AddComponent<PlayerHud>();
             return player;
         }
 
-        static GameObject CreateHorse(Func<Color, Material> materialFor)
+        public static GameObject CreateHorse(Func<Color, Material> materialFor)
         {
             var horse = new GameObject("Horse");
             horse.transform.position = new Vector3(2f, 0.05f, 1f);
@@ -104,12 +104,25 @@ namespace WeRInTrouble
 
         static Health CreateTarget(Vector3 position, Func<Color, Material> materialFor)
         {
-            var target = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            target.name = "Target";
+            var target = new GameObject("Target");
             target.transform.position = position;
-            target.transform.localScale = new Vector3(0.8f, 1.8f, 0.8f);
-            Tint(target, new Color(0.75f, 0.2f, 0.2f), materialFor);
-            return target.AddComponent<Health>();
+            var health = target.AddComponent<Health>();
+
+            var skin = new Color(0.75f, 0.2f, 0.2f);
+            AddZone(target, health, "Body", HitZoneType.Body, Vector3.zero, new Vector3(0.8f, 1.4f, 0.8f), skin, materialFor);
+            AddZone(target, health, "Head", HitZoneType.Head, new Vector3(0f, 0.95f, 0f), new Vector3(0.45f, 0.45f, 0.45f), skin, materialFor);
+            return health;
+        }
+
+        static void AddZone(GameObject parent, Health health, string name, HitZoneType type, Vector3 localPosition, Vector3 scale, Color color, Func<Color, Material> materialFor)
+        {
+            var part = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            part.name = name;
+            part.transform.SetParent(parent.transform, false);
+            part.transform.localPosition = localPosition;
+            part.transform.localScale = scale;
+            part.AddComponent<HitZone>().Configure(type, HitZone.DefaultMultiplier(type), health);
+            Tint(part, color, materialFor);
         }
 
         static void AddPart(GameObject parent, string name, Vector3 localPosition, Vector3 scale, Color color, Func<Color, Material> materialFor)

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Class Diagram: Scammer No Scamming</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; padding: 24px 16px 64px; font-family: system-ui, "Segoe UI", Tahoma, sans-serif; background: #f6f6f8; color: #1d1d22; line-height: 1.55; }
+  main { max-width: 1200px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  .meta { color: #55555f; margin: 0 0 20px; }
+  nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; }
+  nav a { padding: 6px 12px; background: #fff; border: 1px solid #d5d5de; border-radius: 6px; color: #2b2b8a; text-decoration: none; font-size: .9rem; }
+  nav a:hover { background: #ececff; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; padding: 12px 14px; background: #fff; border: 1px solid #d5d5de; border-radius: 8px; margin: 0 0 28px; font-size: .9rem; }
+  .chip { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; border: 1.5px solid; }
+  section { background: #fff; border: 1px solid #d5d5de; border-radius: 8px; padding: 16px; margin: 0 0 24px; }
+  h2 { font-size: 1.15rem; margin: 0 0 4px; }
+  p.desc { margin: 0 0 12px; color: #44444e; }
+  .frame { overflow: auto; border: 1px solid #e3e3ea; border-radius: 6px; background: #fff; }
+  .frame img { display: block; max-width: none; width: 100%; min-width: 640px; height: auto; }
+  .links { margin: 10px 0 0; font-size: .85rem; }
+  .links a { color: #2b2b8a; margin-right: 14px; }
+  footer { color: #55555f; font-size: .85rem; margin-top: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Class Diagram: Scammer No Scamming</h1>
+  <p class="meta">v0.1 draft · 2026-10-23 · Unity 6000.3.6f1 · namespace ScammerNoScamming</p>
+
+  <nav aria-label="สารบัญ">
+    <a href="#d1">1 ภาพรวมแพ็กเกจ</a>
+    <a href="#d2">2 Game flow</a>
+    <a href="#d3">3 ข้อมูลคดี</a>
+    <a href="#d4">4 ยีน</a>
+    <a href="#d5">5 Player / Horse / Combat</a>
+    <a href="#d6">6 NPC และศัตรู</a>
+    <a href="#d7">7 Trouble</a>
+    <a href="#d8">8 UI</a>
+    <a href="#d9">9 เมืองและเป้าหมาย</a>
+  </nav>
+
+  <div class="legend">
+    <span><span class="chip" style="background:#d4edda;border-color:#2e7d32"></span>มีโค้ดแล้ว</span>
+    <span><span class="chip" style="background:#ffe0b2;border-color:#e65100"></span>มีโค้ดแล้ว ต้องแก้/แยกส่วน</span>
+    <span><span class="chip" style="background:#ececff;border-color:#9370db"></span>ใหม่ (ยังไม่มีโค้ด)</span>
+    <span><span class="chip" style="background:#fff8d6;border-color:#b8860b;border-style:dashed"></span>รอตัดสินใจ</span>
+  </div>
+
+  <section id="d1">
+    <h2>1 ภาพรวมแพ็กเกจ</h2>
+    <p class="desc">แพ็กเกจพึ่งพากันอย่างไร Combat, Player, Enemies ไม่เรียก Trouble หรือ UI ตรงๆ แต่ประกาศผ่าน GameEvents</p>
+    <div class="frame"><img src="01-package-overview.png" alt="ภาพรวมแพ็กเกจ"></div>
+    <p class="links"><a href="01-package-overview.png">PNG ขนาดเต็ม</a><a href="01-package-overview.svg">SVG</a></p>
+  </section>
+
+  <section id="d2">
+    <h2>2 Game flow และการเลือกคดี</h2>
+    <p class="desc">GameManager, state machine ของ phase (Analysis → Planning → Action → Lesson), RunState, CaseSession</p>
+    <div class="frame"><img src="02-game-flow.png" alt="Game flow"></div>
+    <p class="links"><a href="02-game-flow.png">PNG ขนาดเต็ม</a><a href="02-game-flow.svg">SVG</a></p>
+  </section>
+
+  <section id="d3">
+    <h2>3 ข้อมูลคดี (ScriptableObject)</h2>
+    <p class="desc">เนื้อหาคดีเป็นข้อมูล เพิ่มคดีและสุ่มจากพูลได้โดยไม่แก้โปรแกรม</p>
+    <div class="frame"><img src="03-case-data.png" alt="ข้อมูลคดี"></div>
+    <p class="links"><a href="03-case-data.png">PNG ขนาดเต็ม</a><a href="03-case-data.svg">SVG</a></p>
+  </section>
+
+  <section id="d4">
+    <h2>4 ยีนและตัวปรับค่า</h2>
+    <p class="desc">ยีนทุกตัวเป็นรายการ StatModifier ข้อดีข้อเสียคือค่าบวก/ลบในรายการเดียวกัน</p>
+    <div class="frame"><img src="04-genes.png" alt="ยีน"></div>
+    <p class="links"><a href="04-genes.png">PNG ขนาดเต็ม</a><a href="04-genes.svg">SVG</a></p>
+  </section>
+
+  <section id="d5">
+    <h2>5 Player, Horse และ Combat</h2>
+    <p class="desc">ส่วนที่มีโค้ดแล้ว (เขียว/ส้ม) และส่วนที่ต้องเพิ่ม เช่น HitZone, DamageInfo, Weapon</p>
+    <div class="frame"><img src="05-player-horse-combat.png" alt="Player Horse Combat"></div>
+    <p class="links"><a href="05-player-horse-combat.png">PNG ขนาดเต็ม</a><a href="05-player-horse-combat.svg">SVG</a></p>
+  </section>
+
+  <section id="d6">
+    <h2>6 NPC และศัตรู</h2>
+    <p class="desc">ลำดับชั้น Npc → Enemy / Bystander และ state ของศัตรู</p>
+    <div class="frame"><img src="06-npc-enemies.png" alt="NPC และศัตรู"></div>
+    <p class="links"><a href="06-npc-enemies.png">PNG ขนาดเต็ม</a><a href="06-npc-enemies.svg">SVG</a></p>
+  </section>
+
+  <section id="d7">
+    <h2>7 ระบบ Trouble และ GameEvents</h2>
+    <p class="desc">Trouble มีสองถัง: ค่าตั้งต้น (คงไว้ตอนเล่นซ้ำ) กับค่าสะสมตอนลงมือ (รีเซ็ต)</p>
+    <div class="frame"><img src="07-trouble.png" alt="Trouble"></div>
+    <p class="links"><a href="07-trouble.png">PNG ขนาดเต็ม</a><a href="07-trouble.svg">SVG</a></p>
+  </section>
+
+  <section id="d8">
+    <h2>8 UI และหน้าสรุปทักษะ</h2>
+    <p class="desc">หน้าจอต่างๆ HUD และ SkillReport</p>
+    <div class="frame"><img src="08-ui.png" alt="UI"></div>
+    <p class="links"><a href="08-ui.png">PNG ขนาดเต็ม</a><a href="08-ui.svg">SVG</a></p>
+  </section>
+
+  <section id="d9">
+    <h2>9 เมืองและเป้าหมายของด่าน</h2>
+    <p class="desc">CityGenerator, BuildingFactory, Hideout และ CaseObjective</p>
+    <div class="frame"><img src="09-world.png" alt="เมืองและเป้าหมาย"></div>
+    <p class="links"><a href="09-world.png">PNG ขนาดเต็ม</a><a href="09-world.svg">SVG</a></p>
+  </section>
+
+  <footer>
+    ภาพทั้งหมดสร้างจาก <a href="../CLASS_DIAGRAM.md">CLASS_DIAGRAM.md</a> เมื่อ 2026-10-23 ไฟล์ .md คือตัวหลัก ถ้าภาพกับ .md ไม่ตรงกัน ให้ยึด .md และสร้างภาพใหม่
+  </footer>
+</main>
+</body>
+</html>

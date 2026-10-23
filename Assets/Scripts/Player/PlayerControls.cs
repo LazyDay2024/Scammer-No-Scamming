@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace WeRInTrouble
+namespace ScammerNoScamming
 {
     // Keyboard + mouse bindings built in code, so the player prefab needs no input asset wiring.
     public class PlayerControls : MonoBehaviour

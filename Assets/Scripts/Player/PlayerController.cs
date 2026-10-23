@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace WeRInTrouble
+namespace ScammerNoScamming
 {
     // First-person walking and looking. While mounted, walking stops and the body turns
     // only within a limited arc relative to the saddle.

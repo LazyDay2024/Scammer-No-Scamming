@@ -1,42 +1,40 @@
 using System;
 using UnityEngine;
 
-namespace WeRInTrouble
+namespace ScammerNoScamming
 {
-    // Hitscan from the centre of the camera. Skips the shooter's own colliders,
-    // including the horse being ridden, so aiming down never hits the mount.
-    [RequireComponent(typeof(PlayerControls))]
-    public class Gun : MonoBehaviour
+    // Reads the fire button and aims from the centre of the camera; the weapon does the shooting.
+    [RequireComponent(typeof(PlayerControls), typeof(HitscanWeapon))]
+    public class PlayerWeaponController : MonoBehaviour
     {
-        public float damage = 1f;
-        public float range = 120f;
-        public float fireInterval = 0.2f;
         public bool automatic;
         public bool requireLockedCursor = true;
-        public LayerMask hitMask = ~0;
 
         [Header("Tracer")]
         public Material tracerMaterial;
         public Vector3 muzzleOffset = new Vector3(0.25f, -0.2f, 0.6f);
         public float tracerDuration = 0.05f;
 
-        // Position the shot was fired from, so other systems can react to the noise.
+        // Position the shot was heard from, so other systems can react to the noise.
         public event Action<Vector3> Fired;
 
         public float LastHitTime { get; private set; } = -10f;
+        public HitscanWeapon Weapon => weapon;
 
-        readonly RaycastHit[] hits = new RaycastHit[32];
         PlayerControls controls;
         PlayerMount mount;
+        HitscanWeapon weapon;
         Camera aimCamera;
         LineRenderer tracer;
-        float nextFireTime;
         float tracerHideTime;
 
         void Awake()
         {
             controls = GetComponent<PlayerControls>();
             mount = GetComponent<PlayerMount>();
+            weapon = GetComponent<HitscanWeapon>();
+            if (weapon == null) weapon = gameObject.AddComponent<HitscanWeapon>();
+            weapon.Ignore = IsOwnCollider;
         }
 
         void Start()
@@ -54,47 +52,18 @@ namespace WeRInTrouble
             if (requireLockedCursor && Cursor.lockState != CursorLockMode.Locked) return;
 
             bool wantsToFire = automatic ? controls.Fire.IsPressed() : controls.Fire.WasPressedThisFrame();
-            if (wantsToFire && Time.time >= nextFireTime)
-                Shoot();
-        }
-
-        void Shoot()
-        {
-            nextFireTime = Time.time + fireInterval;
+            if (!wantsToFire) return;
 
             Transform cam = aimCamera.transform;
-            Vector3 origin = cam.position;
-            Vector3 direction = cam.forward;
-            Vector3 end = origin + direction * range;
+            if (!weapon.TryFire(cam.position, cam.forward, Faction.Player, out ShotResult shot)) return;
 
-            int count = Physics.RaycastNonAlloc(origin, direction, hits, range, hitMask, QueryTriggerInteraction.Ignore);
-            float nearest = float.MaxValue;
-            Collider target = null;
-            for (int i = 0; i < count; i++)
-            {
-                if (IsOwnCollider(hits[i].collider) || hits[i].distance >= nearest) continue;
-                nearest = hits[i].distance;
-                end = hits[i].point;
-                target = hits[i].collider;
-            }
-
-            if (target != null)
-            {
-                var health = target.GetComponentInParent<Health>();
-                if (health != null)
-                {
-                    health.TakeDamage(damage);
-                    LastHitTime = Time.time;
-                }
-            }
-
-            ShowTracer(cam.TransformPoint(muzzleOffset), end);
-            Fired?.Invoke(transform.position);
+            if (shot.HitDamageable) LastHitTime = Time.time;
+            ShowTracer(cam.TransformPoint(muzzleOffset), shot.EndPoint);
+            Fired?.Invoke(shot.NoisePosition);
         }
 
         bool IsOwnCollider(Collider other)
         {
-            if (other.transform.IsChildOf(transform)) return true;
             return mount != null && mount.CurrentHorse != null && other.transform.IsChildOf(mount.CurrentHorse.transform);
         }
 

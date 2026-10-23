@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace WeRInTrouble
+namespace ScammerNoScamming
 {
     // E mounts the nearest free horse in range, and E again dismounts to the horse's right.
     [RequireComponent(typeof(PlayerController), typeof(PlayerControls))]

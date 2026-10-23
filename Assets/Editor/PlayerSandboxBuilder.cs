@@ -1,14 +1,14 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using WeRInTrouble;
+using ScammerNoScamming;
 
 public static class PlayerSandboxBuilder
 {
     const string ScenePath = "Assets/Scenes/PlayerSandbox.unity";
     const string MaterialFolder = "Assets/Materials";
 
-    [MenuItem("Tools/We R in Trouble/Build Player Sandbox Scene")]
+    [MenuItem("Tools/Scammer No Scamming/Build Player Sandbox Scene")]
     public static void Build()
     {
         if (!AssetDatabase.IsValidFolder(MaterialFolder))
@@ -16,7 +16,7 @@ public static class PlayerSandboxBuilder
 
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var world = PlayerSandbox.Create(MaterialFor);
-        world.Player.GetComponent<Gun>().tracerMaterial = GetMaterial("Tracer", new Color(1f, 0.9f, 0.4f), "Universal Render Pipeline/Unlit");
+        world.Player.GetComponent<PlayerWeaponController>().tracerMaterial = GetMaterial("Tracer", new Color(1f, 0.9f, 0.4f), "Universal Render Pipeline/Unlit");
 
         EditorSceneManager.SaveScene(scene, ScenePath);
         AssetDatabase.SaveAssets();

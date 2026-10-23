@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace WeRInTrouble
+namespace ScammerNoScamming
 {
     // W/S speed up and slow down, A/D steer, Shift gallops, Space jumps. Gait and turn values
     // are public so gene modifiers can scale them later.

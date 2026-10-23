@@ -1,20 +1,20 @@
 using UnityEngine;
 
-namespace WeRInTrouble
+namespace ScammerNoScamming
 {
     // Placeholder IMGUI overlay: crosshair, mount prompt and a controls hint.
     // OnGUI's default font has no Thai glyphs, so the text stays English until a UI font is added.
     public class PlayerHud : MonoBehaviour
     {
         PlayerMount mount;
-        Gun gun;
+        PlayerWeaponController gun;
         GUIStyle promptStyle;
         GUIStyle hintStyle;
 
         void Awake()
         {
             mount = GetComponent<PlayerMount>();
-            gun = GetComponent<Gun>();
+            gun = GetComponent<PlayerWeaponController>();
         }
 
         void OnGUI()
