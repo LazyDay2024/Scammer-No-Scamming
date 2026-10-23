@@ -48,7 +48,7 @@
           "Reward": 2
         }
       ],
-      "Traps": [ 0 ],
+      "Traps": [ 0, 3 ],
       "HideoutId": "east_shophouse",
       "ZoneHint": "ทางใต้ของเมือง (ยังไม่รู้ว่าตรงไหน)",
       "Lesson": {

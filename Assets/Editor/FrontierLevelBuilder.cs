@@ -467,6 +467,16 @@ public static class FrontierLevelBuilder
         var white = WorldSceneArt.Paint("TempleWhite", new Color(.92f, .88f, .8f));
         var red = WorldSceneArt.Paint("TempleRoofRed", new Color(.62f, .16f, .1f));
         var gold = WorldSceneArt.Paint("TempleGold", new Color(.95f, .72f, .25f));
+        // The hill slopes beneath the wide platform; extend its foundation to the lowest corner.
+        float foundationBottom = temple.position.y;
+        foreach (float x in new[] { -8f, 8f })
+        foreach (float z in new[] { -12f, 12f })
+        {
+            Vector3 corner = temple.TransformPoint(new Vector3(x, 0f, z));
+            foundationBottom = Mathf.Min(foundationBottom, terrain.SampleHeight(corner) + terrain.transform.position.y);
+        }
+        float foundationDepth = temple.position.y - foundationBottom + .2f;
+        WorldSceneArt.Box(temple, "Foundation", Vector3.down * (foundationDepth * .5f), new Vector3(16f, foundationDepth, 24f), white);
         WorldSceneArt.Box(temple, "Platform", new Vector3(0f, .5f, 0f), new Vector3(16f, 1f, 24f), white);
         WorldSceneArt.Box(temple, "Hall", new Vector3(0f, 3.5f, 0f), new Vector3(10f, 5f, 18f), white);
         for (int k = 0; k < 3; k++)
