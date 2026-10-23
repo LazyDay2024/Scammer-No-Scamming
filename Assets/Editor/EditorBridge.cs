@@ -66,6 +66,10 @@ public static class EditorBridge
                 case "play": EditorApplication.isPlaying = true; break;
                 case "stop": EditorApplication.isPlaying = false; break;
                 case "shot": Shot(Camera.main ?? UnityEngine.Object.FindAnyObjectByType<Camera>(), arg); break;
+                case "uishot":
+                    ScreenCapture.CaptureScreenshot(arg);
+                    Append("result.txt", "screenshot enqueued " + arg);
+                    break;
                 case "sceneshot": Shot(SceneView.lastActiveSceneView?.camera, arg); break;
                 case "look": Look(arg); break;
                 case "tp": Teleport(arg); break;
@@ -101,6 +105,43 @@ public static class EditorBridge
                     var hideout = ScammerNoScamming.Hideout.Find(definition.HideoutId) ?? throw new ArgumentException("no hideout");
                     Vector3 door = hideout.transform.TransformPoint(new Vector3(0f, .2f, -4f));
                     Teleport($"{door.x} {door.y} {door.z} {hideout.transform.eulerAngles.y} 0");
+                    break;
+                case "solve": // invoke CaseFlowDemo BeginRun first, then exercise the station's physical targets
+                    var station = UnityEngine.Object.FindAnyObjectByType<ScammerNoScamming.StationInvestigation>()
+                        ?? throw new InvalidOperationException("no station (enter play mode)");
+                    for (int guard = 0; guard < 100 && station.StageName == "Testimony"; guard++) station.Victim.Interact();
+                    for (int guard = 0; guard < 20 && station.StageName == "Questions"; guard++)
+                    {
+                        var question = station.Session.CurrentQuestion ?? throw new InvalidOperationException("no current question");
+                        int correct = question.CorrectIndex;
+                        var answer = question.Reward == ScammerNoScamming.IntelKind.HideoutLocation ? station.MapPins[correct] : station.AnswerTargets[correct];
+                        answer.Interact();
+                        station.AdvanceTarget.Interact();
+                    }
+                    var genes = UnityEngine.Object.FindAnyObjectByType<ScammerNoScamming.GeneSelectionScreen>();
+                    Append("result.txt", $"solve stage={station.StageName} genesOpen={genes != null && genes.IsOpen}");
+                    if (station.StageName != "Genes" || genes == null || !genes.IsOpen)
+                        throw new InvalidOperationException("station did not reach open gene selection");
+                    break;
+                case "mount":
+                    var mountPlayer = ScammerNoScamming.PlayerLocator.Player ?? throw new InvalidOperationException("no player (enter play mode)");
+                    var mount = mountPlayer.GetComponent<ScammerNoScamming.PlayerMount>() ?? throw new InvalidOperationException("no player mount");
+                    if (mount.IsMounted) throw new InvalidOperationException("player is already mounted");
+                    var nearestHorse = ScammerNoScamming.HorseController.All.Where(h => h != null && !h.HasRider && !h.IsDown)
+                        .Where(h => { var offset = h.transform.position - mountPlayer.transform.position; offset.y = 0f; return offset.sqrMagnitude <= mount.mountRange * mount.mountRange; })
+                        .OrderBy(h => { var offset = h.transform.position - mountPlayer.transform.position; offset.y = 0f; return offset.sqrMagnitude; }).FirstOrDefault()
+                        ?? throw new InvalidOperationException("no free horse in mount range");
+                    var mountMethod = typeof(ScammerNoScamming.PlayerMount).GetMethod("Mount", BindingFlags.NonPublic | BindingFlags.Instance,
+                        null, new[] { typeof(ScammerNoScamming.HorseController) }, null) ?? throw new InvalidOperationException("no Mount method");
+                    mountMethod.Invoke(mount, new object[] { nearestHorse });
+                    Append("result.txt", $"mount mounted={mount.IsMounted} horse={nearestHorse.name}");
+                    if (!mount.IsMounted) throw new InvalidOperationException("player did not mount");
+                    break;
+                case "riders":
+                    var riders = UnityEngine.Object.FindObjectsByType<ScammerNoScamming.MountedScammer>(FindObjectsSortMode.None);
+                    foreach (var rider in riders)
+                        Append("result.txt", $"rider {rider.name} pos={rider.transform.position} mounted={rider.IsMounted} horseHealth={(rider.horseHealth != null ? rider.horseHealth.Current.ToString() : "none")}");
+                    Append("result.txt", "riders count=" + riders.Length);
                     break;
                 case "invoke": // invoke <ComponentType> <method>: calls a no-argument method on the first instance in the scene
                     var ip = arg.Split(' ');
