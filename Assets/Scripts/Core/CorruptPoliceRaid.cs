@@ -14,6 +14,13 @@ namespace ScammerNoScamming
             GameEvents.TroubleFull += Raid;
         }
 
+        // Trouble survives a death, so a replay can begin with the meter already full; the fill event
+        // fired in the previous life, so the police have to come now.
+        void Start()
+        {
+            if (TroubleMeter.IsFull) Raid();
+        }
+
         void OnDisable()
         {
             GameEvents.TroubleFull -= Raid;

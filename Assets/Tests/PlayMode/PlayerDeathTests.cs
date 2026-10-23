@@ -132,7 +132,7 @@ namespace ScammerNoScamming.Tests
 
             yield return new WaitForSeconds(0.5f);
             Assert.AreEqual(1, replay.Replays);
-            Assert.AreEqual(0f, TroubleMeter.Action, 0.001f, "action-phase Trouble resets on replay");
+            Assert.AreEqual(4f, TroubleMeter.Action, 0.001f, "action-phase Trouble is kept through a death");
             Assert.AreEqual(10f, TroubleMeter.Carried, 0.001f, "analysis Trouble is kept");
             TroubleMeter.ResetAll();
 

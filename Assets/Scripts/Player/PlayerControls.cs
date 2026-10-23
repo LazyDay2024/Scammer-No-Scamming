@@ -12,6 +12,7 @@ namespace ScammerNoScamming
         public InputAction Jump { get; private set; }
         public InputAction Sprint { get; private set; }
         public InputAction Interact { get; private set; }
+        public InputAction Reload { get; private set; }
 
         InputAction[] all;
 
@@ -29,8 +30,9 @@ namespace ScammerNoScamming
             Jump = new InputAction("Jump", InputActionType.Button, "<Keyboard>/space");
             Sprint = new InputAction("Sprint", InputActionType.Button, "<Keyboard>/leftShift");
             Interact = new InputAction("Interact", InputActionType.Button, "<Keyboard>/e");
+            Reload = new InputAction("Reload", InputActionType.Button, "<Keyboard>/r");
 
-            all = new[] { Move, Look, Fire, Jump, Sprint, Interact };
+            all = new[] { Move, Look, Fire, Jump, Sprint, Interact, Reload };
         }
 
         void OnEnable()

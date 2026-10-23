@@ -3,9 +3,8 @@ using UnityEngine.SceneManagement;
 
 namespace ScammerNoScamming
 {
-    // Owner's rule: when the player dies, replay the action phase of the same case. Genes and analysis
-    // answers are kept, and only the Trouble earned during the action phase is reset (TroubleMeter
-    // does that on GameEvents.ActionReplaying).
+    // Owner's rule: when the player dies, replay the action phase of the same case. Genes, analysis
+    // answers and all Trouble are kept (the meter does not reset on GameEvents.ActionReplaying).
     // Reloading the action scene resets everything in it (enemies, traps, horse, ammo, health), so whatever
     // must survive a death (genes, answers, pre-action Trouble) has to live outside the scene, for example
     // in a DontDestroyOnLoad GameManager. A boss fight in its own scene restarts just the boss this way.

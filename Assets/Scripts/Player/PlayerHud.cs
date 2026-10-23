@@ -95,11 +95,11 @@ namespace ScammerNoScamming
                 GUI.Label(new Rect(0f, cy + 60f, Screen.width, 40f), prompt, promptStyle);
 
             GUI.Label(new Rect(12f, 10f, Screen.width, 24f),
-                "WASD move / ride   Mouse look   LMB fire   Space jump   Shift sprint   E mount", hintStyle);
+                "WASD move / ride   Mouse look   LMB fire   R reload   Space jump   Shift sprint   E mount", hintStyle);
 
             if (gun != null)
-                GUI.Label(new Rect(Screen.width - 220f, Screen.height - 40f, 200f, 28f),
-                    string.Format("AMMO {0}/{1}", gun.Ammo, gun.maxAmmo), popupStyle);
+                GUI.Label(new Rect(Screen.width - 320f, Screen.height - 40f, 300f, 28f),
+                    gun.Reloading ? "RELOADING..." : string.Format("AMMO {0} / {1}", gun.Loaded, gun.Reserve), popupStyle);
             DrawHealthAndLog();
             DrawTrouble();
             DrawPopups();

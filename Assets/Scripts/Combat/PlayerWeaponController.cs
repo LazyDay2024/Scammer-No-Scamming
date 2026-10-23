@@ -9,7 +9,10 @@ namespace ScammerNoScamming
     {
         public bool automatic;
         public bool requireLockedCursor = true;
+        // maxAmmo is every round the player can carry; magazineSize is how many sit in the gun at once.
         public int maxAmmo = 30;
+        public int magazineSize = 10;
+        public float reloadTime = 1.5f;
 
         [Header("Tracer")]
         public Material tracerMaterial;
@@ -21,10 +24,25 @@ namespace ScammerNoScamming
 
         public float LastHitTime { get; private set; } = -10f;
         public HitscanWeapon Weapon => weapon;
-        public int Ammo { get; private set; }
+        public int Loaded { get; private set; }
+        public int Reserve { get; private set; }
+        public int Ammo => Loaded + Reserve;
+        public bool Reloading { get; private set; }
 
-        public void Refill() { Ammo = maxAmmo; }
-        public void Drain() { Ammo = 0; }
+        public void Refill()
+        {
+            int loaded = Mathf.Min(magazineSize, maxAmmo);
+            SetRounds(loaded, maxAmmo - loaded);
+        }
+
+        public void Drain() { SetRounds(0, 0); }
+
+        public void SetRounds(int loaded, int reserve)
+        {
+            Loaded = loaded;
+            Reserve = reserve;
+            Reloading = false;
+        }
 
         PlayerControls controls;
         PlayerMount mount;
@@ -32,6 +50,7 @@ namespace ScammerNoScamming
         Camera aimCamera;
         LineRenderer tracer;
         float tracerHideTime;
+        float reloadDoneTime;
 
         void Awake()
         {
@@ -40,7 +59,13 @@ namespace ScammerNoScamming
             weapon = GetComponent<HitscanWeapon>();
             if (weapon == null) weapon = gameObject.AddComponent<HitscanWeapon>();
             weapon.Ignore = IsOwnCollider;
-            Ammo = maxAmmo;
+            Refill();
+        }
+
+        // A reload cut short by death or a disabled gun must not finish later.
+        void OnDisable()
+        {
+            Reloading = false;
         }
 
         void Start()
@@ -54,20 +79,39 @@ namespace ScammerNoScamming
             if (tracer != null && tracer.enabled && Time.time >= tracerHideTime)
                 tracer.enabled = false;
 
+            UpdateReload();
+
             if (aimCamera == null) return;
             if (requireLockedCursor && Cursor.lockState != CursorLockMode.Locked) return;
 
             bool wantsToFire = automatic ? controls.Fire.IsPressed() : controls.Fire.WasPressedThisFrame();
-            if (!wantsToFire || Ammo <= 0) return;
+            if (!wantsToFire || Loaded <= 0 || Reloading) return;
 
             Transform cam = aimCamera.transform;
             if (!weapon.TryFire(cam.position, cam.forward, Faction.Player, out ShotResult shot)) return;
-            Ammo--;
+            Loaded--;
 
             if (shot.HitDamageable) LastHitTime = Time.time;
             ShowTracer(cam.TransformPoint(muzzleOffset), shot.EndPoint);
             Fired?.Invoke(shot.NoisePosition);
             GameEvents.RaisePlayerFired(shot.NoisePosition);
+        }
+
+        // Swapping magazines takes reloadTime, during which the gun cannot fire; the rounds left in the gun stay in it.
+        void UpdateReload()
+        {
+            if (Reloading && Time.time >= reloadDoneTime)
+            {
+                int moved = Mathf.Min(magazineSize - Loaded, Reserve);
+                Loaded += moved;
+                Reserve -= moved;
+                Reloading = false;
+            }
+            else if (!Reloading && controls.Reload.WasPressedThisFrame() && Loaded < magazineSize && Reserve > 0)
+            {
+                Reloading = true;
+                reloadDoneTime = Time.time + reloadTime;
+            }
         }
 
         bool IsOwnCollider(Collider other)

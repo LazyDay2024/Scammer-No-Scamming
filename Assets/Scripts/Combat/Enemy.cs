@@ -38,6 +38,9 @@ namespace ScammerNoScamming
 
         public bool IsEngaged { get; private set; }
 
+        // Whether the on-foot bandit model replaces the placeholder boxes. Riders keep the boxes until they get a horse model.
+        protected virtual bool UsesCharacterModel => true;
+
         readonly RaycastHit[] hitBuffer = new RaycastHit[16];
         Weapon heardFrom;
         NavMeshAgent agent;
@@ -51,17 +54,22 @@ namespace ScammerNoScamming
         float nextTargetSearch;
         float patrolWaitUntil;
         bool hasPatrolPoint;
+        bool provoked;
 
         protected override void Awake()
         {
             base.Awake();
             Faction = faction;
+            Health.Damaged += OnHurt;
             home = transform.position;
 
             Weapon = GetComponent<HitscanWeapon>();
             Weapon.Damage = shotDamage;
             Weapon.FireInterval = shotInterval;
             Weapon.Ignore = IsAlly;
+            // Added here rather than required, so the weapon already exists when the tracer looks for it.
+            if (GetComponent<ShotTracer>() == null) gameObject.AddComponent<ShotTracer>();
+            if (UsesCharacterModel) ScammerAnimation.Attach(this);
 
             // Without a baked NavMesh under it the enemy walks straight lines instead (see PatrolStraight).
             if (NavMesh.SamplePosition(transform.position, out NavMeshHit ground, 2f, NavMesh.AllAreas))
@@ -76,6 +84,15 @@ namespace ScammerNoScamming
             }
         }
 
+        protected override float DeathAnimationTime
+        {
+            get
+            {
+                var animation = GetComponent<ScammerAnimation>();
+                return animation != null ? animation.DeathSeconds : 0f;
+            }
+        }
+
         protected override void OnDied(Health health)
         {
             if (agent != null) agent.enabled = false;
@@ -85,7 +102,18 @@ namespace ScammerNoScamming
         protected override void OnDestroy()
         {
             if (heardFrom != null) heardFrom.Fired -= OnHeardShot;
+            if (Health != null) Health.Damaged -= OnHurt;
             base.OnDestroy();
+        }
+
+        // Being shot by the player tells the enemy where they are and, from then on, sight no longer
+        // has a range or a field of view (a wall still blocks it). Riders also call this for their horse.
+        protected void OnHurt(Health health, DamageInfo info)
+        {
+            if (info.SourceFaction != Faction.Player || Health.IsDead || !ResolveTarget()) return;
+            provoked = true;
+            LastKnownPosition = Target.transform.position;
+            lastAlertTime = Time.time;
         }
 
         // Where the enemy aims on the target: the player's eye line, dropped a little to the chest.
@@ -310,11 +338,13 @@ namespace ScammerNoScamming
         {
             Vector3 eye = EyePosition;
             Vector3 toTarget = AimPoint - eye;
-            float distance = toTarget.magnitude;
-            if (distance > sightRange) return false;
+            if (!provoked)
+            {
+                if (toTarget.magnitude > sightRange) return false;
 
-            Vector3 flat = new Vector3(toTarget.x, 0f, toTarget.z);
-            if (Vector3.Angle(transform.forward, flat) > sightHalfAngle) return false;
+                Vector3 flat = new Vector3(toTarget.x, 0f, toTarget.z);
+                if (Vector3.Angle(transform.forward, flat) > sightHalfAngle) return false;
+            }
 
             return HasLineOfSight(eye, AimPoint);
         }

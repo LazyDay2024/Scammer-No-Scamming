@@ -37,8 +37,66 @@ namespace ScammerNoScamming
                 result.Targets.Add(CreateTarget(new Vector3((i - 1) * 4f, 0.9f, 12f + i * 6f), materialFor));
 
             result.Spawner = new GameObject("EnemySpawner").AddComponent<EnemySpawner>();
+            result.Spawner.gameObject.AddComponent<PlayerHurtKeys>();
             result.Replay = new GameObject("ActionReplay").AddComponent<ActionReplay>();
             return result;
+        }
+
+        // Cover walls and a patrolling squad past the hurdle, out of sight and earshot of the start, so the player
+        // chooses when to engage. Only the saved scene gets them; the player tests stay free of enemy fire.
+        public static List<Enemy> AddEnemies(Func<Color, Material> materialFor = null)
+        {
+            for (int i = -1; i <= 1; i++)
+            {
+                var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                wall.name = "Cover";
+                wall.transform.position = new Vector3(i * 10f, 1.25f, 45f);
+                wall.transform.localScale = new Vector3(4f, 2.5f, 0.5f);
+                Tint(wall, new Color(0.55f, 0.55f, 0.5f), materialFor);
+            }
+
+            return new List<Enemy>
+            {
+                CreateEnemy(new Vector3(-12f, 0f, 55f), materialFor),
+                CreateEnemy(new Vector3(12f, 0f, 55f), materialFor),
+                CreateEnemy(new Vector3(0f, 0f, 70f), materialFor),
+                CreateRider(new Vector3(30f, 0f, 70f), materialFor),
+            };
+        }
+
+        // Four items of evidence on the right side and a Seal table behind the start. Only the saved scene gets them.
+        public static EvidenceCase AddEvidence(Func<Color, Material> materialFor = null)
+        {
+            var set = new GameObject("Evidence").AddComponent<EvidenceCase>();
+
+            var table = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            table.name = "SealTable";
+            table.transform.SetParent(set.transform, false);
+            table.transform.position = new Vector3(10f, 0.6f, -8f);
+            table.transform.localScale = new Vector3(3.2f, 1.2f, 1.2f);
+            Tint(table, new Color(0.4f, 0.3f, 0.2f), materialFor);
+            set.sealTable = table.transform;
+
+            var found = new List<EvidenceItem>();
+            AddEvidenceItem(found, set, "เซิร์ฟเวอร์", new Vector3(22f, 0.8f, 4f), new Vector3(0.8f, 1.6f, 0.8f), new Color(0.25f, 0.3f, 0.35f), materialFor);
+            AddEvidenceItem(found, set, "ไดรฟ์เก็บข้อมูล", new Vector3(26f, 0.25f, 14f), new Vector3(0.5f, 0.5f, 0.5f), new Color(0.75f, 0.78f, 0.8f), materialFor);
+            AddEvidenceItem(found, set, "ถุงเงิน", new Vector3(14f, 0.3f, 18f), new Vector3(0.6f, 0.6f, 0.6f), new Color(0.7f, 0.6f, 0.3f), materialFor);
+            AddEvidenceItem(found, set, "เสื้อของผู้เสียหาย", new Vector3(20f, 0.25f, 26f), new Vector3(0.7f, 0.5f, 0.7f), new Color(0.85f, 0.82f, 0.7f), materialFor);
+            set.items = found.ToArray();
+            return set;
+        }
+
+        static void AddEvidenceItem(List<EvidenceItem> list, EvidenceCase parent, string label, Vector3 position, Vector3 scale, Color color, Func<Color, Material> materialFor)
+        {
+            var item = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            item.name = "Evidence_" + label;
+            item.transform.SetParent(parent.transform, false);
+            item.transform.position = position;
+            item.transform.localScale = scale;
+            Tint(item, color, materialFor);
+            var evidence = item.AddComponent<EvidenceItem>();
+            evidence.label = label;
+            list.Add(evidence);
         }
 
         // A 200 m square of grass under a sun. Add RuntimeNavMesh to it once everything that should block walking exists.
@@ -156,12 +214,13 @@ namespace ScammerNoScamming
             horse.transform.SetParent(root.transform, false);
             var horseHealth = horse.AddComponent<Health>();
             var coat = new Color(0.4f, 0.25f, 0.15f);
-            AddZone(horse, horseHealth, "Body", HitZoneType.Body, new Vector3(0f, 1f, 0f), new Vector3(0.9f, 0.9f, 2.2f), coat, materialFor);
-            AddZone(horse, horseHealth, "Head", HitZoneType.Head, new Vector3(0f, 1.95f, 1.45f), new Vector3(0.35f, 0.4f, 0.8f), coat, materialFor);
+            // Sized to the horse model (body 2 m long, its back at 1.6 m): the barrel and the head and neck.
+            AddZone(horse, horseHealth, "Body", HitZoneType.Body, new Vector3(0f, 1.15f, 0f), new Vector3(0.8f, 1f, 2.1f), coat, materialFor);
+            AddZone(horse, horseHealth, "Head", HitZoneType.Head, new Vector3(0f, 1.85f, 1.2f), new Vector3(0.4f, 0.7f, 0.9f), coat, materialFor);
 
             var rider = new GameObject(RiderScammer.RiderName);
             rider.transform.SetParent(root.transform, false);
-            rider.transform.localPosition = new Vector3(0f, 1.4f, 0f);
+            rider.transform.localPosition = new Vector3(0f, RiderScammer.SeatHeight, RiderScammer.SeatForward);
             var skin = new Color(0.75f, 0.2f, 0.2f);
             AddZone(rider, riderHealth, "Body", HitZoneType.Body, new Vector3(0f, 0.7f, 0f), new Vector3(0.8f, 1.4f, 0.8f), skin, materialFor);
             AddZone(rider, riderHealth, "Head", HitZoneType.Head, new Vector3(0f, 1.65f, 0f), new Vector3(0.45f, 0.45f, 0.45f), skin, materialFor);

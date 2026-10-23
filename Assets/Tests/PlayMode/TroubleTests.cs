@@ -47,7 +47,7 @@ namespace ScammerNoScamming.Tests
         }
 
         [Test]
-        public void Analysis_and_gene_trouble_survive_a_replay_but_action_trouble_does_not()
+        public void All_trouble_survives_a_replay()
         {
             TroubleMeter.Add(TroubleSource.WrongAnswer, 10f);
             TroubleMeter.Add(TroubleSource.ExtraGene, 5f);
@@ -58,8 +58,8 @@ namespace ScammerNoScamming.Tests
             GameEvents.RaiseActionReplaying();
 
             Assert.AreEqual(15f, TroubleMeter.Carried, 0.001f);
-            Assert.AreEqual(0f, TroubleMeter.Action, 0.001f);
-            Assert.AreEqual(15f, TroubleMeter.Current, 0.001f);
+            Assert.AreEqual(10f, TroubleMeter.Action, 0.001f);
+            Assert.AreEqual(25f, TroubleMeter.Current, 0.001f);
         }
 
         [Test]
@@ -148,6 +148,25 @@ namespace ScammerNoScamming.Tests
                 Assert.IsTrue(rider.IsEngaged);
             }
             Assert.IsTrue(player.GetComponent<PlayerCharacter>().Health.Current > 0f, "a raid is danger, not an instant loss");
+        }
+
+        [UnityTest]
+        public IEnumerator A_replay_that_starts_with_a_full_meter_sends_the_police_straight_away()
+        {
+            TroubleMeter.Add(TroubleSource.Gunshot, TroubleMeter.Max); // filled in the life before the death
+            MakePlayer();
+            var raidObject = new GameObject("Raid");
+            spawned.Add(raidObject);
+            var group = raidObject.AddComponent<AmbushGroup>();
+            group.kind = AmbushKind.Riders;
+            group.count = 2;
+            group.minRadius = 25f;
+            group.maxRadius = 30f;
+            var raid = raidObject.AddComponent<CorruptPoliceRaid>();
+            yield return null;
+
+            Assert.IsTrue(raid.HasRaided);
+            Assert.AreEqual(2, Object.FindObjectsByType<RiderScammer>(FindObjectsSortMode.None).Length);
         }
     }
 }

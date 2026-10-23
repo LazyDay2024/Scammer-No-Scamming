@@ -138,6 +138,234 @@ namespace ScammerNoScamming.Tests
         }
 
         [UnityTest]
+        public IEnumerator Reload_swaps_in_a_fresh_magazine_after_the_delay_and_blocks_firing_meanwhile()
+        {
+            world = PlayerSandbox.Create();
+            var gun = world.Player.GetComponent<PlayerWeaponController>();
+            gun.requireLockedCursor = false;
+            gun.reloadTime = 0.3f;
+            yield return null;
+            gun.SetRounds(2, 20);
+
+            yield return Tap(keyboard.rKey);
+            Assert.IsTrue(gun.Reloading);
+
+            yield return Tap(mouse.leftButton);
+            Assert.AreEqual(2, gun.Loaded, "a gun that is reloading cannot fire");
+
+            yield return new WaitForSeconds(0.5f);
+            Assert.IsFalse(gun.Reloading);
+            Assert.AreEqual(gun.magazineSize, gun.Loaded);
+            Assert.AreEqual(12, gun.Reserve, "only the missing rounds leave the reserve");
+        }
+
+        [UnityTest]
+        public IEnumerator Reload_does_nothing_with_a_full_magazine_or_an_empty_reserve()
+        {
+            world = PlayerSandbox.Create();
+            var gun = world.Player.GetComponent<PlayerWeaponController>();
+            yield return null;
+
+            yield return Tap(keyboard.rKey);
+            Assert.IsFalse(gun.Reloading, "magazine is already full");
+
+            gun.SetRounds(0, 0);
+            yield return Tap(keyboard.rKey);
+            Assert.IsFalse(gun.Reloading, "nothing left to load");
+        }
+
+        [UnityTest]
+        public IEnumerator Player_can_reload_while_mounted()
+        {
+            world = PlayerSandbox.Create();
+            var gun = world.Player.GetComponent<PlayerWeaponController>();
+            gun.reloadTime = 0.3f;
+            yield return null;
+            yield return Tap(keyboard.eKey);
+            Assert.IsTrue(world.Player.GetComponent<PlayerController>().IsMounted);
+            gun.SetRounds(1, 20);
+
+            yield return Tap(keyboard.rKey);
+            yield return new WaitForSeconds(0.5f);
+
+            Assert.AreEqual(gun.magazineSize, gun.Loaded);
+            Assert.IsTrue(world.Player.GetComponent<PlayerController>().IsMounted, "reloading must not drop the rider");
+        }
+
+        [UnityTest]
+        public IEnumerator Hurt_and_kill_keys_work_for_a_mounted_player()
+        {
+            world = PlayerSandbox.Create();
+            var character = world.Player.GetComponent<PlayerCharacter>();
+            yield return null;
+            yield return Tap(keyboard.eKey);
+
+            yield return Tap(keyboard.hKey);
+            Assert.AreEqual(80f, character.Health.Current, 0.01f);
+            Assert.IsTrue(world.Player.GetComponent<PlayerController>().IsMounted);
+
+            yield return Tap(keyboard.kKey);
+            Assert.IsTrue(character.Health.IsDead);
+            Assert.IsFalse(world.Player.GetComponent<PlayerController>().IsMounted, "a dead rider falls off the horse");
+        }
+
+        [UnityTest]
+        public IEnumerator Sandbox_squad_patrols_out_of_reach_until_the_player_engages()
+        {
+            world = PlayerSandbox.Create();
+            var squad = PlayerSandbox.AddEnemies();
+            var character = world.Player.GetComponent<PlayerCharacter>();
+            try
+            {
+                yield return new WaitForSeconds(2f);
+
+                Assert.AreEqual(4, squad.Count);
+                foreach (var enemy in squad)
+                    Assert.IsFalse(enemy.IsEngaged, enemy.name + " should not notice the player at the start");
+                Assert.AreEqual(PlayerCharacter.StartingHealth, character.Health.Current);
+            }
+            finally
+            {
+                foreach (var enemy in squad)
+                    if (enemy != null) Object.Destroy(enemy.gameObject);
+                foreach (var wall in GameObject.FindObjectsByType<Transform>(FindObjectsSortMode.None))
+                    if (wall.name == "Cover") Object.Destroy(wall.gameObject);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Trap_course_has_all_five_trap_kinds_and_T_puts_everything_back()
+        {
+            world = PlayerSandbox.Create();
+            TroubleMeter.ResetAll();
+            var character = world.Player.GetComponent<PlayerCharacter>();
+            var gun = world.Player.GetComponent<PlayerWeaponController>();
+            var course = new GameObject("Course").AddComponent<TrapCourse>();
+            try
+            {
+                yield return null;
+
+                var kinds = new System.Collections.Generic.HashSet<TrapKind>();
+                foreach (var trap in course.Traps) kinds.Add(trap.Kind);
+                Assert.AreEqual(5, kinds.Count, "one of every trap kind");
+
+                // Fall for a fake crate, wake the ambush, and shoot the villager dead.
+                SupplyCrate fake = null;
+                AmbushBait bait = null;
+                DisguisedScammer villager = null;
+                foreach (var trap in course.Traps)
+                {
+                    if (trap is SupplyCrate crate && crate.isFake) fake = crate;
+                    if (trap is AmbushBait b) bait = b;
+                    if (trap is DisguisedScammer d) villager = d;
+                }
+                fake.Use(world.Player);
+                bait.Spring(world.Player);
+                villager.GetComponent<Health>().TakeDamage(new DamageInfo(99f, HitZoneType.Body, Faction.Player, Vector3.zero));
+                yield return null;
+
+                Assert.Less(character.Health.Current, 100f);
+                Assert.AreEqual(0, gun.Ammo, "the fake crate robbed the ammo");
+                Assert.Greater(TroubleMeter.Current, 0f);
+                Assert.IsTrue(villager.IsDefused);
+                foreach (var hidden in bait.activateOnSpring)
+                {
+                    Assert.IsTrue(hidden.activeSelf, "the ambushers woke");
+                    Assert.IsNotNull(hidden.GetComponent<Enemy>());
+                }
+
+                yield return Tap(keyboard.tKey);
+
+                Assert.AreEqual(100f, character.Health.Current, 0.01f);
+                Assert.AreEqual(gun.maxAmmo, gun.Ammo);
+                Assert.AreEqual(0f, TroubleMeter.Current);
+                Assert.AreEqual(0, TrapLog.SprungKinds.Count);
+                Assert.AreEqual(6, course.Traps.Count);
+                foreach (var trap in course.Traps)
+                {
+                    Assert.IsFalse(trap.HasSprung, trap.name + " is armed again");
+                    Assert.IsFalse(trap.IsDefused, trap.name + " is back to life");
+                    foreach (var hidden in trap.activateOnSpring)
+                        Assert.IsFalse(hidden.activeSelf, "ambushers hide until the trap springs");
+                }
+            }
+            finally
+            {
+                if (course != null) Object.Destroy(course.gameObject);
+                TroubleMeter.ResetAll();
+                TrapLog.Reset();
+            }
+        }
+
+        void StandBeside(Vector3 point)
+        {
+            var walking = world.Player.GetComponent<CharacterController>();
+            walking.enabled = false; // a CharacterController snaps back to its old spot otherwise
+            world.Player.transform.position = new Vector3(point.x, 0.05f, point.z + 1.5f);
+            walking.enabled = true;
+            Physics.SyncTransforms();
+        }
+
+        IEnumerator HoldE(float seconds)
+        {
+            Press(keyboard.eKey);
+            yield return new WaitForSeconds(seconds);
+            Release(keyboard.eKey);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Mission_ends_only_after_every_item_of_evidence_is_collected_and_Sealed()
+        {
+            world = PlayerSandbox.Create();
+            var evidence = PlayerSandbox.AddEvidence();
+            evidence.collectSeconds = 0.2f;
+            evidence.sealSeconds = 0.2f;
+            bool complete = false;
+            System.Action onComplete = () => complete = true;
+            GameEvents.MissionComplete += onComplete;
+            try
+            {
+                yield return null;
+                Assert.AreEqual(4, evidence.Total, "a case has several items of evidence");
+
+                StandBeside(evidence.sealTable.position);
+                yield return HoldE(0.5f);
+                Assert.AreEqual(0, evidence.Sealed, "nothing to Seal with empty hands");
+
+                for (int i = 0; i < 3; i++)
+                {
+                    StandBeside(evidence.items[i].transform.position);
+                    yield return HoldE(0.45f);
+                    Assert.AreEqual(i + 1, evidence.Carried);
+                    Assert.IsTrue(evidence.items[i].Collected);
+                    Assert.IsFalse(evidence.items[i].gameObject.activeSelf, "a collected item leaves the floor");
+                }
+
+                StandBeside(evidence.sealTable.position);
+                yield return HoldE(1f); // one long hold Seals the carried items one after another
+                Assert.AreEqual(3, evidence.Sealed);
+                Assert.AreEqual(0, evidence.Carried);
+                Assert.IsFalse(complete, "one item is still out there");
+                Assert.IsFalse(evidence.IsComplete);
+
+                StandBeside(evidence.items[3].transform.position);
+                yield return HoldE(0.45f);
+                StandBeside(evidence.sealTable.position);
+                yield return HoldE(0.5f);
+
+                Assert.AreEqual(4, evidence.Sealed);
+                Assert.IsTrue(evidence.IsComplete);
+                Assert.IsTrue(complete, "the mission-complete event fires once everything is Sealed");
+            }
+            finally
+            {
+                GameEvents.MissionComplete -= onComplete;
+                Object.Destroy(evidence.gameObject);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator Interact_far_from_horse_does_nothing()
         {
             world = PlayerSandbox.Create();

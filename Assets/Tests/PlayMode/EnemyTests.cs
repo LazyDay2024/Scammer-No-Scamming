@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -67,6 +68,111 @@ namespace ScammerNoScamming.Tests
         }
 
         [UnityTest]
+        public IEnumerator Foot_scammer_runs_at_the_player_once_it_sees_them_and_stops_at_keep_distance()
+        {
+            MakePlayer();
+            var enemy = PlayerSandbox.CreateEnemy(new Vector3(0f, 0f, 22f));
+            enemy.transform.rotation = Quaternion.Euler(0f, 180f, 0f);
+            enemy.patrolRadius = 0f;
+            enemy.reactionTime = 0.1f;
+            spawned.Add(enemy.gameObject);
+
+            float deadline = Time.time + 5f;
+            while (enemy.transform.position.z > enemy.keepDistance + 0.5f && Time.time < deadline) yield return null;
+            yield return new WaitForSeconds(0.5f);
+
+            float distance = Vector3.Distance(enemy.transform.position, player.transform.position);
+            Assert.IsTrue(enemy.IsEngaged);
+            Assert.Less(distance, 15f, "it should have run in from 22 m");
+            Assert.Greater(distance, enemy.keepDistance - 1.5f, "it should stop near keepDistance, not run into the player");
+        }
+
+        [UnityTest]
+        public IEnumerator Enemy_shot_by_the_player_from_beyond_sight_range_hunts_and_shoots_back()
+        {
+            var character = MakePlayer();
+            var enemy = PlayerSandbox.CreateEnemy(new Vector3(0f, 0f, 50f));
+            enemy.transform.rotation = Quaternion.identity; // looking away from the player, 50 m off, sight range is 25 m
+            enemy.patrolRadius = 0f;
+            enemy.spreadDegrees = 0f;
+            enemy.reactionTime = 0.1f;
+            spawned.Add(enemy.gameObject);
+            yield return new WaitForSeconds(0.5f);
+            Assert.IsFalse(enemy.IsEngaged, "it has not noticed the player");
+            Assert.AreEqual(100f, character.Health.Current, 0.001f);
+
+            enemy.GetComponent<Health>().TakeDamage(new DamageInfo(0.5f, HitZoneType.Body, Faction.Player, enemy.transform.position));
+
+            float deadline = Time.time + 5f;
+            while (character.Health.Current >= 100f && Time.time < deadline) yield return null;
+
+            Assert.IsTrue(enemy.IsEngaged);
+            Assert.Less(character.Health.Current, 100f, "a wounded enemy shoots back from any distance");
+            Assert.Less(enemy.transform.position.z, 50f, "and runs at the player");
+        }
+
+        [UnityTest]
+        public IEnumerator Enemy_shot_by_another_scammer_is_not_provoked_at_the_player()
+        {
+            var character = MakePlayer();
+            var enemy = PlayerSandbox.CreateEnemy(new Vector3(0f, 0f, 50f));
+            enemy.transform.rotation = Quaternion.identity;
+            enemy.patrolRadius = 0f;
+            spawned.Add(enemy.gameObject);
+            yield return new WaitForSeconds(0.3f);
+
+            enemy.GetComponent<Health>().TakeDamage(new DamageInfo(0.5f, HitZoneType.Body, Faction.Scammer, enemy.transform.position));
+            yield return new WaitForSeconds(0.5f);
+
+            Assert.IsFalse(enemy.IsEngaged);
+            Assert.AreEqual(100f, character.Health.Current, 0.001f);
+        }
+
+        [UnityTest]
+        public IEnumerator Rider_whose_horse_is_shot_by_the_player_also_hunts_from_afar()
+        {
+            MakePlayer();
+            var rider = PlayerSandbox.CreateRider(new Vector3(0f, 0f, 50f));
+            rider.transform.rotation = Quaternion.identity;
+            rider.patrolRadius = 0f;
+            spawned.Add(rider.gameObject);
+            yield return new WaitForSeconds(0.5f);
+            Assert.IsFalse(rider.IsEngaged);
+
+            rider.HorseHealth.TakeDamage(new DamageInfo(0.5f, HitZoneType.Body, Faction.Player, rider.transform.position));
+            yield return new WaitForSeconds(0.5f);
+
+            Assert.IsTrue(rider.IsEngaged);
+        }
+
+        [UnityTest]
+        public IEnumerator Enemy_shot_flashes_a_tracer_from_the_revolver_muzzle_to_where_the_shot_ended()
+        {
+            MakePlayer();
+            var enemy = MakeEnemy();
+            var line = enemy.GetComponentInChildren<LineRenderer>(true);
+            Assert.IsNotNull(line, "an enemy gets a ShotTracer");
+
+            bool fired = false;
+            ShotResult seen = default;
+            enemy.GetComponent<HitscanWeapon>().Fired += shot => { fired = true; seen = shot; };
+            float deadline = Time.time + 3f;
+            while (!fired && Time.time < deadline) yield return null;
+
+            Assert.IsTrue(fired, "the enemy should shoot within 3 s");
+            Assert.IsTrue(line.enabled, "the tracer shows right after the shot");
+            Assert.AreEqual(seen.EndPoint, line.GetPosition(1));
+
+            // The animation keeps moving the hand after the shot, so the muzzle is only checked to be close.
+            var muzzle = enemy.GetComponentsInChildren<Transform>().First(t => t.name == ScammerAnimation.MuzzleName);
+            Assert.Less(Vector3.Distance(line.GetPosition(0), muzzle.position), 0.4f, "the line leaves the revolver");
+            Assert.Greater(Vector3.Distance(line.GetPosition(0), seen.Origin), 0.2f, "and not the eye the shot was aimed from");
+
+            yield return new WaitForSeconds(0.2f);
+            Assert.IsFalse(line.enabled, "the tracer is only a flash");
+        }
+
+        [UnityTest]
         public IEnumerator Enemy_behind_a_wall_does_not_see_or_shoot()
         {
             var character = MakePlayer();
@@ -120,7 +226,9 @@ namespace ScammerNoScamming.Tests
             foreach (var body in enemy.GetComponentsInChildren<Collider>())
                 Assert.IsFalse(body.enabled, "a body must not soak up shots");
 
-            yield return new WaitForSeconds(0.8f);
+            // A scammer with the bandit model lies down with its death clip instead of tipping over, so wait that out too.
+            var model = enemy.GetComponent<ScammerAnimation>();
+            yield return new WaitForSeconds((model != null ? model.DeathSeconds : 0f) + 0.8f);
             Assert.IsTrue(enemy == null, "the body is destroyed after the fall, linger and sink");
         }
 
@@ -259,9 +367,9 @@ namespace ScammerNoScamming.Tests
             var rider = MakeStillRider();
             yield return null;
 
-            Assert.IsTrue(ShootAt(rider.transform.position + new Vector3(0f, 2.6f, 0f))); // above the horse's head, which faces the player
+            Assert.IsTrue(ShootAt(rider.transform.position + new Vector3(0f, 2.4f, 0f))); // over the horse's head, which faces the player, into the seated rider's head
 
-            Assert.AreEqual(2f, rider.Health.Current, 0.001f);
+            Assert.AreEqual(3f - HitZone.DefaultMultiplier(HitZoneType.Head), rider.Health.Current, 0.001f, "a head shot");
             Assert.AreEqual(rider.horseMaxHealth, rider.HorseHealth.Current, 0.001f, "the horse is untouched");
         }
 
@@ -276,7 +384,7 @@ namespace ScammerNoScamming.Tests
             yield return null;
             Transform horse = rider.transform.Find(RiderScammer.HorseName);
             Transform seatedRider = rider.transform.Find(RiderScammer.RiderName);
-            Assert.Greater(seatedRider.localPosition.y, 1f, "starts seated above the horse");
+            Assert.Greater(seatedRider.localPosition.y, 0.5f, "starts seated above the horse");
 
             rider.HorseHealth.TakeDamage(new DamageInfo(99f, HitZoneType.Body, Faction.Player, Vector3.zero));
             yield return null;

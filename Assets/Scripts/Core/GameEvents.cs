@@ -15,6 +15,10 @@ namespace ScammerNoScamming
         public static event Action ActionReplaying;
         public static event Action<float, float> TroubleChanged;
         public static event Action TroubleFull;
+        // Items of evidence in hand, Sealed so far, and the total for the case.
+        public static event Action<int, int, int> EvidenceChanged;
+        // Every item of evidence is Sealed.
+        public static event Action MissionComplete;
 
         public static void RaiseDamaged(Health target, DamageInfo info) => Damaged?.Invoke(target, info);
         public static void RaisePlayerFired(Vector3 noisePosition) => PlayerFired?.Invoke(noisePosition);
@@ -22,6 +26,8 @@ namespace ScammerNoScamming
         public static void RaiseActionReplaying() => ActionReplaying?.Invoke();
         public static void RaiseTroubleChanged(float current, float max) => TroubleChanged?.Invoke(current, max);
         public static void RaiseTroubleFull() => TroubleFull?.Invoke();
+        public static void RaiseEvidenceChanged(int carried, int sealedCount, int total) => EvidenceChanged?.Invoke(carried, sealedCount, total);
+        public static void RaiseMissionComplete() => MissionComplete?.Invoke();
 
         // Static events survive between play sessions when domain reload is off, so start each session clean.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -33,6 +39,8 @@ namespace ScammerNoScamming
             ActionReplaying = null;
             TroubleChanged = null;
             TroubleFull = null;
+            EvidenceChanged = null;
+            MissionComplete = null;
         }
     }
 }
