@@ -22,7 +22,7 @@ namespace ScammerNoScamming
         static readonly HashSet<object> holders = new HashSet<object>();
 
         Camera cam;
-        Transform focus;
+        Transform focus, camA, camB;
         float startTime;
 
         public static bool IsLive => instance != null && instance.cam != null && instance.cam.enabled;
@@ -80,6 +80,11 @@ namespace ScammerNoScamming
         void Activate()
         {
             if (gameObject.activeSelf) return;
+            // Level designers can place "MenuCam_A" (and optionally "MenuCam_B") to direct the shot.
+            var a = GameObject.Find("MenuCam_A");
+            var b = GameObject.Find("MenuCam_B");
+            camA = a != null ? a.transform : null;
+            camB = b != null ? b.transform : null;
             var station = GameObject.Find("PoliceStation");
             var player = PlayerLocator.Player;
             if (station != null) focus = station.transform;
@@ -95,6 +100,19 @@ namespace ScammerNoScamming
 
         void Place(float t)
         {
+            if (camA != null)
+            {
+                if (camB == null)
+                {
+                    transform.SetPositionAndRotation(camA.position + camA.right * Mathf.Sin(t * 0.2f) * 0.6f, camA.rotation);
+                    return;
+                }
+                // Slow glide A -> B and back; eased at both ends.
+                float u = Mathf.PingPong(t / 45f, 1f);
+                u = u * u * (3f - 2f * u);
+                transform.SetPositionAndRotation(Vector3.Lerp(camA.position, camB.position, u), Quaternion.Slerp(camA.rotation, camB.rotation, u));
+                return;
+            }
             if (focus == null) return;
             Vector3 center = focus.position;
             float angle = startAngle + Mathf.Sin(t * swingSpeed) * swing;

@@ -3,10 +3,12 @@ using UnityEngine;
 
 namespace ScammerNoScamming
 {
+    // Title screen: the title block and three entries, nothing else. Options live in SettingsPanel.
     public class MainMenuScreen : GameScreen
     {
         Action onStart;
         int selected;
+        bool showSettings;
         Vector2 lastMouse;
 
         protected override bool FillsScreen => false;
@@ -17,8 +19,11 @@ namespace ScammerNoScamming
         {
             onStart = start;
             selected = 0;
+            showSettings = false;
             Open();
         }
+
+        public void DebugSettings(bool on) => showSettings = on;
 
         void StartGame()
         {
@@ -30,66 +35,46 @@ namespace ScammerNoScamming
         {
             // The scene behind is the live city; darken the left for the text and settle the corners.
             ThaiGui.ScrimLeft(1250f, 0.94f);
-            ThaiGui.ScrimBottom(360f, 0.55f);
+            ThaiGui.ScrimBottom(360f, 0.5f);
             ThaiGui.VignetteOverlay(0.55f);
             ThaiGui.Grain(0.035f);
+
+            if (showSettings)
+            {
+                if (SettingsPanel.Draw(canvas)) showSettings = false;
+                return;
+            }
 
             const float x = 150f;
             float age = Age;
             using (ThaiGui.Fade(ThaiGui.Appear(age, 0.25f)))
+                ThaiGui.Kicker(new Rect(x, 150f, 0f, 0f), "2035 · สยามภิรมย์");
+            float rise = 1f - ThaiGui.Appear(age, 0.4f, 0.7f);
+            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.4f, 0.7f)))
             {
-                ThaiGui.Kicker(new Rect(x, 130f, 0f, 0f), "2035 · SIAM PHIROM");
+                float y = 232f - 16f * rise;
+                var title = ThaiGui.Headline(104, ThaiGui.Bone, FontStyle.Bold);
+                GUI.Label(new Rect(x - 5f, y, 1000f, 140f), "SCAMMER", title);
+                GUI.Label(new Rect(x - 5f, y + 112f, 1000f, 140f), "NO SCAMMING", title);
             }
-            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.45f, 0.7f)))
+            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.75f)))
             {
-                float y = 215f - 16f * (1f - ThaiGui.Appear(age, 0.45f, 0.7f));
-                GUI.Label(new Rect(x - 6f, y, 1000f, 150f), "SCAMMER", ThaiGui.Headline(ThaiGui.Display, ThaiGui.Bone, FontStyle.Bold));
-                GUI.Label(new Rect(x - 6f, y + 128f, 1000f, 150f), "NO SCAMMING", ThaiGui.Headline(ThaiGui.Display - 8, ThaiGui.Bone, FontStyle.Bold));
-            }
-            using (ThaiGui.Fade(ThaiGui.Appear(age, 0.8f)))
-            {
-                ThaiGui.Fill(new Rect(x, 508f, 70f, 2f), ThaiGui.Gold);
-                GUI.Label(new Rect(x, 530f, 900f, 80f), "ม้าเหล็กหมดน้ำมัน", ThaiGui.Text(ThaiGui.H2, ThaiGui.Gold, FontStyle.Bold));
+                ThaiGui.Fill(new Rect(x, 482f, 64f, 2f), ThaiGui.Gold);
+                GUI.Label(new Rect(x, 508f, 900f, 70f), "ม้าเหล็กหมดน้ำมัน", ThaiGui.Text(ThaiGui.H2 - 6, ThaiGui.Gold, FontStyle.Bold));
             }
 
-            using (ThaiGui.Fade(ThaiGui.Appear(age, 1.05f)))
+            using (ThaiGui.Fade(ThaiGui.Appear(age, 1.0f)))
             {
-                var items = new[] { "เริ่มเกม", "ออกจากเกม" };
+                var items = new[] { "เริ่มเกม", "ตั้งค่า", "ออกจากเกม" };
                 HandleKeys(items.Length);
                 for (int i = 0; i < items.Length; i++)
                 {
-                    var r = new Rect(x - 6f, 650f + i * 74f, 460f, 64f);
+                    // Text lines up with the title; the brass bar hangs in the left margin.
+                    var r = new Rect(x - 28f, 640f + i * 68f, 420f, 60f);
                     if (Event.current.type == EventType.Repaint && Event.current.mousePosition != lastMouse && r.Contains(Event.current.mousePosition)) selected = i;
-                    if (ThaiGui.MenuItem(r, items[i], selected == i, 34)) Activate(i);
+                    if (ThaiGui.MenuItem(r, items[i], selected == i, 32)) Activate(i);
                 }
                 lastMouse = Event.current.mousePosition;
-                SensitivitySlider(new Rect(x + 22f, 828f, 400f, 70f));
-            }
-
-            using (ThaiGui.Fade(ThaiGui.Appear(age, 1.3f)))
-            {
-                float fy = canvas.height - 78f;
-                ThaiGui.HRule(x, fy - 18f, 760f, new Color(ThaiGui.Bone.r, ThaiGui.Bone.g, ThaiGui.Bone.b, 0.18f));
-                Controls(x, fy);
-            }
-        }
-
-        // Small key hints on one line: keys in bone, actions muted.
-        public static void Controls(float x, float y)
-        {
-            var keys = ThaiGui.Text(ThaiGui.Cap, ThaiGui.Bone, FontStyle.Bold);
-            var label = ThaiGui.Text(ThaiGui.Cap + 1, ThaiGui.Muted);
-            keys.wordWrap = false;
-            label.wordWrap = false;
-            var hints = new[] { ("WASD", "เดิน"), ("เมาส์", "มอง"), ("E", "ใช้ / ขึ้นม้า"), ("คลิกซ้าย", "ยิง"), ("Esc", "พักเกม") };
-            foreach (var (key, action) in hints)
-            {
-                var ks = keys.CalcSize(new GUIContent(key));
-                GUI.Label(new Rect(x, y, ks.x + 4f, 34f), key, keys);
-                x += ks.x + 12f;
-                var ls = label.CalcSize(new GUIContent(action));
-                GUI.Label(new Rect(x, y, ls.x + 4f, 34f), action, label);
-                x += ls.x + 34f;
             }
         }
 
@@ -109,35 +94,30 @@ namespace ScammerNoScamming
         void Activate(int index)
         {
             if (index == 0) StartGame();
+            else if (index == 1) showSettings = true;
             else Application.Quit();
         }
 
-        public const string SensitivityKey = "lookSensitivity";
-
-        public static void LoadSensitivity()
+        // Short key reminder used by the in-game HUD during the first seconds of play.
+        public static void Controls(float x, float y)
         {
-            var player = PlayerLocator.Player;
-            if (player == null) return;
-            try
+            var keys = ThaiGui.Text(ThaiGui.Cap, ThaiGui.Bone, FontStyle.Bold);
+            var label = ThaiGui.Text(ThaiGui.Cap + 1, ThaiGui.Muted);
+            keys.wordWrap = false;
+            label.wordWrap = false;
+            var hints = new[] { ("WASD", "เดิน"), ("เมาส์", "มอง"), ("E", "ใช้ / ขึ้นม้า"), ("คลิกซ้าย", "ยิง"), ("Esc", "พักเกม") };
+            foreach (var (key, action) in hints)
             {
-                if (PlayerPrefs.HasKey(SensitivityKey)) player.lookSensitivity = PlayerPrefs.GetFloat(SensitivityKey);
-            }
-            catch { }
-        }
-
-        public static void SensitivitySlider(Rect r)
-        {
-            var player = PlayerLocator.Player;
-            if (player == null) return;
-            ThaiGui.Tracked(r.x, r.y, "ความไวเมาส์", ThaiGui.Cap + 1, ThaiGui.Muted, 0f, FontStyle.Normal);
-            var value = ThaiGui.Text(ThaiGui.Cap + 1, ThaiGui.Bone, FontStyle.Bold, TextAnchor.UpperRight);
-            GUI.Label(new Rect(r.xMax - 100f, r.y, 100f, 30f), player.lookSensitivity.ToString("0.00"), value);
-            float v = ThaiGui.Slider(new Rect(r.x, r.y + 36f, r.width, 18f), player.lookSensitivity, 0.02f, 0.4f);
-            if (!Mathf.Approximately(v, player.lookSensitivity))
-            {
-                player.lookSensitivity = v;
-                try { PlayerPrefs.SetFloat(SensitivityKey, v); } catch { }
+                var ks = keys.CalcSize(new GUIContent(key));
+                GUI.Label(new Rect(x, y, ks.x + 4f, 34f), key, keys);
+                x += ks.x + 12f;
+                var ls = label.CalcSize(new GUIContent(action));
+                GUI.Label(new Rect(x, y, ls.x + 4f, 34f), action, label);
+                x += ls.x + 34f;
             }
         }
+
+        public const string SensitivityKey = SettingsPanel.SensitivityKey;
+        public static void LoadSensitivity() => SettingsPanel.Load();
     }
 }
