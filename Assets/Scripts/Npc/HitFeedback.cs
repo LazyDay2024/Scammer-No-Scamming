@@ -129,6 +129,9 @@ namespace ScammerNoScamming
 
         void PlayGunshot()
         {
+            // The new rig owns layered audio; retain the legacy path for existing/test rigs.
+            var feel = GetComponent<WeaponFeel>();
+            if (feel != null && feel.isActiveAndEnabled) return;
             if (audioSource != null && gunshot != null) audioSource.PlayOneShot(gunshot, gunshotVolume);
         }
 

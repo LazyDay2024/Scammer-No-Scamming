@@ -75,6 +75,8 @@ namespace ScammerNoScamming
             agent = GetComponent<NavMeshAgent>();
             if (agent != null) agent.updateRotation = false;
             Weapon = GetComponent<HitscanWeapon>();
+            if (Application.isPlaying && GetComponent<EnemyShotAudio>() == null)
+                gameObject.AddComponent<EnemyShotAudio>();
             Weapon.Ignore = collider => collider.transform.IsChildOf(transform);
             if (muzzle == null)
             {
