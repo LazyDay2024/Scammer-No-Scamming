@@ -120,7 +120,7 @@ namespace ScammerNoScamming
             Tick(Time.deltaTime);
         }
 
-        public void Tick(float deltaTime)
+        public virtual void Tick(float deltaTime)
         {
             if (IsDead || State == ArmedEnemyState.Dead) return;
             var player = PlayerLocator.Player;
@@ -246,7 +246,7 @@ namespace ScammerNoScamming
             return Mathf.Lerp(Mathf.Max(0f, initialError), Mathf.Max(0f, finalError), fraction);
         }
 
-        void AimAndFire(Vector3 target)
+        protected void AimAndFire(Vector3 target)
         {
             if (Weapon == null || Time.time < nextShotTime) return;
             Vector3 origin = muzzle != null ? muzzle.position : transform.position + Vector3.up * muzzleHeight;
