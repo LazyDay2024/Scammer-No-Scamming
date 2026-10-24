@@ -1,0 +1,26 @@
+{
+    "name": "Horse.CityMap.Editor",
+    "rootNamespace": "HorseCity.EditorTools",
+    "references": [
+        "Horse.CityMap",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.render-pipelines.universal",
+            "expression": "12.0.0",
+            "define": "HORSE_URP"
+        }
+    ],
+    "noEngineReferences": false
+}

@@ -1,0 +1,22 @@
+{
+    "name": "Horse.CityMap",
+    "rootNamespace": "HorseCity",
+    "references": [
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "1.0.0",
+            "define": "HORSE_INPUTSYSTEM"
+        }
+    ],
+    "noEngineReferences": false
+}
