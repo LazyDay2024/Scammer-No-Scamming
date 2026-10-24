@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/PlayAble.unity
+    guid: 19374b9efa7a2dc46aa54cf6dfa1c0cb
+  - enabled: 1
     path: Assets/Scenes/Frontier_Case01.unity
     guid: 9629b265ff19b684dbbce0fd1cd21de6
   - enabled: 1
