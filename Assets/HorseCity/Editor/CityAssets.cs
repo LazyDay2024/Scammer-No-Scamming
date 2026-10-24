@@ -32,7 +32,7 @@ namespace HorseCity.EditorTools
         public Material Wood, WoodDark, Hay, FenceWhite, Water;
         public Material Leaves, LeavesDark, Bark, Brick;
         public Material FloorTile, FloorVinyl, RubberMat, WallInterior, WallClinic, WallPolice, Ceiling, Bars;
-        public Material Fabric, Leather, Paper, Screen, Gold;
+        public Material Fabric, Leather, Paper, Screen, Gold, Glass;
 
         Shader _lit;
         bool _urp;
@@ -162,6 +162,7 @@ namespace HorseCity.EditorTools
             Paper = Mat("Int_Paper", new Color(0.9f, 0.88f, 0.82f), 0.05f, 0f);
             Screen = Mat("Int_Screen", new Color(0.1f, 0.2f, 0.25f), 0.8f, 0f, null, 1f, null, new Color(0.3f, 0.7f, 0.9f));
             Gold = Mat("Gold", new Color(0.8f, 0.62f, 0.25f), 0.7f, 1f);
+            Glass = GlassMat("Glass_Display", new Color(0.75f, 0.88f, 0.92f, 0.16f));
 
             AssetDatabase.SaveAssets();
         }
@@ -204,6 +205,36 @@ namespace HorseCity.EditorTools
 
             if (isNew) AssetDatabase.CreateAsset(m, path);
             else EditorUtility.SetDirty(m);
+            return m;
+        }
+
+        /// <summary>See-through glass for display cases (URP Lit or Standard, transparent).</summary>
+        Material GlassMat(string name, Color tint)
+        {
+            Material m = Mat(name, tint, 0.95f, 0f);
+            if (_urp)
+            {
+                SetFloat(m, "_Surface", 1f);
+                SetFloat(m, "_Blend", 0f);
+                SetFloat(m, "_SrcBlend", (float)BlendMode.SrcAlpha);
+                SetFloat(m, "_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+                SetFloat(m, "_SrcBlendAlpha", (float)BlendMode.One);
+                SetFloat(m, "_DstBlendAlpha", (float)BlendMode.OneMinusSrcAlpha);
+                SetFloat(m, "_ZWrite", 0f);
+                m.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            }
+            else
+            {
+                SetFloat(m, "_Mode", 3f);
+                SetFloat(m, "_SrcBlend", (float)BlendMode.One);
+                SetFloat(m, "_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+                SetFloat(m, "_ZWrite", 0f);
+                m.EnableKeyword("_ALPHAPREMULTIPLY_ON");
+            }
+            m.SetOverrideTag("RenderType", "Transparent");
+            m.renderQueue = (int)RenderQueue.Transparent;
+            m.enableInstancing = false;
+            EditorUtility.SetDirty(m);
             return m;
         }
 

@@ -12,6 +12,16 @@ namespace HorseCity.EditorTools
         public LightSpec(Vector3 p, Color c, float r, float i) { pos = p; color = c; range = r; intensity = i; }
     }
 
+    /// <summary>A spot where the builder drops a gun model from the weapons pack.</summary>
+    public struct GunSlot
+    {
+        public Vector3 pos;      // bottom center of where the gun rests, local space
+        public float yaw;        // direction the gun's length runs along (local x rotated by yaw)
+        public bool upright;     // true: standing in a wall case, false: lying flat
+        public float maxLength;  // the gun is scaled down if it is longer than this
+        public GunSlot(Vector3 p, float y, bool up, float max) { pos = p; yaw = y; upright = up; maxLength = max; }
+    }
+
     /// <summary>Output of a landmark build, all in the landmark's local frame (front faces -Z).</summary>
     public class Landmark
     {
@@ -25,11 +35,12 @@ namespace HorseCity.EditorTools
         public List<(QuestPointKind kind, Vector3 pos, string note)> points = new List<(QuestPointKind, Vector3, string)>();
         /// <summary>Lot rectangle (center, size) in local space, used to keep generic buildings away.</summary>
         public Rect lot;
+        public List<GunSlot> guns = new List<GunSlot>();
     }
 
     /// <summary>
-    /// Story locations. The vet, horse auction house, police station and police stable get
-    /// full interiors. The central tower and the hidden weapon shop are exterior only.
+    /// Story locations. The vet, horse auction house, police station, police stable and the
+    /// hidden weapon shop get full interiors. The central tower is exterior only.
     /// </summary>
     public class Landmarks
     {
@@ -555,32 +566,106 @@ namespace HorseCity.EditorTools
             return L;
         }
 
-        // ================================================================== HIDDEN WEAPON SHOP (exterior only)
+        // ================================================================== HIDDEN WEAPON SHOP
         public Landmark WeaponShop()
         {
             var L = new Landmark { name = "WeaponShop_Hidden" };
-            Part s = L.shell, y = L.yard;
-            // a tired two storey concrete shack facing a narrow alley, no signage on purpose
-            s.Box(A.ShopGrey, new Vector3(0, 3.6f, 0), new Vector3(7.2f, 7.2f, 7f), CityAssets.ShopTile);
-            s.Box(A.Rust, new Vector3(0, 1.5f, -3.56f), new Vector3(4f, 3f, 0.12f));      // shutter, rusted shut
-            s.Box(A.WoodDark, new Vector3(2.9f, 1.1f, -3.55f), new Vector3(0.9f, 2.1f, 0.1f)); // side door
-            s.Box(A.Rust, new Vector3(0, 3.3f, -4.4f), new Vector3(7.8f, 0.08f, 1.8f), 6f); // corrugated lean-to
-            s.Beam(A.Metal, new Vector3(-3.6f, 0, -5.2f), new Vector3(-3.6f, 3.25f, -5.2f), 0.08f);
-            s.Beam(A.Metal, new Vector3(3.6f, 0, -5.2f), new Vector3(3.6f, 3.25f, -5.2f), 0.08f);
-            s.Box(A.LampWarm, new Vector3(2.9f, 2.6f, -3.7f), new Vector3(0.15f, 0.2f, 0.15f));  // bare bulb
-            s.Box(A.Concrete, new Vector3(0, 7.5f, 0), new Vector3(7.4f, 0.6f, 7.2f), new Vector2(3, 3));
-            s.Box(A.FenceWhite, new Vector3(-2.5f, 5f, -3.7f), new Vector3(0.8f, 0.55f, 0.35f)); // old AC unit
-            s.Box(A.WindowDark, new Vector3(1f, 5f, -3.52f), new Vector3(1.6f, 1.2f, 0.06f));
-            F.Bars(s, A.Metal, new Vector3(0.2f, 4.4f, -3.6f), new Vector3(1.8f, 4.4f, -3.6f), 0f, 1.2f, 0.2f);
-            F.Crate(y, new Vector3(-3, 0, -5.5f), 12);
-            F.Crate(y, new Vector3(-2.2f, 0, -6f), -20, 0.6f);
-            F.Crate(y, new Vector3(-2.9f, 0.8f, -5.6f), 30, 0.55f);
-            F.Barrel(y, new Vector3(4.6f, 0, -2f));
-            F.Barrel(y, new Vector3(4.6f, 0, -1.2f), A.AwningBlue);
-            L.outdoorLights.Add(new LightSpec(new Vector3(2.9f, 2.4f, -4.2f), new Color(1f, 0.6f, 0.3f), 6f, 1.4f));
-            L.points.Add((QuestPointKind.WeaponShop, new Vector3(2.9f, 0, -5f), "Hidden weapon shop. Knock on the side door."));
-            L.lot = new Rect(-6, -8, 12, 14);
+            Part s = L.shell, i = L.interior, y = L.yard;
+            // A tired two storey concrete shack facing a narrow alley, no signage on purpose.
+            // Ground floor is the shop (x -4.5..4.5, z -4..4), the upper floor is exterior only.
+            const float H = 3.4f;
+            Material ext = A.ShopGrey, inn = A.Concrete;
+            Vector3 c = Vector3.zero;
+
+            Floor(i, A.WoodDark, -4.5f, 4.5f, -4f, 4f);
+            WallX(s, ext, inn, -4, -4.5f, 4.5f, H, c, W(-1.5f, 2.4f, 1f, 2.3f), D(2.9f, 1.2f, 2.3f));
+            WallX(s, ext, inn, 4, -4.5f, 4.5f, H, c);
+            WallZ(s, ext, inn, -4.5f, -4, 4, H, c, W(1f, 1.2f, 2f, 2.6f));
+            WallZ(s, ext, inn, 4.5f, -4, 4, H, c);
+            s.MinMax(A.Ceiling, new Vector3(-4.35f, H - 0.15f, -3.85f), new Vector3(4.35f, H, 3.85f));
+            s.Box(ext, new Vector3(0, H + 1.8f, 0), new Vector3(9.3f, 3.6f, 8.3f), CityAssets.ShopTile);
+            s.Box(A.Concrete, new Vector3(0, H + 3.85f, 0), new Vector3(9.5f, 0.5f, 8.5f), new Vector2(3, 3));
+            F.Bars(s, A.Metal, new Vector3(-2.7f, 0, -4.2f), new Vector3(-0.3f, 0, -4.2f), 1f, 2.3f, 0.16f);
+            s.MinMax(A.WoodDark, new Vector3(2.3f, 0, -4.1f), new Vector3(2.35f, 2.3f, -3.0f));  // door swung open
+            s.Box(A.FenceWhite, new Vector3(-2.5f, 5f, -4.35f), new Vector3(0.8f, 0.55f, 0.35f)); // old AC unit
+            s.Box(A.WindowDark, new Vector3(1f, 5.2f, -4.18f), new Vector3(1.6f, 1.2f, 0.06f));
+            F.Bars(s, A.Metal, new Vector3(0.2f, 4.6f, -4.25f), new Vector3(1.8f, 4.6f, -4.25f), 0f, 1.2f, 0.2f);
+            // corrugated lean-to over the front table
+            s.MinMax(A.Rust, new Vector3(-4.7f, 3.05f, -7.2f), new Vector3(4.7f, 3.12f, -4.15f), 6f);
+            s.Beam(A.Metal, new Vector3(-4.5f, 0, -7f), new Vector3(-4.5f, 3.05f, -7f), 0.08f);
+            s.Beam(A.Metal, new Vector3(4.5f, 0, -7f), new Vector3(4.5f, 3.05f, -7f), 0.08f);
+            s.Box(A.LampWarm, new Vector3(2.9f, 2.7f, -4.3f), new Vector3(0.15f, 0.2f, 0.15f)); // bare bulb over the door
+
+            // outside: the long table with guns laid out
+            y.MinMax(A.Wood, new Vector3(-4.1f, 0.82f, -6.4f), new Vector3(1.9f, 0.88f, -5.4f));
+            foreach (float lx in new[] { -4f, 1.8f })
+                foreach (float lz in new[] { -6.3f, -5.5f })
+                    y.MinMax(A.WoodDark, new Vector3(lx - 0.05f, 0, lz - 0.05f), new Vector3(lx + 0.05f, 0.82f, lz + 0.05f));
+            for (int k = 0; k < 5; k++)
+                L.guns.Add(new GunSlot(new Vector3(-3.5f + k * 1.2f, 0.88f, -5.9f), 0f, false, 1.1f));
+            F.Crate(y, new Vector3(-4.6f, 0, -7.8f), 12);
+            F.Crate(y, new Vector3(-3.7f, 0, -8.1f), -20, 0.6f);
+            F.Crate(y, new Vector3(-4.5f, 0.8f, -7.9f), 30, 0.55f);
+            F.Barrel(y, new Vector3(5.2f, 0, -2f));
+            F.Barrel(y, new Vector3(5.2f, 0, -1.2f), A.AwningBlue);
+
+            // inside: glass display counter across the shop
+            float cx0 = -3.8f, cx1 = 1.4f, cz0 = -0.45f, cz1 = 0.45f;
+            i.MinMax(A.WoodDark, new Vector3(cx0, 0.2f, cz0), new Vector3(cx1, 0.9f, cz1));
+            i.MinMax(A.Fabric, new Vector3(cx0 + 0.05f, 0.9f, cz0 + 0.05f), new Vector3(cx1 - 0.05f, 0.92f, cz1 - 0.05f)); // felt
+            GlassBox(i, new Vector3(cx0, 0.9f, cz0), new Vector3(cx1, 1.35f, cz1));
+            for (int k = 0; k < 4; k++)
+                L.guns.Add(new GunSlot(new Vector3(-3.15f + k * 1.25f, 0.92f, 0f), 0f, false, 1.0f));
+            i.Box(A.Metal, new Vector3(1.0f, 1.5f, 0.1f), new Vector3(0.4f, 0.3f, 0.35f));   // cash register
+            i.Box(A.Screen, new Vector3(1.0f, 1.62f, -0.08f), new Vector3(0.25f, 0.08f, 0.02f));
+            i.Cylinder(A.WoodDark, new Vector3(-1.2f, 0.2f, 1.2f), 0.2f, 0.7f, 8);        // shopkeeper stool
+
+            // back wall: tall glass cabinets with rifles standing up
+            for (int k = 0; k < 3; k++)
+            {
+                float x = -3.1f + k * 2f;
+                Vector3 min = new Vector3(x - 0.8f, 0.2f, 3.1f), max = new Vector3(x + 0.8f, 2.6f, 3.8f);
+                i.MinMax(A.WoodDark, new Vector3(min.x, min.y, 3.75f), new Vector3(max.x, max.y, 3.82f)); // back panel
+                i.MinMax(A.WoodDark, min, new Vector3(max.x, 0.45f, max.z));                              // plinth
+                i.MinMax(A.WoodDark, new Vector3(min.x, 2.5f, min.z), max);                               // top
+                GlassBox(i, new Vector3(min.x, 0.45f, min.z), new Vector3(max.x, 2.5f, 3.75f));
+                i.Box(A.LampBulb, new Vector3(x, 2.47f, 3.45f), new Vector3(1.2f, 0.03f, 0.1f));         // case strip light
+                L.guns.Add(new GunSlot(new Vector3(x - 0.38f, 0.45f, 3.5f), 0f, true, 1.9f));
+                L.guns.Add(new GunSlot(new Vector3(x + 0.38f, 0.45f, 3.5f), 0f, true, 1.9f));
+            }
+            // ammo shelves and crates on the right
+            F.Shelf(i, new Vector3(4.15f, 0.2f, 1.6f), -90, 2.4f, 2f, A.Metal, A.Rust);
+            F.Crate(i, new Vector3(3.6f, 0.2f, -2.6f), 15, 0.6f);
+            F.Crate(i, new Vector3(3.7f, 0.8f, -2.6f), -10, 0.5f);
+            F.Crate(i, new Vector3(2.9f, 0.2f, -3.2f), 40, 0.55f);
+            F.HangingLamp(i, new Vector3(-1.2f, 2.7f, -0.2f), 0.55f, A.LampWarm);
+            F.HangingLamp(i, new Vector3(2.6f, 2.7f, 1.8f), 0.55f, A.LampWarm);
+
+            L.interiorLights.Add(new LightSpec(new Vector3(-1.2f, 2.5f, -0.2f), Warm, 7f, 1.3f));
+            L.interiorLights.Add(new LightSpec(new Vector3(-1.1f, 2.2f, 3.2f), ClinicWhite, 5f, 0.9f));
+            L.interiorLights.Add(new LightSpec(new Vector3(2.6f, 2.5f, 1.8f), Warm, 5f, 0.8f));
+            L.outdoorLights.Add(new LightSpec(new Vector3(2.9f, 2.5f, -4.8f), new Color(1f, 0.6f, 0.3f), 7f, 1.4f));
+            L.outdoorLights.Add(new LightSpec(new Vector3(-1.1f, 2.8f, -5.9f), new Color(1f, 0.65f, 0.35f), 6f, 1.1f));
+            L.interiorBounds = new Bounds(new Vector3(0, 1.7f, 0), new Vector3(9f, 3.4f, 8f));
+            L.points.Add((QuestPointKind.WeaponShop, new Vector3(2.9f, 0, -5f), "Hidden weapon shop. Guns on the front table, more in the glass cases inside."));
+            L.lot = new Rect(-6, -9, 12, 15);
             return L;
+        }
+
+        /// <summary>Glass box (five panes, open at the bottom) with thin metal edges.</summary>
+        void GlassBox(Part p, Vector3 min, Vector3 max)
+        {
+            const float t = 0.02f;
+            p.MinMax(A.Glass, new Vector3(min.x, max.y - t, min.z), max);                        // top
+            p.MinMax(A.Glass, min, new Vector3(max.x, max.y, min.z + t));                        // front
+            p.MinMax(A.Glass, new Vector3(min.x, min.y, max.z - t), max);                        // back
+            p.MinMax(A.Glass, min, new Vector3(min.x + t, max.y, max.z));                        // left
+            p.MinMax(A.Glass, new Vector3(max.x - t, min.y, min.z), max);                        // right
+            const float e = 0.035f;
+            foreach (float x in new[] { min.x, max.x })
+                foreach (float z in new[] { min.z, max.z })
+                    p.MinMax(A.Chrome, new Vector3(x - e, min.y, z - e), new Vector3(x + e, max.y, z + e));
+            p.MinMax(A.Chrome, new Vector3(min.x, max.y - e, min.z - e), new Vector3(max.x, max.y + e, min.z + e));
         }
 
         // ================================================================== CENTRAL TOWER (the biggest building)

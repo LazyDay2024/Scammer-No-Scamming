@@ -35,7 +35,7 @@ look).
 
 ## Interiors
 
-Only these four have interiors. Everything else is exterior only.
+Only these five have interiors. Everything else is exterior only.
 
 - **Vet clinic**: reception and waiting room, treatment hall with examination stocks, overhead hoist,
   medicine cabinets and x-ray light box, three recovery stalls, turnout paddock behind.
@@ -45,6 +45,11 @@ Only these four have interiors. Everything else is exterior only.
   cells, briefing room, armory, locker room, chief's office. Upper floor is exterior only.
 - **Police stable**: 15 stalls along a central aisle, tack room with saddle racks, feed room,
   training paddock behind.
+
+- **Hidden weapon shop**: a long table out front under the lean-to with guns laid out, and inside a
+  glass display counter plus three tall glass cabinets with rifles standing up, ammo shelves and crates.
+  The guns come from the **Low Poly Weapons VOL.1** pack: import it anywhere in the project before
+  building. Without it the shop is built empty and the Console says so.
 
 ## Quest points
 

@@ -138,7 +138,7 @@ namespace HorseCity.EditorTools
                 EditorSceneManager.MarkSceneDirty(scene);
                 EditorSceneManager.SaveScene(scene);
                 Selection.activeTransform = _root;
-                Debug.Log($"[HORSE] City map built (generator v5): {_meshCount} meshes, {Placed.Count} footprints, {StreetLights.Count} street lamps. Scene saved to {scene.path}");
+                Debug.Log($"[HORSE] City map built (generator v6): {_meshCount} meshes, {Placed.Count} footprints, {StreetLights.Count} street lamps. Scene saved to {scene.path}");
             }
             finally
             {
@@ -461,6 +461,13 @@ namespace HorseCity.EditorTools
             }
             foreach (var q in L.points)
                 AddQuestPoint(q.kind, root.TransformPoint(q.pos), yaw, q.note);
+
+            if (L.guns.Count > 0)
+            {
+                int n = GunPlacer.Place(root, L.guns, GunPlacer.FindGuns());
+                if (n == 0) Debug.LogWarning("[HORSE] No gun models found. Import the 'Low Poly Weapons VOL.1' pack and rebuild to fill the weapon shop.");
+                else Debug.Log($"[HORSE] Placed {n} guns in {L.name}.");
+            }
 
             // reserve the lot so generic buildings stay out
             Vector2 lc = L.lot.center;
