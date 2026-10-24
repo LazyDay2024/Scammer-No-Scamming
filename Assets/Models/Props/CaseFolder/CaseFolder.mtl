@@ -1,0 +1,20 @@
+newmtl A4_Page3Shape
+Kd 1 1 1
+map_Kd CaseFolder_tex0.jpg
+
+newmtl A4_Page2Shape
+Kd 1 1 1
+map_Kd CaseFolder_tex0.jpg
+
+newmtl A4_Page1Shape
+Kd 1 1 1
+map_Kd CaseFolder_tex0.jpg
+
+newmtl A4_Paper_StackShape
+Kd 1 1 1
+map_Kd CaseFolder_tex0.jpg
+
+newmtl Folder_1Shape
+Kd 1 1 1
+map_Kd CaseFolder_tex3.jpg
+

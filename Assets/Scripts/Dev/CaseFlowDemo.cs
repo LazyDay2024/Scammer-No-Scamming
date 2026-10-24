@@ -20,6 +20,8 @@ namespace ScammerNoScamming
         public float troublePerInnocent = 20f;
         public float policeThreshold = 100f;
         public StationInvestigation station;
+        [Tooltip("Optional: case file, map and raid-site choice at the start of a case, instead of the station boards.")]
+        public CaseBriefing briefing;
 
         enum Step { Idle, ToHideout, ToStation, Dead, Done }
         CaseDatabase db;
@@ -126,6 +128,7 @@ namespace ScammerNoScamming
             Hideout.HideAll();
             DisableTraps();
             if (station != null) station.Close();
+            if (briefing != null) briefing.Stop();
             menu.Show(() => story.Show("bg_opening", "2035 · สยามภิรมย์", "ม้าเหล็กหมดน้ำมัน", db.Text.Opening, null,
                 "รับคดีแรก", BeginRun));
         }
@@ -138,6 +141,17 @@ namespace ScammerNoScamming
             if (station != null) station.Reset();
             ShowMenu();
         }
+
+        // For CaseBriefing: heal and return to the station start after dying there.
+        public void RespawnPlayerAtStart()
+        {
+            ResetPlayerPosition();
+            if (vitals != null) vitals.ResetForAction(RunModifiers.None);
+            if (playerWeapon != null) playerWeapon.FullRestock();
+        }
+
+        public void ShowStory(string title, string subtitle, string body, string button, System.Action onDone) =>
+            story.Show("bg_ending_messy", title, subtitle, body, null, button, onDone, true);
 
         void ResetPlayerPosition()
         {
@@ -165,6 +179,7 @@ namespace ScammerNoScamming
             foreach (var trap in FindObjectsByType<Trap>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 trap.ResetForAction();
+                if (IsRealCrate(trap)) { trap.gameObject.SetActive(true); continue; } // ammo crates are scenery, not part of a case
                 bool wanted = definition == null || definition.Traps.Count == 0 || definition.Traps.Contains(trap.Kind);
                 if (!trap.IsDefused) trap.gameObject.SetActive(wanted);
             }
@@ -175,13 +190,24 @@ namespace ScammerNoScamming
             foreach (var trap in FindObjectsByType<Trap>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 trap.ResetForAction();
-                trap.gameObject.SetActive(false);
+                trap.gameObject.SetActive(IsRealCrate(trap));
             }
         }
 
+        static bool IsRealCrate(Trap trap) => trap is SupplyCrate crate && !crate.isFake;
+
+        static string lastFirstCaseId; // survives returning to the menu; reset only when the app restarts
+
         void BeginRun()
         {
+            // A fresh draw every time a game starts, never opening on the case the last game opened on.
             run = db.PickRun(regularCases, System.Environment.TickCount);
+            if (run.Count > 1 && !run[0].IsBoss && run[0].CaseId == lastFirstCaseId)
+            {
+                int swap = run.FindIndex(1, c => !c.IsBoss);
+                if (swap > 0) { var first = run[0]; run[0] = run[swap]; run[swap] = first; }
+            }
+            lastFirstCaseId = run[0].CaseId;
             if (!includeBoss) run.RemoveAll(c => c.IsBoss);
             caseIndex = 0;
             trouble = 0f;
@@ -198,6 +224,7 @@ namespace ScammerNoScamming
             DisableTraps();
             step = Step.Idle;
             CurrentAnalysis = null;
+            if (briefing != null) { briefing.Begin(current, OnAnalysed); return; }
             if (station != null)
             {
                 station.TroublePerWrongAnswer = troublePerWrongAnswer;
@@ -241,10 +268,12 @@ namespace ScammerNoScamming
             ArmTraps(current);
             hurtInnocents.Clear();
             if (vitals != null) vitals.ResetForAction(modifiers);
+            if (playerWeapon != null) playerWeapon.FullRestock(); // a retry after dying starts with full ammo
             ArmedEnemy.SightMultiplier = Mathf.Max(0f, modifiers.EnemySightRange);
             var hideout = Hideout.Find(current.HideoutId);
             raid = hideout != null ? hideout.GetComponent<RaidEncounter>() : null;
             if (raid != null) raid.BeginRaid();
+            if (briefing != null) briefing.OnActionBegan();
             step = Step.ToHideout;
             CheckPolice();
         }
@@ -271,13 +300,29 @@ namespace ScammerNoScamming
         }
         void CheckPolice() { if (raid != null && trouble >= policeThreshold) raid.SpawnCorruptPolice(); }
 
-        void OnPlayerDied()
+        // Seconds the player's view spends falling before the retreat page appears.
+        const float DeathViewSeconds = 1.8f;
+
+        void OnPlayerDied() => StartCoroutine(DeathRoutine());
+
+        // Every death, in any phase, plays the fall (PlayerCharacter) and then shows a page, so a death can never leave a
+        // frozen camera with no UI. The page's button respawns the player with full health and ammo.
+        System.Collections.IEnumerator DeathRoutine()
         {
-            if (!ActionActive) return;
-            step = Step.Dead;
-            story.Show("bg_ending_messy", "ล่าถอยจากพื้นที่", "ยังมีโอกาสกลับไปช่วยพวกเขา",
-                "คุณบาดเจ็บจนบุกต่อไม่ไหว กลับมาที่สถานีแล้วเตรียมลงมือใหม่ คำตอบวิเคราะห์และยีนที่เลือกยังอยู่ครบ",
-                null, "บุกอีกครั้ง", RetryAction);
+            yield return new WaitForSecondsRealtime(DeathViewSeconds);
+            if (vitals == null || !vitals.Health.IsDead) yield break; // revived meanwhile (debug, restart)
+            if (briefing != null && briefing.HandleDeath()) yield break;
+            if (ActionActive)
+            {
+                step = Step.Dead;
+                story.Show("bg_ending_messy", "ล่าถอยจากพื้นที่", "ยังมีโอกาสกลับไปช่วยพวกเขา",
+                    "คุณบาดเจ็บจนบุกต่อไม่ไหว กลับมาที่สถานีแล้วเตรียมลงมือใหม่ คำตอบวิเคราะห์และยีนที่เลือกยังอยู่ครบ",
+                    null, "บุกอีกครั้ง", RetryAction, true);
+                yield break;
+            }
+            story.Show("bg_ending_messy", "คุณล้มลง", "ยังไม่จบแค่นี้",
+                "คุณฟื้นขึ้นมาที่สถานีพร้อมเลือดและกระสุนเต็ม คดียังดำเนินต่อจากเดิม",
+                null, "ลุกขึ้นสู้ต่อ", () => { story.Close(); RespawnPlayerAtStart(); }, true);
         }
 
         public void RetryAction()
@@ -331,11 +376,24 @@ namespace ScammerNoScamming
         void OnGUI()
         {
             if (!ActionActive || GameScreen.AnyOpen || current == null) return;
-            string objective = HasEvidence ? "นำหลักฐานกลับสถานี แล้ว Seal ที่โต๊ะเก็บหลักฐาน"
-                : raid != null && raid.Cleared ? "ปลอดภัยแล้ว เล็งที่หลักฐานแล้วกด E เพื่อเก็บ"
+            string objective = briefing != null && briefing.ActionObjective(HasEvidence) is string briefed ? briefed
+                : HasEvidence ? "นำหลักฐานกลับสถานี แล้ว Seal ที่โต๊ะเก็บหลักฐาน"
+                : raid != null && raid.Cleared ? "ปลอดภัยแล้ว เก็บหลักฐานจากเครื่องของบอส (กด E) · " + raid.EvidenceTaken + "/" + raid.EvidenceTotal
                 : $"บุก {current.ZoneHint} · ศัตรูเหลือ {(raid != null ? raid.RemainingEnemies : 0)} คน";
+            Vector3? waypoint = null;
+            if (HasEvidence)
+            {
+                if (sealPoint != null) waypoint = sealPoint.position;
+            }
+            else
+            {
+                var entrance = HideoutEntrance.Find(current.HideoutId);
+                var hideout = Hideout.Find(current.HideoutId);
+                if (entrance != null) waypoint = entrance.transform.position;
+                else if (hideout != null) waypoint = hideout.transform.position;
+            }
             GameHud.Draw(current.Title, objective, vitals != null ? vitals.Health.Current : 100f,
-                vitals != null ? vitals.Health.max : 100f, trouble, policeThreshold, raid != null && raid.PoliceSpawned);
+                vitals != null ? vitals.Health.max : 100f, trouble, policeThreshold, raid != null && raid.PoliceSpawned, waypoint);
         }
     }
 }

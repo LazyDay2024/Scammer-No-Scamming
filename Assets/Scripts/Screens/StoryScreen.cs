@@ -14,13 +14,17 @@ namespace ScammerNoScamming
         string extra;
         string button;
         Action onDone;
+        bool overGameView;
 
         protected override bool FillsScreen => false;
-        protected override bool WantsLiveWorld => true;
+        // A death page stays on the player's own fallen view; cutting to the drifting backdrop camera there reads as a
+        // frozen cutscene with no UI until the page fades in.
+        protected override bool WantsLiveWorld => !overGameView;
 
         public void Show(string backgroundArt, string kickerText, string titleText, string bodyText, string extraText,
-            string buttonText, Action done)
+            string buttonText, Action done, bool overGameView = false)
         {
+            this.overGameView = overGameView;
             art = backgroundArt;
             kicker = kickerText;
             title = titleText;
@@ -41,11 +45,15 @@ namespace ScammerNoScamming
         {
             bool grim = art != null && art.Contains("messy");
             var tone = grim ? ThaiGui.Danger : ThaiGui.Gold;
-            ThaiGui.Dim(grim ? 0.35f : 0.12f);
-            ThaiGui.ScrimLeft(1350f, 0.95f);
-            ThaiGui.ScrimBottom(320f, 0.5f);
-            ThaiGui.VignetteOverlay(grim ? 0.8f : 0.55f);
-            ThaiGui.Grain(0.035f);
+            // The scrims fade in with the text; at full strength from the first frame they read as a black flash.
+            using (ThaiGui.Fade(ThaiGui.Appear(Age, 0f, 0.45f)))
+            {
+                ThaiGui.Dim(grim ? 0.35f : 0.12f);
+                ThaiGui.ScrimLeft(1350f, 0.95f);
+                ThaiGui.ScrimBottom(320f, 0.5f);
+                ThaiGui.VignetteOverlay(grim ? 0.8f : 0.55f);
+                ThaiGui.Grain(0.035f);
+            }
 
             const float x = 150f, w = 880f;
             float age = Age;

@@ -9,8 +9,12 @@ namespace ScammerNoScamming
         public Transform enemyRoot;
         public Transform corruptPoliceRoot;
         public Transform evidencePoint;
+        [Tooltip("More evidence besides evidencePoint (for example the boss's laptop); all must be taken.")]
+        public Transform[] extraEvidence = new Transform[0];
         public bool Active { get; private set; }
-        public bool EvidenceCollected { get; private set; }
+        public bool EvidenceCollected => evidenceItems.Count > 0 ? taken.Count >= evidenceItems.Count : collectedWhole;
+        public int EvidenceTotal => evidenceItems.Count;
+        public int EvidenceTaken => taken.Count;
         public bool PoliceSpawned { get; private set; }
         public int RemainingEnemies
         {
@@ -26,18 +30,26 @@ namespace ScammerNoScamming
 
         readonly List<ArmedEnemy> enemies = new List<ArmedEnemy>();
         GameObject liveRaid, livePolice;
-        WorldInteractable evidenceInteraction;
+        readonly List<Transform> evidenceItems = new List<Transform>();
+        readonly HashSet<Transform> taken = new HashSet<Transform>();
+        readonly Dictionary<Transform, WorldInteractable> interactions = new Dictionary<Transform, WorldInteractable>();
+        bool collectedWhole;
 
         void Awake()
         {
             HideTemplates();
-            if (evidencePoint != null)
+            if (evidencePoint != null) evidenceItems.Add(evidencePoint);
+            foreach (var extra in extraEvidence) if (extra != null) evidenceItems.Add(extra);
+            foreach (var item in evidenceItems)
             {
-                evidenceInteraction = evidencePoint.GetComponent<WorldInteractable>();
-                if (evidenceInteraction == null) evidenceInteraction = evidencePoint.gameObject.AddComponent<WorldInteractable>();
-                evidenceInteraction.Prompt = "เก็บหลักฐาน";
-                evidenceInteraction.Available = false;
-                evidenceInteraction.OnInteract = () => TryCollectEvidence();
+                var interaction = item.GetComponent<WorldInteractable>();
+                if (interaction == null) interaction = item.gameObject.AddComponent<WorldInteractable>();
+                var label = item.GetComponent<EvidenceItem>();
+                interaction.Prompt = label != null ? "เก็บหลักฐาน: " + label.label : "เก็บหลักฐาน";
+                interaction.Available = false;
+                var captured = item;
+                interaction.OnInteract = () => TryCollectEvidence(captured);
+                interactions[item] = interaction;
             }
         }
 
@@ -63,14 +75,15 @@ namespace ScammerNoScamming
         public void ResetRaid()
         {
             Active = false;
-            EvidenceCollected = false;
+            collectedWhole = false;
+            taken.Clear();
             PoliceSpawned = false;
             enemies.Clear();
             RemoveInstance(ref liveRaid);
             RemoveInstance(ref livePolice);
             HideTemplates();
-            if (evidenceInteraction != null) evidenceInteraction.Available = false;
-            if (evidencePoint != null) evidencePoint.gameObject.SetActive(true);
+            foreach (var pair in interactions) if (pair.Value != null) pair.Value.Available = false;
+            foreach (var item in evidenceItems) if (item != null) item.gameObject.SetActive(true);
         }
 
         void RemoveInstance(ref GameObject instance)
@@ -100,17 +113,21 @@ namespace ScammerNoScamming
             NpcGunfire.EnsureExists();
         }
 
-        public bool TryCollectEvidence()
+        // Takes one piece (the main one when none is named); true once something was taken.
+        public bool TryCollectEvidence(Transform item = null)
         {
             if (!Cleared || EvidenceCollected) return false;
-            EvidenceCollected = true;
-            if (evidencePoint != null) evidencePoint.gameObject.SetActive(false);
+            if (evidenceItems.Count == 0) { collectedWhole = true; return true; }
+            if (item == null) item = evidenceItems.Find(e => !taken.Contains(e));
+            if (item == null || !taken.Add(item)) return false;
+            item.gameObject.SetActive(false);
             return true;
         }
 
         void Update()
         {
-            if (evidenceInteraction != null) evidenceInteraction.Available = Cleared && !EvidenceCollected;
+            foreach (var pair in interactions)
+                if (pair.Value != null) pair.Value.Available = Cleared && !taken.Contains(pair.Key);
         }
 
         void OnDisable() => ResetRaid();

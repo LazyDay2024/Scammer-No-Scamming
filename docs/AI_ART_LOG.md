@@ -46,3 +46,15 @@ All lettering, including Thai, was drawn afterward in Pillow using C:/Windows/Fo
 - `docs/art-reference/_qa_contact.png` - temporary montage created and refreshed with Python Pillow for visual inspection; removed after review, not a deliverable.
 
 Image deliverables total: 4936202 bytes. No Unity .meta files created. No scenes, prefabs or scripts modified. No Unity run, commit or push.
+
+## 2026-10-24 — Hideout interior concept references
+
+Tool: built-in `image_gen.imagegen`. Generated images are concept references only and are stored outside Unity Assets at `D:/Scammer No Scamming/art-from-codex/Hideout_Interior_Concepts/`.
+
+| Scene | Output | Prompt summary |
+|---|---|---|
+| `Hideout_east_shophouse` (FakeShop) | `east_shophouse-fake-shop-interior.png` | Cream-brown walls, dark brown floor/trim, packing warehouse and false storefront; packing tables, counters, crates, office desk. |
+| `Hideout_north_tower` (CallCenter) | `north_tower-call-center-interior.png` | Cool green-gray walls, dark gray floor/trim, 18 workstations, server racks, supervisor desk, break table. |
+| `Hideout_south_house` (FakeOfficer) | `south_house-fake-officer-interior.png` | Blue-gray walls, gray floor, navy trim, fake jail bunks, green-screen studio, reception, bench, boss desk. |
+
+Source captures are in `Hideout_Interior_Concepts/source_scenes/`. Captured from the existing Unity scenes with the ceiling renderer disabled only for the screenshots; the saved scene files were not changed. The temporary editor capture helper was removed after use. Concept images have not been imported into or applied to the Unity scenes.

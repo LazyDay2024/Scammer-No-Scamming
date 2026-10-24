@@ -61,13 +61,14 @@ namespace ScammerNoScamming.Tests
         }
 
         [Test]
-        public void RunStartsWithTheTutorialCaseAndEndsWithTheBoss()
+        public void RunHasEachCaseOnceEndsWithTheBossAndTheOrderVaries()
         {
             var run = db.PickRun(3, 42);
             Assert.AreEqual(4, run.Count);
-            Assert.AreEqual("CASE_01_FAKE_SHOP", run[0].CaseId);
             Assert.IsTrue(run[3].IsBoss);
             Assert.AreEqual(run.Count, run.Distinct().Count());
+            var firsts = Enumerable.Range(0, 30).Select(seed => db.PickRun(3, seed)[0].CaseId).Distinct().Count();
+            Assert.Greater(firsts, 1, "every run opened with the same case");
         }
     }
 

@@ -11,6 +11,8 @@ namespace ScammerNoScamming
 
         public bool isFake = true;
         public float interactRange = 2.5f;
+        [Tooltip("A real crate can be opened again after this many seconds (0: only once per case).")]
+        public float restockSeconds = 25f;
 
         public override TrapKind Kind => TrapKind.FakeSupply;
         public bool IsUsed { get; private set; }
@@ -22,8 +24,11 @@ namespace ScammerNoScamming
             return offset.sqrMagnitude <= interactRange * interactRange;
         }
 
+        float usedAt;
+
         void LateUpdate()
         {
+            if (IsUsed && !isFake && restockSeconds > 0f && Time.time - usedAt >= restockSeconds) IsUsed = false;
             var player = FindPlayer();
             if (IsUsed || player == null) return;
             bool pressed = InteractPressedOnFoot(player);
@@ -50,6 +55,7 @@ namespace ScammerNoScamming
         {
             if (IsUsed) return;
             IsUsed = true;
+            usedAt = Time.time;
             if (isFake) Spring(user);
             else Collected?.Invoke(this, user);
         }

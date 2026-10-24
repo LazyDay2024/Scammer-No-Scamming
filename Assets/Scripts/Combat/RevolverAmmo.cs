@@ -99,6 +99,15 @@ namespace ScammerNoScamming
             InterruptReload();
         }
 
+        // A fresh start (respawn, retry): full cylinder and full reserve.
+        public void RefillAll()
+        {
+            InterruptReload();
+            loaded = Capacity;
+            reserve = SupplyReserve;
+            Changed?.Invoke();
+        }
+
         public void RefillReserve()
         {
             if (reserve >= SupplyReserve) return;

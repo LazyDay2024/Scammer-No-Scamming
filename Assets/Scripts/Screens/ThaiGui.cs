@@ -429,11 +429,11 @@ namespace ScammerNoScamming
                     border = new RectOffset(PanelRadius + 3, PanelRadius + 3, PanelRadius + 3, PanelRadius + 3),
                 };
                 style.normal.background = ButtonTexture(new Color(1f, 1f, 1f, 0.03f), new Color(Bone.r, Bone.g, Bone.b, 0.3f));
-                style.hover.background = ButtonTexture(new Color(Gold.r, Gold.g, Gold.b, 0.16f), Gold);
+                style.hover.background = style.normal.background;
                 style.active.background = ButtonTexture(new Color(Gold.r, Gold.g, Gold.b, 0.3f), Gold);
                 style.focused.background = style.normal.background;
                 style.normal.textColor = Ink(Bone);
-                style.hover.textColor = Ink(Gold);
+                style.hover.textColor = Ink(Bone);
                 style.active.textColor = Color.white;
                 style.focused.textColor = Ink(Bone);
                 style.onNormal = style.normal;
@@ -486,9 +486,8 @@ namespace ScammerNoScamming
         public static bool Btn(Rect r, string text, int size = 32, bool primary = false)
         {
             int id = r.GetHashCode() ^ text.GetHashCode();
-            bool enabled = GUI.enabled;
-            bool over = enabled && r.Contains(Event.current.mousePosition);
-            float h = Hover(id, over);
+            // Decided: hovering never changes a control's colour (the pointer is only a click target).
+            float h = Hover(id, false);
             if (primary)
             {
                 Surfaced(r, Color.Lerp(Accent, new Color(0.96f, 0.76f, 0.4f), h));
@@ -507,8 +506,7 @@ namespace ScammerNoScamming
         public static bool MenuItem(Rect r, string text, bool selected, int size = 40)
         {
             int id = r.GetHashCode() ^ text.GetHashCode();
-            bool over = r.Contains(Event.current.mousePosition);
-            float h = Hover(id, over || selected);
+            float h = Hover(id, selected); // selection lights an entry; hovering does not
             Fill(r, new Color(Gold.r, Gold.g, Gold.b, 0.10f * h));
             Fill(new Rect(r.x, r.y + 8f, 3f, r.height - 16f), new Color(Gold.r, Gold.g, Gold.b, h));
             var label = new Rect(r.x + 28f + 12f * h, r.y, r.width - 40f, r.height);

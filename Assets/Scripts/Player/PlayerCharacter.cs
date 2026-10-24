@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace ScammerNoScamming
@@ -9,6 +10,8 @@ namespace ScammerNoScamming
         public const float StartingHealth = 100f;
 
         CapsuleCollider riderHitbox;
+        Coroutine fall;
+        const float FallSeconds = 1.1f;
 
         public bool RiderHitboxActive => riderHitbox != null && riderHitbox.enabled;
 
@@ -43,13 +46,49 @@ namespace ScammerNoScamming
             var gun = GetComponent<PlayerWeaponController>();
             if (gun != null) gun.enabled = false;
 
-            // Drop the view to the floor and tip it over so the death reads at a glance.
+            // The view collapses to the floor and rolls onto its side (see FallRoutine).
             var view = GetComponentInChildren<Camera>();
             if (view != null)
             {
-                if (view.transform.parent != transform) view.transform.parent.localPosition = new Vector3(0f, 0.4f, 0f);
-                view.transform.localRotation = Quaternion.Euler(0f, 0f, 70f);
+                if (fall != null) StopCoroutine(fall);
+                fall = StartCoroutine(FallRoutine(view.transform));
             }
+        }
+
+        // Knees give way: the eye drops with growing speed while the view pitches down and rolls over. Unscaled time, so
+        // it also plays if something pauses the game at the moment of death.
+        IEnumerator FallRoutine(Transform view)
+        {
+            var pivot = view.parent != transform ? view.parent : null;
+            Vector3 from = pivot != null ? pivot.localPosition : Vector3.zero;
+            Vector3 to = new Vector3(from.x, 0.4f, from.z);
+            Quaternion roll = Quaternion.Euler(18f, 0f, 70f);
+            for (float t = 0f; t < FallSeconds; t += Time.unscaledDeltaTime)
+            {
+                float u = Mathf.Clamp01(t / FallSeconds);
+                float drop = u * u;                          // accelerates like a body falling
+                float tip = 1f - (1f - u) * (1f - u);        // settles gently on its side
+                if (pivot != null) pivot.localPosition = Vector3.Lerp(from, to, drop);
+                view.localRotation = Quaternion.Slerp(Quaternion.identity, roll, tip);
+                yield return null;
+            }
+            if (pivot != null) pivot.localPosition = to;
+            view.localRotation = roll;
+            fall = null;
+        }
+
+        // Undo OnDied after the health has been restored: control back on, camera upright.
+        public void Revive()
+        {
+            if (fall != null) { StopCoroutine(fall); fall = null; }
+            var mount = GetComponent<PlayerMount>();
+            if (mount != null) mount.enabled = true;
+            var controller = GetComponent<PlayerController>();
+            if (controller != null) controller.enabled = true;
+            var gun = GetComponent<PlayerWeaponController>();
+            if (gun != null) gun.enabled = true;
+            var view = GetComponentInChildren<Camera>();
+            if (view != null) view.transform.localRotation = Quaternion.identity; // the pivot height is reset by PlayerController
         }
 
         void CreateRiderHitbox()

@@ -347,7 +347,7 @@ public static class FrontierLevelBuilder
 
     // ---------------------------------------------------------------- town
 
-    static Transform BuildStation(Transform level, Terrain terrain)
+    public static Transform BuildStation(Transform level, Terrain terrain)
     {
         // A 26 x 16 m hall like CityBuilder's (StationInvestigation/StationDressing use its local layout); door faces the street.
         var root = new GameObject("PoliceStation").transform;

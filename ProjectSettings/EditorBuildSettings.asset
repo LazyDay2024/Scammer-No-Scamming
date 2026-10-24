@@ -9,14 +9,23 @@ EditorBuildSettings:
     path: Assets/Scenes/PlayAble.unity
     guid: 19374b9efa7a2dc46aa54cf6dfa1c0cb
   - enabled: 1
-    path: Assets/Scenes/Frontier_Case01.unity
+    path: Assets/Scenes/Test/Frontier_Case01.unity
     guid: 9629b265ff19b684dbbce0fd1cd21de6
   - enabled: 1
-    path: Assets/Scenes/CaseFlowDemo.unity
+    path: Assets/Scenes/Test/CaseFlowDemo.unity
     guid: 8b8b8b1620e1b7f458c3dcf926a06d17
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
+    path: Assets/Scenes/Test/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/HideOut/Hideout_east_shophouse.unity
+    guid: fe75071591f00664ebf3644264b9747e
+  - enabled: 1
+    path: Assets/Scenes/HideOut/Hideout_north_tower.unity
+    guid: 082d2772ee0eb5843ad291fcb0371c51
+  - enabled: 1
+    path: Assets/Scenes/HideOut/Hideout_south_house.unity
+    guid: bfc233b50638aa24c887532b85276c24
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

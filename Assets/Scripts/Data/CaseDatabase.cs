@@ -26,6 +26,12 @@ namespace ScammerNoScamming
             public bool IsBoss;
             public string VictimName;
             public string VictimRole;
+            public string Honorific;
+            public int Age;
+            public string Address;
+            public string IncidentDate;
+            public string IncidentTime;
+            public string Suspect;
             public string Portrait;
             public string VictimStory;
             public List<string> Clues;
@@ -66,18 +72,12 @@ namespace ScammerNoScamming
             return FromJson(asset.text);
         }
 
-        // Decided: cases are a pool and each run picks some at random. The first pick is the tutorial
-        // case when one is marked by id order (CASE_01...), the boss always comes last.
+        // Decided: cases are a pool and every run draws them in a new random order (the first case is random too,
+        // so no two runs start alike); the boss always comes last. Pass a changing seed for a new order each run.
         public List<CaseDefinition> PickRun(int count, int seed)
         {
             var regular = new List<CaseDefinition>(Regular);
-            regular.Sort((a, b) => string.CompareOrdinal(a.CaseId, b.CaseId));
             var picked = new List<CaseDefinition>();
-            if (regular.Count > 0)
-            {
-                picked.Add(regular[0]);
-                regular.RemoveAt(0);
-            }
             var rng = new System.Random(seed);
             while (picked.Count < count && regular.Count > 0)
             {

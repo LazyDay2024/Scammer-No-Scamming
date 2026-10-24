@@ -23,6 +23,7 @@ namespace ScammerNoScamming
         public RevolverAmmo Ammo => weapon != null ? weapon.Ammo : GetComponent<RevolverAmmo>();
         // API used by Nithis's trap consequences and trap course.
         public void Refill() => Ammo?.RefillReserve();
+        public void FullRestock() => Ammo?.RefillAll();
         public void Drain() => Ammo?.Empty();
 
         PlayerControls controls;

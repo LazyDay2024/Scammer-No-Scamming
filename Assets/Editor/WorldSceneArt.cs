@@ -17,10 +17,10 @@ public static class WorldSceneArt
     static readonly Color Wood = new Color(.24f, .145f, .09f);
     static readonly Color Iron = new Color(.12f, .16f, .17f);
 
-    public static Material Paint(string name, Color color, bool unlit = false)
+    public static Material Paint(string name, Color color, bool unlit = false, string folder = Folder)
     {
-        EnsureFolder(Folder);
-        string path = $"{Folder}/{name}.mat";
+        EnsureFolder(folder);
+        string path = $"{folder}/{name}.mat";
         var material = AssetDatabase.LoadAssetAtPath<Material>(path);
         if (material == null)
         {

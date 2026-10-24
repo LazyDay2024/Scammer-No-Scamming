@@ -68,6 +68,12 @@ namespace ScammerNoScamming
         public bool IsBoss;
         public string VictimName;
         public string VictimRole;
+        public string Honorific;
+        public int Age;
+        public string Address;
+        public string IncidentDate;
+        public string IncidentTime;
+        public string Suspect;
         public string Portrait;
         [TextArea] public string VictimStory;
         public List<string> Clues = new List<string>();

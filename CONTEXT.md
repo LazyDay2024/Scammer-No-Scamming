@@ -1,7 +1,7 @@
 # CONTEXT: Scammer No Scamming (Game Jam, Unity 6)
 
 อ่านไฟล์นี้ก่อนเริ่มงานทุก session อัปเดตเมื่อสโคป โครงสร้าง หรือสถานะเปลี่ยนมาก
-ปรับล่าสุด: 2026-10-23
+ปรับล่าสุด: 2026-10-24 (เพิ่มหัวข้อ "ฉาก PlayAble")
 
 ## โปรเจกต์
 
@@ -119,6 +119,37 @@
 - ถ้า Unity Editor เปิดโปรเจกต์จริงอยู่ อย่ารัน batchmode บนโปรเจกต์เดียวกัน ให้คัดลอก `Assets`, `Packages`, `ProjectSettings` ไปโฟลเดอร์ชั่วคราวแล้วรันที่นั่น ไฟล์ใหม่ต้องมี `.meta` ก่อน commit (คัดจากสำเนาที่ Unity import แล้ว)
 - เทสต์: ตัวจำลองคลิกใน InputTestFixture ทำคลิกหลุดเป็นครั้งคราว (เทสต์ที่คลิกจริงลองได้ถึง 4 ครั้ง), ย้าย collider ในเทสต์ต้อง `Physics.SyncTransforms()`, ผู้เล่นในเทสต์ต้องมีพื้น, `TroubleMeter` เป็น static ต้อง `ResetAll()` ในเทสต์ที่เช็ก Trouble
 - `Builds/` อยู่ใน `.gitignore` ชื่อหน้าต่างเกม (productName) ยังเป็น "My project"
+
+## ฉาก PlayAble (อัปเดต 2026-10-24) ฉากหลักที่จะส่งงาน
+
+`Assets/Scenes/PlayAble.unity` = แผนที่เมือง HorseCity (วงกลม หอคอยกลาง สน. ทางตะวันตกเฉียงใต้) + ระบบเล่นที่ใส่ด้วยเมนู **Tools/Scammer No Scamming/Add Gameplay To PlayAble Scene** (`Assets/Editor/PlayAbleBuilder.cs`) รันซ้ำได้ มันลบของที่ตัวเองเคยเพิ่มแล้วสร้างใหม่ **อย่าแก้ฉากด้วยมือแล้วคาดว่าจะอยู่ ให้แก้ที่ builder**
+
+**Flow ของคดี** (ควบคุมโดย `Dev/CaseFlowDemo` + `Briefing/CaseBriefing`, ไม่ใช้ `StationInvestigation` ในฉากนี้)
+1. เกิดในล็อบบี้ สน.จริงของเมือง (`PoliceStation` ใน Landmarks) → เปิดแฟ้มคดีบนโต๊ะ (`CaseDocumentScreen`: บันทึกถ้อยคำผู้เสียหายตามแบบ สภ. + หลักฐานแนบ ข้อมูลเติมจาก `game_content.json`: `Honorific/Age/Address/IncidentDate/IncidentTime/Suspect`)
+2. หยิบแผนที่บนโต๊ะ → กด **M** เปิดแผนที่เมือง (`CityMapScreen`, ภาพวาดจากผังตึกด้วย `CityMapView` หรือรูปทำมือที่ `Assets/Art/UI/CityMap.png`) มีตำแหน่งผู้เล่น
+3. เลือกรัง 1 ใน 3 (`MapSite` บอกประเภทแก๊ง) **เลือกผิด** = สแกมเมอร์ 4 คนบุก สน. (`StationRaid`, จุดเกิดคือ template ใต้ `RaidSpawnPoints`) + Trouble +20 ตายแล้วลุกสู้ใหม่ (`CaseBriefing.HandleDeath`) กำจัดหมดแล้วเลือกใหม่ได้ (จุดที่ผิดถูกมาร์ก) **เลือกถูก** = เผยรังด้วยเสาแสง → เลือกยีน → ออกปฏิบัติการ
+4. ที่รัง: ยามหน้าประตู 3 คน (`HideoutEntrance.guards`) → เดินผ่านประตูโดยไม่ขี่ม้า (`DoorPortal`, เปิดเฉพาะรังที่เผยแล้ว) → เข้า **ห้องรังที่เป็น Scene แยก** (`Assets/Interiors/Scenes/Hideout_<id>.unity`, โหลดแบบ additive ตอนเริ่มคดี แล้วปลดตอนคดีถัดไป/กลับเมนู ตัวห้องอยู่ใต้แผนที่ y=-300 กันชนกับเมือง) → ทลายรัง เก็บหลักฐาน → ออกประตูกลับถนน → ขี่กลับ สน. → Seal ที่โต๊ะ → บทเรียน → คดีถัดไป (3 คดี) → ฉากจบ → กลับเมนู
+
+**รัง 3 ผัง** (ตัวสร้าง `Assets/Editor/HideoutInteriors.cs` ผังเป็นตัวเลขในข้อมูล แก้เลขแล้วรัน builder ใหม่ ไม่ต้องแก้โค้ด) ตัวอาคารเท่ากัน 26×18 ม. แต่ละผังเป็น Scene ของตัวเอง:
+| id รัง | คดี | ผัง | ศัตรู / ผู้ถูกบังคับ |
+|---|---|---|---|
+| `east_shophouse` | CASE_01 ร้านค้าปลอม | `FakeShop` เส้นตรง หน้าร้าน→โถงแพ็ก→คลัง/ออฟฟิศ | 7 / 2 |
+| `north_tower` | CASE_02 งานออนไลน์ | `CallCenter` ฟลอร์โล่ง 18 โต๊ะ ห้องเซิร์ฟเวอร์ซ้ายหลัง | 8 / 5 |
+| `south_house` | CASE_03 แอบอ้างเจ้าหน้าที่ | `FakeOfficer` ล็อบบี้ + ห้องขังปลอม + ทางเดิน + ห้องผู้การ + สตูดิโอ | 6 / 3 |
+ประตูรังคือโกดังริมเมืองที่มี marker `QP_SuspectHideout` อยู่หน้าประตู (แต่ละรังเลือก marker ใกล้พิกัดที่กำหนดใน `PlayAbleBuilder.Sites`) ฝั่งถนนเก็บใน PlayAble: ประตู + ยาม + `MapSite` + `HideoutEntrance` (ชื่อ Scene) ฝั่งในเก็บใน Scene รัง: `Hideout` + `RaidEncounter` + `HideoutInterior` (จุดเข้า/ประตูออก) `CaseBriefing.SwitchInterior` โหลด Scene แล้ว `HideoutEntrance.Bind` ต่อประตูสองฝั่งและยกเสาแสงเหนือประตูถนน **Scene รังต้องอยู่ใน Build Settings** (builder ใส่ให้) ผัง/ตัวเลขศัตรูเป็นค่าตั้งต้น ยังไม่ได้ลองเล่นจริงว่าสมดุล
+
+**ไฟล์ที่เกี่ยวข้อง**: `Scripts/Briefing/*` (`CaseBriefing`, `CaseDocumentScreen`, `CityMapScreen`, `CityMapView`, `MapSite`, `DoorPortal`, `HideoutEntrance`, `HideoutInterior`), `PlayAbleBuilder.cs`, `HideoutInteriors.cs`, `PlayAbleDebug.cs` (ตัวช่วยเทสต์ผ่าน EditorBridge: `exec PlayAbleDebug.Start/OpenFile/TakeMap/PickWrong/PickRight/...` ลบได้)
+
+**การแก้ที่ทำกับระบบเดิม**: ตอนขี่ม้าหมุนมุมมองได้ 360° (ลบ `mountedYawLimit`, ยิงไปด้านหลังได้) · `PlayerCharacter.Revive()` เรียกจาก `PlayerVitals.ResetForAction` (เดิมตายแล้วเกิดใหม่เดินไม่ได้ กล้องติดพื้น เพราะไม่มีใครเปิดการควบคุมกลับ) · `CaseFlowDemo` มีช่อง `briefing` (ถ้าไม่ใส่ ทำงานแบบเดิมด้วย `StationInvestigation`) · `PlayerController.ResetLook()`
+
+**สถานะ "เล่นจบได้" (ตรวจ 2026-10-24 ใน Unity Editor ด้วยสคริปต์ `PlayAbleRun.*` ขับระบบจริงทีละขั้น)**: ผ่านครบทั้ง 3 คดีต่อเนื่อง (เปิดแฟ้ม → หยิบแผนที่ → เลือกรัง → ยีน → ยาม → เข้าห้องรัง Scene แยก → ทลายรัง → เก็บหลักฐาน → ออก → Seal → บทเรียน → คดีถัดไป) → ฉากจบ → กลับเมนู → เริ่มรอบใหม่ได้ (Scene รังถูกปลดแล้วโหลดใหม่) ตายกลางห้องรัง → หน้า "ล่าถอย" → บุกอีกครั้งได้ เลือกรังผิด → สแกมเมอร์บุก สน. → กำจัดแล้วเลือกใหม่ได้ **ที่ยังไม่ได้ตรวจ**: ทั้งหมดนี้ยังไม่เคยเล่นด้วยมือ/เมาส์/คีย์บอร์ดจริงตั้งแต่ต้นจนจบ, ใน build (ไม่ใช่ Editor), และบน WebGL
+
+**ข้อควรรู้เฉพาะฉากนี้**
+- ไฟล์ nav ของรังตั้งชื่อ `Assets/Navigation/PlayAble_<id>.asset` (เดิมชน `east_shophouse.asset` ของฉาก Frontier แก้แล้ว) `WorldSceneArt.Compound` ยังบันทึกลงชื่อ id เดิม ห้ามใช้ในฉากนี้
+- ฉากนี้ใช้ `RuntimeNavMesh` เบกตอนเริ่มเล่น มี error "does not allow read access" กับโมเดลเฟอร์นิเจอร์ (Couch, Drawer, Bookshelf ฯลฯ) **ใน build ศัตรูอาจเดินไม่ได้** ต้องเปิด Read/Write ที่โมเดลพวกนั้น
+- แสงในสน.และห้องรังมืด อ่านได้แต่ทึบ
+- เทสต์ผ่าน EditorBridge: เกมไม่ขยับเฟรมเองเมื่อ Unity ไม่ได้โฟกัส ต้อง `AppActivate` หน้าต่าง Unity ก่อน และใช้ `uishot` (ไม่ใช่ `shot`) ถ้าจะเห็น IMGUI
+- `ActionReplay` ยังอยู่ในฉาก (ใช้กับตายนอก flow) ตอนตายระหว่างปฏิบัติการ flow แสดงหน้า "ล่าถอย" ก่อน เวลาหยุดจึงไม่ถูกรีโหลดฉาก
 
 ## การตัดสินใจจากเจ้าของโปรเจกต์ (อัปเดต 2026-10-23) ใช้แทนข้อเสนอเดิมที่ขัดกัน
 

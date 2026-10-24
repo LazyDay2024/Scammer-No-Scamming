@@ -16,7 +16,6 @@ namespace ScammerNoScamming
         [Header("Look")]
         public float lookSensitivity = 0.1f;
         public float pitchLimit = 85f;
-        public float mountedYawLimit = 110f;
 
         [Header("Camera")]
         public Transform cameraPivot;
@@ -83,6 +82,13 @@ namespace ScammerNoScamming
             verticalVelocity = 0f;
         }
 
+        // After the body is moved by something else (a doorway), forget the old facing.
+        public void ResetLook()
+        {
+            yaw = transform.eulerAngles.y;
+            seatYaw = 0f;
+        }
+
         public void ExitMount(Vector3 position, float worldYaw)
         {
             IsMounted = false;
@@ -106,7 +112,7 @@ namespace ScammerNoScamming
 
             if (IsMounted)
             {
-                seatYaw = Mathf.Clamp(seatYaw + delta.x, -mountedYawLimit, mountedYawLimit);
+                seatYaw = Mathf.Repeat(seatYaw + delta.x + 180f, 360f) - 180f; // full turn so the rider can shoot backwards
                 transform.localRotation = Quaternion.Euler(0f, seatYaw, 0f);
             }
             else
@@ -125,7 +131,8 @@ namespace ScammerNoScamming
             Vector3 direction = transform.right * input.x + transform.forward * input.y;
             if (direction.sqrMagnitude > 1f) direction.Normalize();
 
-            float speed = controls.Sprint.IsPressed() ? sprintSpeed : walkSpeed;
+            bool sprinting = controls.Sprint.IsPressed();
+            float speed = sprinting ? sprintSpeed : walkSpeed;
 
             if (characterController.isGrounded && verticalVelocity < 0f)
                 verticalVelocity = -2f;

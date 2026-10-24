@@ -109,6 +109,8 @@ namespace ScammerNoScamming
             LastDamageTime = float.NegativeInfinity;
             deathReported = false;
             if (controls != null) controls.enabled = true;
+            var character = GetComponent<PlayerCharacter>();
+            if (character != null) character.Revive();
         }
 
         void OnDied(Health sender)
